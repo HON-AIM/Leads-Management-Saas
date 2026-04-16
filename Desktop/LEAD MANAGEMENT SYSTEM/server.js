@@ -41,6 +41,18 @@ const auth = (req, res, next) => {
   }
 };
 
+// 🔍 DEBUG: Check clients in database (no auth)
+app.get('/api/debug/clients', async (req, res) => {
+  try {
+    const clients = await Client.find({}, { name: 1, state: 1, status: 1, leadCap: 1, leadsReceived: 1 });
+    console.log(`=== DEBUG: Found ${clients.length} clients in database ===`);
+    clients.forEach(c => console.log(`  ${c.name} | ${c.state} | ${c.status} | ${c.leadsReceived}/${c.leadCap}`));
+    res.json({ count: clients.length, clients });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 📊 STATS
 app.get('/api/stats', auth, async (req, res) => {
   try {
