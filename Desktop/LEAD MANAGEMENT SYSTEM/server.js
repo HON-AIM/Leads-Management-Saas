@@ -78,11 +78,26 @@ app.post('/api/leads', async (req, res) => {
   try {
     const { name, email, phone, state, source = 'form', notes, metadata } = req.body;
 
-    // Distribution Engine: Find available client
-    const client = await Client.findOne({
-      state: state,
-      $expr: { $lt: ["$leadsReceived", "$leadCap"] }
-    }).sort({ leadsReceived: 1 }); // Assign to client with fewest leads
+    // Find clients that match the state (case-insensitive)
+    const stateUpper = state?.toUpperCase();
+    console.log(`Looking for client in state: ${stateUpper}`);
+
+    const availableClients = await Client.find({
+      state: { $regex: new RegExp('^' + stateUpper + '$', 'i') }
+    });
+
+    console.log(`Found ${availableClients.length} clients for state ${stateUpper}`);
+
+    // Filter for clients with available capacity
+    let client = null;
+    for (const c of availableClients) {
+      if (c.leadsReceived < c.leadCap) {
+        // Check if this is the client with fewest leads among those available
+        if (!client || c.leadsReceived < client.leadsReceived) {
+          client = c;
+        }
+      }
+    }
 
     let assignedTo = null;
     let status = 'unassigned';
@@ -92,6 +107,7 @@ app.post('/api/leads', async (req, res) => {
       client.leadsReceived += 1;
       await client.save();
       status = 'assigned';
+      console.log(`Lead assigned to: ${client.name} (${client.state})`);
 
       // Log activity
       await Activity.create({
@@ -100,6 +116,8 @@ app.post('/api/leads', async (req, res) => {
         clientId: client._id,
         leadId: null
       });
+    } else {
+      console.log(`No client available for state: ${stateUpper}`);
     }
 
     // Create lead
@@ -107,7 +125,7 @@ app.post('/api/leads', async (req, res) => {
       name,
       email,
       phone,
-      state,
+      state: stateUpper,
       source,
       assignedTo,
       status,
