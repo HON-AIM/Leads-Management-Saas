@@ -19,6 +19,13 @@ app.use(express.json());
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 // ============================================
+// HEALTH CHECK (place this early to verify routes load)
+// ============================================
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// ============================================
 // STATE NORMALIZATION MODULE
 // ============================================
 
