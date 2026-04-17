@@ -19,7 +19,13 @@ const Login = () => {
       await login(username, password);
       navigate('/dashboard');
     } catch (err) {
-      setError('Invalid username or password');
+      if (err.code === 'ECONNREFUSED' || err.message?.includes('Network')) {
+        setError('Unable to connect to server. Please check your connection.');
+      } else if (err.response?.status === 401) {
+        setError('Invalid username or password');
+      } else {
+        setError('An error occurred. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -52,6 +58,7 @@ const Login = () => {
                 placeholder="Enter your username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
               />
             </div>
 
@@ -64,13 +71,14 @@ const Login = () => {
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full"
+              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
@@ -84,7 +92,7 @@ const Login = () => {
         </div>
 
         <p className="text-center text-sm text-gray-500 mt-6">
-          © 2024 LeadDistribute. All rights reserved.
+          © {new Date().getFullYear()} LeadDistribute. All rights reserved.
         </p>
       </div>
     </div>

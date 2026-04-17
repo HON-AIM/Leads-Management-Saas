@@ -3,6 +3,7 @@ import { activitiesAPI } from '../services/api';
 
 const ActivityFeed = () => {
   const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchActivities = async () => {
@@ -11,11 +12,13 @@ const ActivityFeed = () => {
         setActivities(response.data);
       } catch (error) {
         console.error('Error fetching activities:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchActivities();
-    const interval = setInterval(fetchActivities, 5000);
+    const interval = setInterval(fetchActivities, 10000);
     return () => clearInterval(interval);
   }, []);
 

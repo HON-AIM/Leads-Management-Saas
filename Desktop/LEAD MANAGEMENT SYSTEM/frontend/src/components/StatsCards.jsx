@@ -8,6 +8,7 @@ const StatsCards = () => {
     leadsToday: 0,
     unassignedLeads: 0
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -16,11 +17,13 @@ const StatsCards = () => {
         setStats(response.data);
       } catch (error) {
         console.error('Error fetching stats:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchStats();
-    const interval = setInterval(fetchStats, 5000); // Refresh every 5 seconds
+    const interval = setInterval(fetchStats, 10000);
     return () => clearInterval(interval);
   }, []);
 

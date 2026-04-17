@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 const ClientsTable = () => {
   const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -13,11 +14,13 @@ const ClientsTable = () => {
         setClients(response.data);
       } catch (error) {
         console.error('Error fetching clients:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchClients();
-    const interval = setInterval(fetchClients, 5000);
+    const interval = setInterval(fetchClients, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -79,9 +82,11 @@ const ClientsTable = () => {
             ))}
           </tbody>
         </table>
-        {clients.length === 0 && (
+        {loading ? (
+          <p className="text-center py-8 text-gray-500">Loading...</p>
+        ) : clients.length === 0 ? (
           <p className="text-center py-8 text-gray-500">No clients yet</p>
-        )}
+        ) : null}
       </div>
     </div>
   );
