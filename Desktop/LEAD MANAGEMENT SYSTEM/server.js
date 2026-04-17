@@ -18,6 +18,202 @@ app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
+// ============================================
+// STATE NORMALIZATION HELPER
+// ============================================
+function normalizeState(state) {
+  if (!state) return null;
+  
+  const trimmed = String(state).trim().toUpperCase();
+  
+  const stateAbbreviations = {
+    'ALABAMA': 'AL', 'ALASKA': 'AK', 'ARIZONA': 'AZ', 'ARKANSAS': 'AR', 'CALIFORNIA': 'CA',
+    'COLORADO': 'CO', 'CONNECTICUT': 'CT', 'DELAWARE': 'DE', 'FLORIDA': 'FL', 'GEORGIA': 'GA',
+    'HAWAII': 'HI', 'IDAHO': 'ID', 'ILLINOIS': 'IL', 'INDIANA': 'IN', 'IOWA': 'IA',
+    'KANSAS': 'KS', 'KENTUCKY': 'KY', 'LOUISIANA': 'LA', 'MAINE': 'ME', 'MARYLAND': 'MD',
+    'MASSACHUSETTS': 'MA', 'MICHIGAN': 'MI', 'MINNESOTA': 'MN', 'MISSISSIPPI': 'MS', 'MISSOURI': 'MO',
+    'MONTANA': 'MT', 'NEBRASKA': 'NE', 'NEVADA': 'NV', 'NEW HAMPSHIRE': 'NH', 'NEW JERSEY': 'NJ',
+    'NEW MEXICO': 'NM', 'NEW YORK': 'NY', 'NORTH CAROLINA': 'NC', 'NORTH DAKOTA': 'ND', 'OHIO': 'OH',
+    'OKLAHOMA': 'OK', 'OREGON': 'OR', 'PENNSYLVANIA': 'PA', 'RHODE ISLAND': 'RI', 'SOUTH CAROLINA': 'SC',
+    'SOUTH DAKOTA': 'SD', 'TENNESSEE': 'TN', 'TEXAS': 'TX', 'UTAH': 'UT', 'VERMONT': 'VT',
+    'VIRGINIA': 'VA', 'WASHINGTON': 'WA', 'WEST VIRGINIA': 'WV', 'WISCONSIN': 'WI', 'WYOMING': 'WY',
+    'DISTRICT OF COLUMBIA': 'DC', 'WASHINGTON DC': 'DC', 'WASHINGTON D.C.': 'DC'
+  };
+
+  if (trimmed.length === 2) {
+    return trimmed;
+  }
+  
+  return stateAbbreviations[trimmed] || trimmed;
+}
+
+// ============================================
+// LEAD DISTRIBUTION ENGINE (Shared Logic)
+// ============================================
+async function processLead(name, email, phone, rawState, source = 'form') {
+  const results = {
+    assignedTo: null,
+    status: 'unassigned',
+    reason: 'unknown',
+    clientName: null
+  };
+
+  console.log('\n========================================');
+  console.log('=== LEAD DISTRIBUTION ENGINE ===');
+  console.log('========================================');
+  console.log('Incoming Lead Data:');
+  console.log('  Name:', name);
+  console.log('  Email:', email);
+  console.log('  Phone:', phone);
+  console.log('  State (raw):', rawState);
+  console.log('  Source:', source);
+
+  // Validate required fields
+  if (!name && !email) {
+    console.error('❌ REJECTED: Missing name and email');
+    results.reason = 'missing_fields';
+    return results;
+  }
+
+  // Normalize state
+  const normalizedState = normalizeState(rawState);
+  console.log('  State (normalized):', normalizedState);
+
+  if (!normalizedState) {
+    console.warn('⚠️ WARNING: No state provided');
+    results.reason = 'no_state';
+    return results;
+  }
+
+  // Get all clients and log their states for debugging
+  const allClients = await Client.find({});
+  console.log('\n📋 ALL CLIENTS IN DATABASE:');
+  console.log('  Total clients:', allClients.length);
+  allClients.forEach(c => {
+    console.log(`  - ${c.name} | State: "${c.state}" | Status: ${c.status} | Cap: ${c.leadCap} | Received: ${c.leadsReceived}`);
+  });
+
+  // Find clients matching state using case-insensitive regex
+  const availableClients = await Client.find({
+    state: { $regex: new RegExp('^' + normalizedState + '$', 'i') },
+    status: { $ne: 'inactive' }
+  });
+
+  console.log(`\n🔍 Clients matching state "${normalizedState}": ${availableClients.length}`);
+  
+  if (availableClients.length > 0) {
+    console.log('Matching clients details:');
+    availableClients.forEach(c => {
+      console.log(`  - ${c.name}: ${c.leadsReceived}/${c.leadCap} (${c.status})`);
+    });
+  }
+
+  // Filter for clients with available capacity
+  const eligibleClients = availableClients
+    .filter(c => {
+      const hasCapacity = c.leadsReceived < c.leadCap;
+      if (!hasCapacity) {
+        console.log(`  ⛔ ${c.name} has NO capacity (${c.leadsReceived}/${c.leadCap})`);
+      }
+      return hasCapacity;
+    })
+    .sort((a, b) => a.leadsReceived - b.leadsReceived);
+
+  console.log(`\n✅ Eligible clients with capacity: ${eligibleClients.length}`);
+  eligibleClients.forEach(c => {
+    console.log(`  - ${c.name}: ${c.leadsReceived}/${c.leadCap}`);
+  });
+
+  // Assign to first eligible client
+  let assignedClient = null;
+  let assignmentReason = 'no_eligible_client';
+
+  if (eligibleClients.length > 0) {
+    assignedClient = eligibleClients[0];
+    assignmentReason = 'assigned';
+    console.log(`\n🎯 Primary candidate: ${assignedClient.name}`);
+  } else if (availableClients.length === 0) {
+    console.log(`\n❌ NO CLIENT MATCH for state "${normalizedState}"`);
+    assignmentReason = 'no_client_for_state';
+  } else {
+    console.log(`\n❌ ALL MATCHING CLIENTS ARE FULL`);
+    assignmentReason = 'all_clients_full';
+  }
+
+  // Atomic assignment with capacity check
+  if (assignedClient) {
+    console.log(`\n⚡ Attempting atomic assignment to: ${assignedClient.name}`);
+    
+    const updatedClient = await Client.findOneAndUpdate(
+      { 
+        _id: assignedClient._id,
+        leadsReceived: { $lt: assignedClient.leadCap }
+      },
+      { $inc: { leadsReceived: 1 } },
+      { new: true }
+    );
+
+    if (updatedClient) {
+      results.assignedTo = assignedClient._id;
+      results.status = 'assigned';
+      results.clientName = assignedClient.name;
+      results.reason = 'assigned';
+      console.log(`✅ SUCCESS: Lead assigned to ${assignedClient.name}`);
+      console.log(`   New count: ${updatedClient.leadsReceived}/${updatedClient.leadCap}`);
+      
+      if (updatedClient.leadsReceived >= updatedClient.leadCap) {
+        await Client.findByIdAndUpdate(assignedClient._id, { status: 'full' });
+        console.log(`🔴 ${assignedClient.name} is now FULL`);
+      }
+
+      await Activity.create({
+        type: 'lead_assigned',
+        message: `Lead ${name} assigned to ${assignedClient.name}`,
+        clientId: assignedClient._id
+      });
+    } else {
+      console.log(`⚠️ FAIL: Race condition, trying next...`);
+      assignmentReason = 'race_condition';
+      
+      const remainingClients = eligibleClients.slice(1);
+      for (const altClient of remainingClients) {
+        const altUpdated = await Client.findOneAndUpdate(
+          { _id: altClient._id, leadsReceived: { $lt: altClient.leadCap } },
+          { $inc: { leadsReceived: 1 } },
+          { new: true }
+        );
+        
+        if (altUpdated) {
+          results.assignedTo = altClient._id;
+          results.status = 'assigned';
+          results.clientName = altClient.name;
+          results.reason = 'assigned_fallback';
+          console.log(`✅ SUCCESS: Lead assigned to fallback client: ${altClient.name}`);
+          
+          if (altUpdated.leadsReceived >= altUpdated.leadCap) {
+            await Client.findByIdAndUpdate(altClient._id, { status: 'full' });
+          }
+          
+          await Activity.create({
+            type: 'lead_assigned',
+            message: `Lead ${name} assigned to ${altClient.name}`,
+            clientId: altClient._id
+          });
+          break;
+        }
+      }
+    }
+  }
+
+  console.log('\n📊 FINAL RESULT:');
+  console.log(`  Status: ${results.status}`);
+  console.log(`  Assigned to: ${results.clientName || 'NONE'}`);
+  console.log(`  Reason: ${results.reason}`);
+  console.log('========================================\n');
+
+  return results;
+}
+
 mongoose.connect(process.env.MONGO_URI)
 .then(async () => {
   console.log("MongoDB Connected");
@@ -124,214 +320,43 @@ app.get('/api/activities', auth, async (req, res) => {
   }
 });
 
-// 🔥 RECEIVE LEAD (with distribution engine)
+// 🔥 RECEIVE LEAD (uses shared distribution engine)
 app.post('/api/leads', async (req, res) => {
   try {
     const { name, email, phone, state, source = 'form', notes, metadata } = req.body;
 
-    console.log('\n========================================');
-    console.log('=== LEAD DISTRIBUTION ENGINE ===');
-    console.log('========================================');
-    console.log('Incoming Lead Data:');
-    console.log('  Name:', name);
-    console.log('  Email:', email);
-    console.log('  Phone:', phone);
-    console.log('  State (raw):', state);
-    console.log('  Source:', source);
-
-    // Validate required fields
-    if (!name && !email) {
-      console.error('❌ REJECTED: Missing name and email');
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Name or email is required',
-        assignedTo: null,
-        status: 'rejected'
-      });
-    }
-
-    // Normalize state
-    const normalizedState = normalizeState(state);
-    console.log('  State (normalized):', normalizedState);
-
-    // Get all clients and log their states for debugging
-    const allClients = await Client.find({});
-    console.log('\n📋 ALL CLIENTS IN DATABASE:');
-    console.log('  Total clients:', allClients.length);
-    allClients.forEach(c => {
-      console.log(`  - ${c.name} | State: "${c.state}" | Status: ${c.status} | Cap: ${c.leadCap} | Received: ${c.leadsReceived}`);
-    });
-
-    // Find clients matching state and NOT inactive
-    const availableClients = await Client.find({
-      state: { $regex: new RegExp('^' + normalizedState + '$', 'i') },
-      status: { $ne: 'inactive' }
-    });
-
-    console.log(`\n🔍 Clients matching state "${normalizedState}": ${availableClients.length}`);
-    
-    if (availableClients.length > 0) {
-      console.log('Matching clients details:');
-      availableClients.forEach(c => {
-        console.log(`  - ${c.name}: ${c.leadsReceived}/${c.leadCap} (${c.status})`);
-      });
-    }
-
-    // Filter for clients with available capacity, then sort by leadsReceived (fewest first)
-    const eligibleClients = availableClients
-      .filter(c => {
-        const hasCapacity = c.leadsReceived < c.leadCap;
-        if (!hasCapacity) {
-          console.log(`  ⛔ ${c.name} has NO capacity (${c.leadsReceived}/${c.leadCap})`);
-        }
-        return hasCapacity;
-      })
-      .sort((a, b) => a.leadsReceived - b.leadsReceived);
-
-    console.log(`\n✅ Eligible clients with capacity: ${eligibleClients.length}`);
-    if (eligibleClients.length > 0) {
-      eligibleClients.forEach(c => {
-        console.log(`  - ${c.name}: ${c.leadsReceived}/${c.leadCap}`);
-      });
-    }
-
-    let client = null;
-    let assignmentReason = 'no_matching_client';
-
-    if (eligibleClients.length > 0) {
-      client = eligibleClients[0];
-      assignmentReason = 'assigned';
-      console.log(`\n🎯 Primary candidate: ${client.name}`);
-    } else {
-      // Detailed reason logging
-      if (availableClients.length === 0) {
-        console.log(`\n❌ NO CLIENT MATCH for state "${normalizedState}"`);
-        assignmentReason = 'no_client_for_state';
-      } else {
-        console.log(`\n❌ ALL MATCHING CLIENTS ARE FULL`);
-        assignmentReason = 'all_clients_full';
-      }
-    }
-
-    let assignedTo = null;
-    let leadStatus = 'unassigned';
-    let clientName = null;
-
-    if (client) {
-      console.log(`\n⚡ Attempting atomic assignment to: ${client.name}`);
-      
-      // Increment client leads atomically, only if not at capacity
-      const updatedClient = await Client.findOneAndUpdate(
-        { 
-          _id: client._id,
-          leadsReceived: { $lt: client.leadCap }
-        },
-        { $inc: { leadsReceived: 1 } },
-        { new: true }
-      );
-
-      if (updatedClient) {
-        assignedTo = client._id;
-        leadStatus = 'assigned';
-        clientName = client.name;
-        console.log(`✅ SUCCESS: Lead assigned to ${client.name}`);
-        console.log(`   New count: ${updatedClient.leadsReceived}/${updatedClient.leadCap}`);
-        
-        // Update client status to 'full' if reached cap
-        if (updatedClient.leadsReceived >= updatedClient.leadCap) {
-          await Client.findByIdAndUpdate(client._id, { status: 'full' });
-          console.log(`🔴 ${client.name} is now FULL`);
-        }
-
-        await Activity.create({
-          type: 'lead_assigned',
-          message: `Lead ${name} assigned to ${client.name}`,
-          clientId: client._id,
-          leadId: null
-        });
-      } else {
-        console.log(`⚠️ FAIL: ${client.name} reached capacity (race condition), trying next...`);
-        assignmentReason = 'race_condition_try_next';
-        
-        // Try next eligible client (fallback loop)
-        const remainingClients = eligibleClients.slice(1);
-        let assigned = false;
-
-        for (const altClient of remainingClients) {
-          const altUpdated = await Client.findOneAndUpdate(
-            { 
-              _id: altClient._id,
-              leadsReceived: { $lt: altClient.leadCap }
-            },
-            { $inc: { leadsReceived: 1 } },
-            { new: true }
-          );
-          
-          if (altUpdated) {
-            assignedTo = altClient._id;
-            leadStatus = 'assigned';
-            clientName = altClient.name;
-            assignmentReason = 'assigned_fallback';
-            console.log(`✅ SUCCESS: Lead assigned to fallback client: ${altClient.name}`);
-            
-            if (altUpdated.leadsReceived >= altUpdated.leadCap) {
-              await Client.findByIdAndUpdate(altClient._id, { status: 'full' });
-            }
-            
-            await Activity.create({
-              type: 'lead_assigned',
-              message: `Lead ${name} assigned to ${altClient.name}`,
-              clientId: altClient._id,
-              leadId: null
-            });
-            assigned = true;
-            break;
-          }
-        }
-
-        if (!assigned) {
-          console.log(`❌ All fallback clients failed assignment`);
-          assignmentReason = 'all_assignments_failed';
-        }
-      }
-    }
+    // Process the lead using shared engine
+    const processResult = await processLead(name, email, phone, state, source);
 
     // Create the lead
     const lead = await Lead.create({
       name: name || 'Unknown',
       email: email || 'no-email@system.local',
       phone: phone || null,
-      state: normalizedState || 'UNKNOWN',
+      state: normalizeState(state) || 'UNKNOWN',
       source,
-      assignedTo,
-      status: leadStatus,
+      assignedTo: processResult.assignedTo,
+      status: processResult.status,
       notes,
       metadata
     });
 
     // Create activity log
     await Activity.create({
-      type: leadStatus === 'assigned' ? 'lead_assigned' : 'lead_received',
-      message: leadStatus === 'assigned' 
-        ? `Lead ${name} assigned to ${clientName}` 
-        : `New lead received from ${source}: ${name} (${assignmentReason})`,
+      type: processResult.status === 'assigned' ? 'lead_assigned' : 'lead_received',
+      message: processResult.status === 'assigned' 
+        ? `Lead ${name} assigned to ${processResult.clientName}` 
+        : `New lead received from ${source}: ${name} (${processResult.reason})`,
       leadId: lead._id,
-      clientId: assignedTo
+      clientId: processResult.assignedTo
     });
-
-    console.log('\n📊 FINAL RESULT:');
-    console.log(`  Lead ID: ${lead._id}`);
-    console.log(`  Status: ${leadStatus}`);
-    console.log(`  Assigned to: ${clientName || 'NONE'}`);
-    console.log(`  Reason: ${assignmentReason}`);
-    console.log('========================================\n');
 
     res.json({
       success: true,
       lead,
-      assignedTo: clientName,
-      status: leadStatus,
-      reason: assignmentReason
+      assignedTo: processResult.clientName,
+      status: processResult.status,
+      reason: processResult.reason
     });
 
   } catch (err) {
@@ -346,81 +371,74 @@ app.post('/api/webhooks/lead', async (req, res) => {
     console.log('\n=== GHL WEBHOOK RECEIVED ===');
     console.log('Full Request Body:', JSON.stringify(req.body, null, 2));
 
-    const { contact_name, email, phone, state, source = 'webhook' } = req.body;
+    // GHL sends state in various fields - check all possibilities
+    const rawState = 
+      req.body.state || 
+      req.body.state_province || 
+      req.body.location_state ||
+      req.body.customFields?.state ||
+      req.body.custom_fields?.state ||
+      req.body.location?.state;
+
+    const { 
+      contact_name, 
+      firstName, 
+      lastName,
+      name,
+      email, 
+      phone, 
+      source = 'webhook' 
+    } = req.body;
+
+    // Build name from various possible fields
+    const leadName = contact_name || name || `${firstName || ''} ${lastName || ''}`.trim() || email || 'Unknown';
     
-    // Log raw incoming data
-    console.log('Raw incoming state:', state, '| Type:', typeof state);
-    console.log('Contact name:', contact_name);
+    console.log('Raw incoming state:', rawState, '| Type:', typeof rawState);
+    console.log('Extracted name:', leadName);
     console.log('Email:', email);
 
     // Normalize and validate incoming data
-    const normalizedState = normalizeState(state);
+    const normalizedState = normalizeState(rawState);
     console.log('Normalized state:', normalizedState);
 
-    if (!normalizedState) {
-      console.warn('⚠️ WEBHOOK WARNING: Missing or invalid state in webhook payload');
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Missing or invalid state',
-        receivedState: state
-      });
-    }
+    // Process the lead using shared engine (directly, not via HTTP)
+    const processResult = await processLead(leadName, email, phone, rawState, source);
 
-    // Transform webhook data to lead format with normalized state
-    const leadData = {
-      name: contact_name || email || 'Unknown',
+    // Create the lead
+    const lead = await Lead.create({
+      name: leadName || 'Unknown',
       email: email || 'no-email@webhook.local',
       phone: phone || null,
-      state: normalizedState,
-      source: source || 'webhook'
-    };
+      state: normalizedState || 'UNKNOWN',
+      source: source || 'webhook',
+      assignedTo: processResult.assignedTo,
+      status: processResult.status
+    });
 
-    console.log('Transformed lead data:', leadData);
+    // Create activity log
+    await Activity.create({
+      type: processResult.status === 'assigned' ? 'lead_assigned' : 'lead_received',
+      message: processResult.status === 'assigned' 
+        ? `Webhook lead ${leadName} assigned to ${processResult.clientName}` 
+        : `Webhook lead received: ${leadName} (${processResult.reason})`,
+      leadId: lead._id,
+      clientId: processResult.assignedTo
+    });
 
-    // Call the main leads endpoint
-    const result = await fetch(`http://localhost:5000/api/leads`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(leadData)
-    }).then(res => res.json());
+    console.log('Webhook lead processing complete:', processResult);
+    res.json({
+      success: true,
+      lead,
+      assignedTo: processResult.clientName,
+      status: processResult.status,
+      reason: processResult.reason
+    });
 
-    console.log('Lead processing result:', result);
-    res.json(result);
   } catch (err) {
     console.error('Webhook error:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
-
-// State normalization helper function
-function normalizeState(state) {
-  if (!state) return null;
-  
-  // Trim whitespace and convert to uppercase for matching
-  const trimmed = String(state).trim().toUpperCase();
-  
-  // Handle common state name variations (full names to abbreviations)
-  const stateAbbreviations = {
-    'ALABAMA': 'AL', 'ALASKA': 'AK', 'ARIZONA': 'AZ', 'ARKANSAS': 'AR', 'CALIFORNIA': 'CA',
-    'COLORADO': 'CO', 'CONNECTICUT': 'CT', 'DELAWARE': 'DE', 'FLORIDA': 'FL', 'GEORGIA': 'GA',
-    'HAWAII': 'HI', 'IDAHO': 'ID', 'ILLINOIS': 'IL', 'INDIANA': 'IN', 'IOWA': 'IA',
-    'KANSAS': 'KS', 'KENTUCKY': 'KY', 'LOUISIANA': 'LA', 'MAINE': 'ME', 'MARYLAND': 'MD',
-    'MASSACHUSETTS': 'MA', 'MICHIGAN': 'MI', 'MINNESOTA': 'MN', 'MISSISSIPPI': 'MS', 'MISSOURI': 'MO',
-    'MONTANA': 'MT', 'NEBRASKA': 'NE', 'NEVADA': 'NV', 'NEW HAMPSHIRE': 'NH', 'NEW JERSEY': 'NJ',
-    'NEW MEXICO': 'NM', 'NEW YORK': 'NY', 'NORTH CAROLINA': 'NC', 'NORTH DAKOTA': 'ND', 'OHIO': 'OH',
-    'OKLAHOMA': 'OK', 'OREGON': 'OR', 'PENNSYLVANIA': 'PA', 'RHODE ISLAND': 'RI', 'SOUTH CAROLINA': 'SC',
-    'SOUTH DAKOTA': 'SD', 'TENNESSEE': 'TN', 'TEXAS': 'TX', 'UTAH': 'UT', 'VERMONT': 'VT',
-    'VIRGINIA': 'VA', 'WASHINGTON': 'WA', 'WEST VIRGINIA': 'WV', 'WISCONSIN': 'WI', 'WYOMING': 'WY',
-    'DISTRICT OF COLUMBIA': 'DC', 'WASHINGTON DC': 'DC', 'WASHINGTON D.C.': 'DC'
-  };
-
-  // Check if already an abbreviation (2 chars) or convert full name
-  if (trimmed.length === 2) {
-    return trimmed;
-  }
-  
-  return stateAbbreviations[trimmed] || trimmed;
-}
 
 // 🗑️ DELETE LEAD
 app.delete('/api/leads/:id', auth, async (req, res) => {
