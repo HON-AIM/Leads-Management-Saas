@@ -371,35 +371,51 @@ app.post('/api/webhooks/lead', async (req, res) => {
     console.log('\n=== GHL WEBHOOK RECEIVED ===');
     console.log('Full Request Body:', JSON.stringify(req.body, null, 2));
 
+    // Handle both flat and nested GHL payloads
+    const body = req.body;
+    const data = body.data || body.payload || body.lead || body.contact || body;
+
     // GHL sends state in various fields - check all possibilities
     const rawState = 
-      req.body.state || 
-      req.body.state_province || 
-      req.body.location_state ||
-      req.body.customFields?.state ||
-      req.body.custom_fields?.state ||
-      req.body.location?.state;
+      data.state || 
+      data.state_province || 
+      data.location_state ||
+      data.location?.state ||
+      data.address?.state ||
+      data.customFields?.state ||
+      data.custom_fields?.state ||
+      body.state ||
+      body.state_province ||
+      req.body.state;
 
-    const { 
-      contact_name, 
-      firstName, 
-      lastName,
-      name,
-      email, 
-      phone, 
-      source = 'webhook' 
-    } = req.body;
+    // Also check top-level with common GHL field names
+    const contact_name = data.contact_name || data.name || body.contact_name;
+    const firstName = data.firstName || data.first_name || body.firstName;
+    const lastName = data.lastName || data.last_name || body.lastName;
+    const email = data.email || body.email;
+    const phone = data.phone || data.phoneNumber || data.phone_number || body.phone;
+    const source = data.source || body.source || 'webhook';
 
     // Build name from various possible fields
-    const leadName = contact_name || name || `${firstName || ''} ${lastName || ''}`.trim() || email || 'Unknown';
+    const leadName = contact_name || 
+                     `${firstName || ''} ${lastName || ''}`.trim() || 
+                     email || 
+                     'Unknown';
     
-    console.log('Raw incoming state:', rawState, '| Type:', typeof rawState);
-    console.log('Extracted name:', leadName);
-    console.log('Email:', email);
+    console.log('Extracted data:');
+    console.log('  Raw state:', rawState);
+    console.log('  Name:', leadName);
+    console.log('  Email:', email);
+    console.log('  Phone:', phone);
 
     // Normalize and validate incoming data
     const normalizedState = normalizeState(rawState);
     console.log('Normalized state:', normalizedState);
+
+    if (!normalizedState) {
+      console.warn('⚠️ WARNING: No state found in webhook payload');
+      console.log('Available fields:', Object.keys(data));
+    }
 
     // Process the lead using shared engine (directly, not via HTTP)
     const processResult = await processLead(leadName, email, phone, rawState, source);
