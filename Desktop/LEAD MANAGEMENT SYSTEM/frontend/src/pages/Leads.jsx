@@ -31,8 +31,12 @@ const Leads = () => {
   const deleteLead = async (id, name) => {
     if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
       try {
-        await leadsAPI.delete(id);
-        setLeads(leads.filter(lead => lead._id !== id));
+        const response = await leadsAPI.delete(id);
+        
+        // Update UI immediately - no need to wait for fetchLeads
+        setLeads(prevLeads => prevLeads.filter(lead => lead._id !== id));
+        
+        // Optional: refresh to ensure data consistency
         fetchLeads();
       } catch (error) {
         console.error('Error deleting lead:', error);

@@ -8,6 +8,7 @@ const Client = require('./models/Client');
 const Lead = require('./models/Lead');
 const User = require('./models/User');
 const Activity = require('./models/Activity');
+const { sendLeadAssignedEmail } = require('./services/emailService');
 
 const app = express();
 app.use(cors({
@@ -338,6 +339,23 @@ async function processLead(name, email, phone, rawState, source = 'form') {
         message: `Lead ${name} assigned to ${assignedClient.name}`,
         clientId: assignedClient._id
       });
+
+      // Send email notification to client
+      if (assignedClient.email) {
+        const fullClient = await Client.findById(assignedClient._id);
+        if (fullClient && fullClient.email) {
+          const leadDataForEmail = {
+            name: name || 'Unknown',
+            email: email || 'no-email@system.local',
+            phone: phone,
+            state: normalizedState,
+            createdAt: new Date()
+          };
+          sendLeadAssignedEmail(fullClient, leadDataForEmail).catch(err => 
+            console.error('Email notification error:', err.message)
+          );
+        }
+      }
     } else {
       // Race condition - client became full
       log('processLead', { ...leadData, normalizedState }, 'ASSIGNMENT', 'RACE_CONDITION', {
@@ -610,7 +628,7 @@ app.delete('/api/leads/:id', auth, async (req, res) => {
   try {
     const lead = await Lead.findById(req.params.id);
     if (!lead) {
-      return res.status(404).json({ message: 'Lead not found' });
+      return res.status(404).json({ success: false, message: 'Lead not found' });
     }
 
     if (lead.assignedTo) {
@@ -628,10 +646,16 @@ app.delete('/api/leads/:id', auth, async (req, res) => {
       clientId: lead.assignedTo
     });
 
-    res.json({ success: true });
+    return res.json({
+      success: true,
+      message: "Lead deleted successfully"
+    });
   } catch (err) {
     console.error('❌ DELETE_LEAD ERROR:', err);
-    res.status(500).json(err);
+    return res.status(500).json({
+      success: false,
+      message: "Error deleting lead"
+    });
   }
 });
 
