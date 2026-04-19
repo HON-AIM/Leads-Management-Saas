@@ -4,8 +4,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 
-const Client = require('./models/Client');
-const Lead = require('./models/Lead');
+const Client = require('./models/client');
+const Lead = require('./models/lead');
 const User = require('./models/User');
 const Activity = require('./models/Activity');
 const { sendLeadAssignedEmail } = require('./services/emailService');
