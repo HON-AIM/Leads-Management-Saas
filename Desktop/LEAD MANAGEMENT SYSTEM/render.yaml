@@ -3,11 +3,10 @@ services:
     name: lead-management-backend
     plan: free
     region: oregon
-    repo: https://github.com/HON-AIM/Leads-Management-System-Saas
+    repo: https://github.com/HON-AIM/Leads-Management-Saas
     branch: main
-    rootDir: Backend
     buildCommand: npm install
-    startCommand: npm start
+    startCommand: node server.js
     healthCheckPath: /
     envVars:
       - key: NODE_ENV
