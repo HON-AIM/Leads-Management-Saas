@@ -1,11 +1,11 @@
 import axios from 'axios';
 
 const getApiUrl = () => {
+  if (import.meta.env.PROD === 'true') {
+    return import.meta.env.VITE_API_URL || '/api';
+  }
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
-  }
-  if (import.meta.env.PROD) {
-    return '/api';
   }
   return 'http://localhost:5000/api';
 };
