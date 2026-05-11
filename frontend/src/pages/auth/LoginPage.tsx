@@ -60,124 +60,166 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen">
-      <div className="flex flex-1 items-center justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
-        <div className="mx-auto w-full max-w-sm">
-          <div className="mb-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
-              LD
-            </div>
-            <h1 className="mt-6 text-2xl font-semibold tracking-tight">Sign in</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Enter your credentials to access your account
-            </p>
-          </div>
-
-          {expired && (
-            <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
-                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
-              <span>Your session has expired. Please sign in again.</span>
-            </div>
-          )}
-
-          {locked && (
-            <div className="mb-6 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
-                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-              <span>Your account has been temporarily locked due to multiple failed attempts.</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                placeholder="Enter your username"
-                autoComplete="username"
-                autoFocus
-                {...register('username')}
-              />
-              {errors.username && (
-                <p className="text-xs text-destructive">{errors.username.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link to={ROUTES.FORGOT_PASSWORD} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                  Forgot password?
-                </Link>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                autoComplete="current-password"
-                {...register('password')}
-              />
-              {errors.password && (
-                <p className="text-xs text-destructive">{errors.password.message}</p>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                role="checkbox"
-                aria-checked={rememberMe}
-                onClick={() => setRememberMe(!rememberMe)}
-                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
-                  rememberMe
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-input bg-transparent'
-                }`}
-              >
-                {rememberMe && (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                )}
-              </button>
-              <Label htmlFor="remember" className="text-sm font-normal text-muted-foreground cursor-pointer" onClick={() => setRememberMe(!rememberMe)}>
-                Remember me
-              </Label>
-            </div>
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Signing in...
-                </span>
-              ) : (
-                'Sign in'
-              )}
-            </Button>
-          </form>
-        </div>
-      </div>
-
-      <div className="relative hidden w-0 flex-1 lg:block">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5" />
-        <div className="absolute inset-0 flex items-center justify-center p-12">
-          <div className="max-w-md">
-            <blockquote className="space-y-3">
-              <p className="text-lg font-medium text-foreground/80">
-                &ldquo;This platform transformed how we distribute leads across our network. The routing rules and real-time analytics give us complete visibility.&rdquo;
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="mx-auto flex min-h-screen max-w-7xl flex-col overflow-hidden lg:flex-row">
+        <div className="relative hidden flex-1 overflow-hidden lg:block">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.16),_transparent_36%),radial-gradient(circle_at_bottom_right,_rgba(14,165,233,0.2),_transparent_28%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,_rgba(15,23,42,0.95)_0%,_rgba(15,23,42,0.64)_100%)]" />
+          <div className="relative flex h-full flex-col justify-center px-16 py-20">
+            <div className="max-w-xl space-y-8">
+              <span className="inline-flex rounded-full bg-primary/20 px-4 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-primary">
+                Admin Dashboard
+              </span>
+              <h1 className="text-4xl font-semibold leading-tight text-white sm:text-5xl">
+                Centralized lead operations for fast-growing teams
+              </h1>
+              <p className="text-lg leading-8 text-slate-300">
+                Monitor campaign performance, route leads intelligently, and keep your organization in sync with one secure platform.
               </p>
-              <footer className="text-sm text-muted-foreground">
-                <strong className="font-semibold text-foreground">Sarah Chen</strong>
-                {' '}&middot;{' '}Operations Director, LeadGen Inc.
-              </footer>
-            </blockquote>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                  <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Live insights</p>
+                  <p className="mt-3 text-base text-slate-200">See route health, lead velocity, and assignment status in real time.</p>
+                </div>
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                  <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Secure access</p>
+                  <p className="mt-3 text-base text-slate-200">Authenticate, manage sessions, and protect admin controls with confidence.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-1 items-center justify-center px-6 py-12 sm:px-10 lg:px-14">
+          <div className="w-full max-w-md">
+            <div className="rounded-[2rem] border border-white/10 bg-slate-900/95 p-10 shadow-2xl shadow-slate-950/30 backdrop-blur-xl">
+              <div className="mb-8 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-gradient-to-r from-primary to-cyan-500 text-lg font-bold text-white shadow-lg shadow-cyan-500/20">
+                    LD
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium uppercase tracking-[0.3em] text-primary">Lead management</p>
+                    <h1 className="text-3xl font-semibold tracking-tight text-white">Admin sign in</h1>
+                  </div>
+                </div>
+                <p className="text-sm leading-6 text-slate-400">
+                  Use your admin credentials to access routing controls, analytics, and team operations.
+                </p>
+              </div>
+
+              {expired && (
+                <div className="mb-6 rounded-3xl border border-amber-200/70 bg-amber-500/10 p-4 text-sm text-amber-100">
+                  <strong className="font-semibold">Session expired.</strong> Please sign back in to continue.
+                </div>
+              )}
+
+              {locked && (
+                <div className="mb-6 rounded-3xl border border-rose-200/70 bg-rose-500/10 p-4 text-sm text-rose-100">
+                  <strong className="font-semibold">Account locked.</strong> Multiple failed attempts detected, please try again later or reset your password.
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="username">Username</Label>
+                    {errors.username && <span className="text-xs text-rose-300">{errors.username.message}</span>}
+                  </div>
+                  <Input
+                    id="username"
+                    placeholder="admin.username"
+                    autoComplete="username"
+                    autoFocus
+                    {...register('username')}
+                    className="bg-slate-950/80 text-white"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    <Link to={ROUTES.FORGOT_PASSWORD} className="text-sm text-slate-400 hover:text-white">
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    autoComplete="current-password"
+                    {...register('password')}
+                    className="bg-slate-950/80 text-white"
+                  />
+                  {errors.password && <p className="text-xs text-rose-300">{errors.password.message}</p>}
+                </div>
+
+                <div className="flex items-center justify-between gap-4">
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={rememberMe}
+                    onClick={() => setRememberMe(!rememberMe)}
+                    className={`inline-flex h-5 w-5 items-center justify-center rounded border transition-colors ${
+                      rememberMe
+                        ? 'border-primary bg-primary text-slate-950'
+                        : 'border-slate-700 bg-transparent text-transparent'
+                    }`}
+                  >
+                    {rememberMe && (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                  </button>
+                  <Label htmlFor="remember" className="cursor-pointer text-sm text-slate-400" onClick={() => setRememberMe(!rememberMe)}>
+                    Remember me
+                  </Label>
+                  <span className="text-xs text-slate-500">Secure session</span>
+                </div>
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Signing in...
+                    </span>
+                  ) : (
+                    'Sign in to admin portal'
+                  )}
+                </Button>
+              </form>
+            </div>
+
+            <div className="rounded-[2rem] border border-white/10 bg-slate-900/75 p-6 text-sm text-slate-400 shadow-lg shadow-slate-950/20">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-800 text-slate-100">✓</div>
+                  <div>
+                    <p className="font-semibold text-slate-100">Admin-ready experience</p>
+                    <p className="text-slate-500">Streamlined controls for assignments, approvals, and reporting.</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-800 text-slate-100">⚡</div>
+                  <div>
+                    <p className="font-semibold text-slate-100">Fast access</p>
+                    <p className="text-slate-500">Sign in quickly and keep your lead distribution moving.</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-800 text-slate-100">🔒</div>
+                  <div>
+                    <p className="font-semibold text-slate-100">Safe authentication</p>
+                    <p className="text-slate-500">Cookies are secured and sessions are managed from the backend.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

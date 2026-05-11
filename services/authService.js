@@ -127,7 +127,16 @@ class AuthService {
     }
 
     if (user.status === 'pending_verification') {
-      throw new Error('Please verify your email before logging in');
+      const adminRoles = ['super_admin', 'tenant_admin'];
+      if (adminRoles.includes(user.role?.name)) {
+        user.status = 'active';
+        user.emailVerified = true;
+        user.emailVerificationToken = undefined;
+        user.emailVerificationExpires = undefined;
+        await user.save();
+      } else {
+        throw new Error('Please verify your email before logging in');
+      }
     }
 
     if (user.status !== 'active') {
