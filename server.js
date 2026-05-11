@@ -54,7 +54,7 @@ const app = express();
 app.set('trust proxy', 1);
 
 const accessJwtSecret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
-const requiredProductionEnvs = ['MONGO_URI', 'JWT_REFRESH_SECRET', 'FRONTEND_URL', 'ALLOWED_ORIGINS'];
+const requiredProductionEnvs = ['MONGO_URI', 'JWT_REFRESH_SECRET', 'FRONTEND_URL'];
 const missingProductionEnvs = requiredProductionEnvs.filter(key => !process.env[key]);
 if (process.env.NODE_ENV === 'production' && (!accessJwtSecret || missingProductionEnvs.length)) {
   const missingItems = [];
@@ -67,8 +67,11 @@ if (process.env.NODE_ENV === 'production' && (!accessJwtSecret || missingProduct
 app.use(helmet());
 app.use(cors({
   origin: function (origin, callback) {
-    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').filter(Boolean) || [];
-    if (!origin || allowedOrigins.includes(origin)) {
+    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').filter(Boolean);
+    const fallbackOrigins = process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [];
+    const originWhitelist = allowedOrigins?.length ? allowedOrigins : fallbackOrigins;
+
+    if (!origin || originWhitelist.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
