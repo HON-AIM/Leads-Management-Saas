@@ -211,7 +211,12 @@ mongoose.connect(process.env.MONGO_URI)
   const defaultAdminPassword = process.env.DEFAULT_ADMIN_PASSWORD;
   const defaultTenantAdminPassword = process.env.DEFAULT_TENANT_ADMIN_PASSWORD;
 
-  if (!adminExists && superAdminRole) {
+  if (adminExists && adminExists.status === 'pending_verification') {
+    adminExists.status = 'active';
+    adminExists.emailVerified = true;
+    await adminExists.save();
+    console.log('✅ Default super admin activated from pending_verification');
+  } else if (!adminExists && superAdminRole) {
     if (process.env.NODE_ENV === 'production' && !defaultAdminPassword) {
       console.warn('⚠️ DEFAULT_ADMIN_PASSWORD is not set. Skipping default super admin creation in production.');
     } else {
@@ -232,7 +237,12 @@ mongoose.connect(process.env.MONGO_URI)
   }
 
   const tenantAdminExists = await User.findOne({ username: process.env.DEFAULT_TENANT_ADMIN_USERNAME || 'tenantadmin' });
-  if (!tenantAdminExists && tenantAdminRole) {
+  if (tenantAdminExists && tenantAdminExists.status === 'pending_verification') {
+    tenantAdminExists.status = 'active';
+    tenantAdminExists.emailVerified = true;
+    await tenantAdminExists.save();
+    console.log('✅ Default tenant admin activated from pending_verification');
+  } else if (!tenantAdminExists && tenantAdminRole) {
     if (process.env.NODE_ENV === 'production' && !defaultTenantAdminPassword) {
       console.warn('⚠️ DEFAULT_TENANT_ADMIN_PASSWORD is not set. Skipping default tenant admin creation in production.');
     } else {
