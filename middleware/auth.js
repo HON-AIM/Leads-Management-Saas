@@ -1,17 +1,19 @@
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Role = require('../models/Role');
 const Permission = require('../models/Permission');
 const AuditLogService = require('../services/auditLogService');
 
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'dev-access-secret');
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'dev-refresh-secret');
-
-if (!JWT_ACCESS_SECRET || !JWT_REFRESH_SECRET) {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be configured in production.');
-  }
+if (!process.env.JWT_ACCESS_SECRET && !process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+  console.warn('[auth] JWT_ACCESS_SECRET not set. Generating random secret. Set it in env vars for persistent sessions.');
 }
+if (!process.env.JWT_REFRESH_SECRET && !process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+  console.warn('[auth] JWT_REFRESH_SECRET not set. Generating random secret. Set it in env vars for persistent sessions.');
+}
+
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
 
 const authenticate = async (req, res, next) => {
   try {

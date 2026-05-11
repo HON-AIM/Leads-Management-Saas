@@ -41,7 +41,7 @@ export function DeliveryPage() {
     },
   })
 
-  const { data: statsData } = useQuery<{ success: boolean } & DeliveryStats>({
+  const { data: statsData } = useQuery<DeliveryStats>({
     queryKey: QUERY_KEYS.DELIVERY_STATS,
     queryFn: async () => {
       const { data } = await api.get('/delivery/stats')

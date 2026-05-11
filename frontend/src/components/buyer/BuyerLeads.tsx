@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button'
 import { STATUS_STYLES, DELIVERY_STYLES } from '@/types/lead'
 import { formatDate } from '@/lib/utils'
 import { BuyerLeadDetail } from './BuyerLeadDetail'
-import type { Lead, BuyerLeadsResponse } from '@/types/buyer'
+import type { Lead } from '@/types/lead'
+import type { BuyerLeadsResponse } from '@/types/buyer'
 
 export function BuyerLeads() {
   const [page, setPage] = useState(1)

@@ -1,4 +1,5 @@
 require('dotenv').config();
+const crypto = require('crypto');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -53,14 +54,11 @@ const app = express();
 
 app.set('trust proxy', 1);
 
-const accessJwtSecret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
-const requiredProductionEnvs = ['MONGO_URI', 'JWT_REFRESH_SECRET', 'FRONTEND_URL'];
+const accessJwtSecret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
+const requiredProductionEnvs = ['MONGO_URI', 'FRONTEND_URL'];
 const missingProductionEnvs = requiredProductionEnvs.filter(key => !process.env[key]);
-if (process.env.NODE_ENV === 'production' && (!accessJwtSecret || missingProductionEnvs.length)) {
-  const missingItems = [];
-  if (!accessJwtSecret) missingItems.push('JWT_ACCESS_SECRET or JWT_SECRET');
-  missingItems.push(...missingProductionEnvs);
-  console.error('Missing required environment variables for production:', missingItems.join(', '));
+if (process.env.NODE_ENV === 'production' && missingProductionEnvs.length) {
+  console.error('Missing required environment variables for production:', missingProductionEnvs.join(', '));
   process.exit(1);
 }
 
