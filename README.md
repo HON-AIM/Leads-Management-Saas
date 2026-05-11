@@ -553,7 +553,8 @@ Lead Management System/
 3. Set start command: `npm start`
 4. Add environment variables:
    - `MONGO_URI`
-   - `JWT_SECRET`
+   - `JWT_ACCESS_SECRET`
+   - `JWT_SECRET` (optional fallback)
    - `JWT_REFRESH_SECRET`
    - `FRONTEND_URL`
    - `ALLOWED_ORIGINS`

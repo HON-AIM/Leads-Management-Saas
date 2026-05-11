@@ -113,7 +113,7 @@ Docker (Recommended):
 Manual:
   • Backend: Deploy to Render/Railway from the repository root (`.`)
   • Frontend: Deploy to Vercel/Netlify from the `frontend` folder or via the repo root
-  • Set environment variables
+  • Set environment variables, including strong JWT secrets
 
 📁 PROJECT STRUCTURE
 ────────────────────
