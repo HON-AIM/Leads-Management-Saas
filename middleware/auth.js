@@ -4,8 +4,14 @@ const Role = require('../models/Role');
 const Permission = require('../models/Permission');
 const AuditLogService = require('../services/auditLogService');
 
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'your-access-secret-change-in-production';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-change-in-production';
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'dev-access-secret');
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'dev-refresh-secret');
+
+if (!JWT_ACCESS_SECRET || !JWT_REFRESH_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be configured in production.');
+  }
+}
 
 const authenticate = async (req, res, next) => {
   try {

@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const helmet = require('helmet');
 
 const Client = require('./models/Client');
 const Lead = require('./models/Lead');
@@ -52,6 +53,18 @@ const app = express();
 
 app.set('trust proxy', 1);
 
+const accessJwtSecret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+const requiredProductionEnvs = ['MONGO_URI', 'JWT_REFRESH_SECRET', 'FRONTEND_URL', 'ALLOWED_ORIGINS'];
+const missingProductionEnvs = requiredProductionEnvs.filter(key => !process.env[key]);
+if (process.env.NODE_ENV === 'production' && (!accessJwtSecret || missingProductionEnvs.length)) {
+  const missingItems = [];
+  if (!accessJwtSecret) missingItems.push('JWT_ACCESS_SECRET or JWT_SECRET');
+  missingItems.push(...missingProductionEnvs);
+  console.error('Missing required environment variables for production:', missingItems.join(', '));
+  process.exit(1);
+}
+
+app.use(helmet());
 app.use(cors({
   origin: function (origin, callback) {
     const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').filter(Boolean) || [];
@@ -194,37 +207,48 @@ mongoose.connect(process.env.MONGO_URI)
   const superAdminRole = await Role.findOne({ name: 'super_admin' });
   const tenantAdminRole = await Role.findOne({ name: 'tenant_admin' });
   const adminExists = await User.findOne({ username: 'admin' });
+  const defaultAdminPassword = process.env.DEFAULT_ADMIN_PASSWORD;
+  const defaultTenantAdminPassword = process.env.DEFAULT_TENANT_ADMIN_PASSWORD;
+
   if (!adminExists && superAdminRole) {
-    const adminUser = new User({
-      username: 'admin',
-      email: 'admin@example.com',
-      password: 'admin123',
-      firstName: 'Super',
-      lastName: 'Admin',
-      tenantId: defaultTenant._id,
-      role: superAdminRole._id,
-      status: 'active',
-      emailVerified: true
-    });
-    await adminUser.save();
-    console.log("✅ Default super admin created: admin / admin123");
+    if (process.env.NODE_ENV === 'production' && !defaultAdminPassword) {
+      console.warn('⚠️ DEFAULT_ADMIN_PASSWORD is not set. Skipping default super admin creation in production.');
+    } else {
+      const adminUser = new User({
+        username: process.env.DEFAULT_ADMIN_USERNAME || 'admin',
+        email: process.env.DEFAULT_ADMIN_EMAIL || 'admin@example.com',
+        password: defaultAdminPassword || 'admin123',
+        firstName: 'Super',
+        lastName: 'Admin',
+        tenantId: defaultTenant._id,
+        role: superAdminRole._id,
+        status: 'active',
+        emailVerified: true
+      });
+      await adminUser.save();
+      console.log(`✅ Default super admin created: ${adminUser.username} / ${defaultAdminPassword ? '[SECRET_PRIVATE]' : 'admin123'}`);
+    }
   }
 
-  const tenantAdminExists = await User.findOne({ username: 'tenantadmin' });
+  const tenantAdminExists = await User.findOne({ username: process.env.DEFAULT_TENANT_ADMIN_USERNAME || 'tenantadmin' });
   if (!tenantAdminExists && tenantAdminRole) {
-    const taUser = new User({
-      username: 'tenantadmin',
-      email: 'tenantadmin@example.com',
-      password: 'tenant123',
-      firstName: 'Tenant',
-      lastName: 'Admin',
-      tenantId: defaultTenant._id,
-      role: tenantAdminRole._id,
-      status: 'active',
-      emailVerified: true
-    });
-    await taUser.save();
-    console.log("✅ Default tenant admin created: tenantadmin / tenant123");
+    if (process.env.NODE_ENV === 'production' && !defaultTenantAdminPassword) {
+      console.warn('⚠️ DEFAULT_TENANT_ADMIN_PASSWORD is not set. Skipping default tenant admin creation in production.');
+    } else {
+      const taUser = new User({
+        username: process.env.DEFAULT_TENANT_ADMIN_USERNAME || 'tenantadmin',
+        email: process.env.DEFAULT_TENANT_ADMIN_EMAIL || 'tenantadmin@example.com',
+        password: defaultTenantAdminPassword || 'tenant123',
+        firstName: 'Tenant',
+        lastName: 'Admin',
+        tenantId: defaultTenant._id,
+        role: tenantAdminRole._id,
+        status: 'active',
+        emailVerified: true
+      });
+      await taUser.save();
+      console.log(`✅ Default tenant admin created: ${taUser.username} / ${defaultTenantAdminPassword ? '[SECRET_PRIVATE]' : 'tenant123'}`);
+    }
   }
 
   try {

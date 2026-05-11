@@ -548,19 +548,24 @@ Lead Management System/
 
 ### Backend (Render/Railway)
 
-1. Connect your GitHub repository
+1. Connect your GitHub repository from the repository root.
 2. Set build command: `npm install`
 3. Set start command: `npm start`
 4. Add environment variables:
    - `MONGO_URI`
    - `JWT_SECRET`
+   - `JWT_REFRESH_SECRET`
+   - `FRONTEND_URL`
+   - `ALLOWED_ORIGINS`
    - `PORT`
+
+> If your Render service asks for a root directory, set it to `.` (the repository root), not a local desktop path.
 
 ### Frontend (Vercel/Netlify)
 
-1. Import project from GitHub
-2. Set build command: `npm run build`
-3. Set output directory: `dist`
+1. Import the project from GitHub.
+2. If you deploy from the repository root, use build command: `cd frontend && npm install && npm run build`.
+3. If you deploy from the `frontend` directory, set the Vercel root to `frontend`, build command to `npm install && npm run build`, and output directory to `dist`.
 4. Add environment variable:
    - `VITE_API_URL=https://your-backend-url.com/api`
 

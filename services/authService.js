@@ -288,7 +288,7 @@ class AuthService {
     const user = await User.findById(userId);
     if (!user) throw new Error('User not found');
 
-    const tokenDoc = user.refreshTokens.id(refreshToken);
+    const tokenDoc = user.refreshTokens.find(t => t.token === refreshToken);
     if (!tokenDoc) throw new Error('Token not found');
 
     tokenDoc.revoked = true;

@@ -133,7 +133,7 @@ userSchema.methods.generatePasswordResetToken = function() {
 };
 
 userSchema.methods.revokeRefreshToken = function(token) {
-  const tokenDoc = this.refreshTokens.id(token);
+  const tokenDoc = this.refreshTokens.find(t => t.token === token);
   if (tokenDoc) {
     tokenDoc.revoked = true;
     tokenDoc.revokedAt = new Date();

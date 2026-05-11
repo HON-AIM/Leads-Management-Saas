@@ -3,6 +3,7 @@ services:
     name: lead-management-backend
     plan: free
     region: oregon
+    root: .
     repo: https://github.com/HON-AIM/Leads-Management-Saas
     branch: main
     buildCommand: npm install
@@ -15,6 +16,10 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false
       - key: PORT
         value: 10000
       - key: ALLOWED_ORIGINS

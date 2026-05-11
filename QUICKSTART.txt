@@ -111,8 +111,8 @@ Docker (Recommended):
   docker-compose up -d
 
 Manual:
-  • Backend: Deploy to Render/Railway
-  • Frontend: Deploy to Vercel/Netlify
+  • Backend: Deploy to Render/Railway from the repository root (`.`)
+  • Frontend: Deploy to Vercel/Netlify from the `frontend` folder or via the repo root
   • Set environment variables
 
 📁 PROJECT STRUCTURE

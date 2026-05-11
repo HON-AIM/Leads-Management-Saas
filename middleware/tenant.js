@@ -16,6 +16,9 @@ const resolveTenant = async (req, res, next) => {
         if (token) {
           const jwt = require('jsonwebtoken');
           const JWT_SECRET = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+          if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
+            throw new Error('JWT access secret is required in production');
+          }
           try {
             const decoded = jwt.verify(token, JWT_SECRET);
             const User = require('../models/User');
