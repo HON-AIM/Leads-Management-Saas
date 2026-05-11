@@ -65,15 +65,38 @@ if (process.env.NODE_ENV === 'production' && missingProductionEnvs.length) {
 app.use(helmet());
 app.use(cors({
   origin: function (origin, callback) {
-    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').filter(Boolean);
-    const fallbackOrigins = process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [];
-    const originWhitelist = allowedOrigins?.length ? allowedOrigins : fallbackOrigins;
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
 
-    if (!origin || originWhitelist.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').filter(Boolean) || [];
+    const fallbackOrigins = process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [];
+
+    // In development, allow localhost and common dev ports
+    if (process.env.NODE_ENV !== 'production') {
+      const devOrigins = ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://127.0.0.1:5173'];
+      if (devOrigins.some(devOrigin => origin.startsWith(devOrigin.split(':')[1]))) {
+        return callback(null, true);
+      }
     }
+
+    // Check against configured origins
+    const originWhitelist = [...allowedOrigins, ...fallbackOrigins];
+    if (originWhitelist.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Allow Vercel deployments (*.vercel.app)
+    if (origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+
+    // Allow Netlify deployments (*.netlify.app)
+    if (origin.endsWith('.netlify.app')) {
+      return callback(null, true);
+    }
+
+    console.warn(`[CORS] Blocked origin: ${origin}`);
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true
 }));

@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://leads-management-saas-1.onrender.com/api/:path*" },
+    { "source": "/api/:path*", "destination": "${VITE_API_URL}/:path*" },
     { "source": "/((?!assets|favicon).*)", "destination": "/index.html" }
   ],
   "headers": [
