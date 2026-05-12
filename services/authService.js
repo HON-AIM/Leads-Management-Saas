@@ -107,7 +107,15 @@ class AuthService {
   }
 
   static async login(username, password, userAgent, ipAddress) {
+    console.log('🔐 Login attempt for username:', username);
     const user = await User.findOne({ username }).select('+password').populate('role').populate('tenantId');
+
+    if (!user) {
+      console.log('❌ User not found for username:', username);
+      throw new Error('Invalid credentials');
+    }
+
+    console.log('✅ User found:', user.username, 'status:', user.status, 'role:', user.role?.name, 'tenant status:', user.tenantId?.status);
 
     if (!user) {
       throw new Error('Invalid credentials');
@@ -128,13 +136,24 @@ class AuthService {
 
     if (user.status === 'pending_verification') {
       const adminRoles = ['super_admin', 'tenant_admin'];
-      if (adminRoles.includes(user.role?.name)) {
+      let roleName = user.role?.name;
+      if (!roleName && user.role) {
+        try {
+          const role = await Role.findById(user.role);
+          roleName = role?.name;
+        } catch {
+          // ignore
+        }
+      }
+      if (adminRoles.includes(roleName)) {
+        console.log('🔄 Auto-activating admin user:', user.username);
         user.status = 'active';
         user.emailVerified = true;
         user.emailVerificationToken = undefined;
         user.emailVerificationExpires = undefined;
         await user.save();
       } else {
+        console.log('❌ Non-admin user pending verification:', user.username);
         throw new Error('Please verify your email before logging in');
       }
     }

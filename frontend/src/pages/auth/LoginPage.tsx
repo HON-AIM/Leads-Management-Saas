@@ -62,7 +62,7 @@ export function LoginPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col overflow-hidden lg:flex-row">
-        <div className="relative hidden flex-1 overflow-hidden lg:block">
+        <div className="relative hidden overflow-hidden lg:block lg:w-[55%] xl:w-[60%]">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.16),_transparent_36%),radial-gradient(circle_at_bottom_right,_rgba(14,165,233,0.2),_transparent_28%)]" />
           <div className="absolute inset-0 bg-[linear-gradient(90deg,_rgba(15,23,42,0.95)_0%,_rgba(15,23,42,0.64)_100%)]" />
           <div className="relative flex h-full flex-col justify-center px-16 py-20">
@@ -92,7 +92,7 @@ export function LoginPage() {
         </div>
 
         <div className="flex flex-1 items-center justify-center px-6 py-12 sm:px-10 lg:px-14">
-          <div className="w-full max-w-md">
+          <div className="w-full max-w-md space-y-6">
             <div className="rounded-[2rem] border border-white/10 bg-slate-900/95 p-10 shadow-2xl shadow-slate-950/30 backdrop-blur-xl">
               <div className="mb-8 space-y-4">
                 <div className="flex items-center gap-3">

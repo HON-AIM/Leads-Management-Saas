@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  PieChart, Pie, Cell, LineChart, Line,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  Legend,
-} from 'recharts'
+// import {
+//   PieChart, Pie, Cell, LineChart, Line,
+//   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+//   Legend,
+// } from 'recharts'
 import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'

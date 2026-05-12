@@ -19,7 +19,7 @@ export default defineConfig({
           vendor: ['react', 'react-dom', 'react-router-dom'],
           ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-toast'],
           query: ['@tanstack/react-query'],
-          charts: ['recharts'],
+          // charts: ['recharts'],
           socket: ['socket.io-client'],
         },
       },
