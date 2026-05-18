@@ -108,25 +108,27 @@ class AuthService {
 
   static async login(username, password, userAgent, ipAddress) {
     console.log('🔐 Login attempt for username:', username);
-    const user = await User.findOne({ username }).select('+password').populate('role').populate('tenantId');
+    const user = await User.findOne({ username }).select('+password');
 
     if (!user) {
       console.log('❌ User not found for username:', username);
       throw new Error('Invalid credentials');
     }
 
-    console.log('✅ User found:', user.username, 'status:', user.status, 'role:', user.role?.name, 'tenant status:', user.tenantId?.status);
+    // Load role and tenant separately to avoid populate-before-save validation issues
+    let userRole = user.role ? await Role.findById(user.role) : null;
+    const userTenant = user.tenantId ? await Tenant.findById(user.tenantId) : null;
+    let roleName = userRole?.name;
+    const tenantStatus = userTenant?.status;
 
-    if (!user) {
-      throw new Error('Invalid credentials');
-    }
+    console.log('✅ User found:', user.username, 'status:', user.status, 'role:', roleName, 'tenant status:', tenantStatus);
 
     if (user.isLocked()) {
       await AuditLogService.log({
         action: 'permission_denied',
         resource: 'auth',
         performedBy: user._id,
-        tenantId: user.tenantId._id,
+        tenantId: user.tenantId,
         ipAddress,
         status: 'failure',
         message: 'Login attempt on locked account'
@@ -137,15 +139,6 @@ class AuthService {
     if (user.status === 'pending_verification') {
       const adminRoles = ['super_admin', 'tenant_admin'];
       const adminUsernames = [process.env.DEFAULT_ADMIN_USERNAME || 'admin', process.env.DEFAULT_TENANT_ADMIN_USERNAME || 'tenantadmin'];
-      let roleName = user.role?.name;
-      if (!roleName && user.role) {
-        try {
-          const role = await Role.findById(user.role);
-          roleName = role?.name;
-        } catch {
-          // ignore
-        }
-      }
       const isAdminRole = adminRoles.includes(roleName);
       const isAdminUsername = adminUsernames.includes(user.username);
       if (isAdminRole || isAdminUsername) {
@@ -154,6 +147,8 @@ class AuthService {
           const superAdminRole = await Role.findOne({ name: 'super_admin' });
           if (superAdminRole) {
             user.role = superAdminRole._id;
+            userRole = superAdminRole;
+            roleName = 'super_admin';
           }
         }
         user.status = 'active';
@@ -161,7 +156,6 @@ class AuthService {
         user.emailVerificationToken = undefined;
         user.emailVerificationExpires = undefined;
         await user.save();
-        user.role = { name: isAdminRole ? roleName : 'super_admin' };
       } else {
         console.log('❌ Non-admin user pending verification:', user.username);
         throw new Error('Please verify your email before logging in');
@@ -172,7 +166,7 @@ class AuthService {
       throw new Error('Account is not active');
     }
 
-    if (user.tenantId.status !== 'active') {
+    if (tenantStatus !== 'active') {
       throw new Error('Your organization account is not active');
     }
 
@@ -184,7 +178,7 @@ class AuthService {
         action: 'failed_login',
         resource: 'auth',
         performedBy: user._id,
-        tenantId: user.tenantId._id,
+        tenantId: user.tenantId,
         ipAddress,
         userAgent,
         status: 'failure',
@@ -197,7 +191,7 @@ class AuthService {
           action: 'account_locked',
           resource: 'auth',
           performedBy: user._id,
-          tenantId: user.tenantId._id,
+          tenantId: user.tenantId,
           message: 'Account locked due to too many failed attempts'
         });
       }
@@ -207,7 +201,7 @@ class AuthService {
 
     await user.resetLoginAttempts();
 
-    const accessToken = generateAccessToken(user._id, user.role.name);
+    const accessToken = generateAccessToken(user._id, roleName || 'super_admin');
     const refreshToken = generateRefreshToken(user._id);
 
     const refreshTokenDoc = {
@@ -226,7 +220,7 @@ class AuthService {
       action: 'login',
       resource: 'auth',
       performedBy: user._id,
-      tenantId: user.tenantId._id,
+      tenantId: user.tenantId,
       ipAddress,
       userAgent,
       message: `User ${user.username} logged in`
@@ -241,10 +235,10 @@ class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role.name,
-        tenantId: user.tenantId._id,
-        tenantName: user.tenantId.name,
-        tenantSlug: user.tenantId.slug
+        role: roleName || 'super_admin',
+        tenantId: user.tenantId,
+        tenantName: userTenant?.name || 'Default Organization',
+        tenantSlug: userTenant?.slug || 'default'
       }
     };
   }
