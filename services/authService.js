@@ -143,6 +143,8 @@ class AuthService {
       const isAdminUsername = adminUsernames.includes(user.username);
       if (isAdminRole || isAdminUsername) {
         console.log('🔄 Auto-activating admin user:', user.username);
+        console.log('   User email:', user.email, 'tenantId:', user.tenantId);
+        
         if (!isAdminRole) {
           const superAdminRole = await Role.findOne({ name: 'super_admin' });
           if (superAdminRole) {
@@ -151,11 +153,32 @@ class AuthService {
             roleName = 'super_admin';
           }
         }
+        
+        // Ensure required fields are set before saving
+        if (!user.email) {
+          user.email = `${user.username}@system.local`;
+          console.log('   Set default email:', user.email);
+        }
+        if (!user.tenantId) {
+          const defaultTenant = await Tenant.findOne({ slug: 'default' });
+          if (defaultTenant) {
+            user.tenantId = defaultTenant._id;
+            console.log('   Set default tenant:', defaultTenant._id);
+          }
+        }
+        
         user.status = 'active';
         user.emailVerified = true;
         user.emailVerificationToken = undefined;
         user.emailVerificationExpires = undefined;
-        await user.save();
+        
+        try {
+          await user.save();
+          console.log('✅ Admin user activated successfully');
+        } catch (saveError) {
+          console.error('❌ Error saving admin user:', saveError.message);
+          throw saveError;
+        }
       } else {
         console.log('❌ Non-admin user pending verification:', user.username);
         throw new Error('Please verify your email before logging in');
