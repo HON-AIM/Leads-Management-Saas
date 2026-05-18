@@ -136,6 +136,7 @@ class AuthService {
 
     if (user.status === 'pending_verification') {
       const adminRoles = ['super_admin', 'tenant_admin'];
+      const adminUsernames = [process.env.DEFAULT_ADMIN_USERNAME || 'admin', process.env.DEFAULT_TENANT_ADMIN_USERNAME || 'tenantadmin'];
       let roleName = user.role?.name;
       if (!roleName && user.role) {
         try {
@@ -145,13 +146,22 @@ class AuthService {
           // ignore
         }
       }
-      if (adminRoles.includes(roleName)) {
+      const isAdminRole = adminRoles.includes(roleName);
+      const isAdminUsername = adminUsernames.includes(user.username);
+      if (isAdminRole || isAdminUsername) {
         console.log('🔄 Auto-activating admin user:', user.username);
+        if (!isAdminRole) {
+          const superAdminRole = await Role.findOne({ name: 'super_admin' });
+          if (superAdminRole) {
+            user.role = superAdminRole._id;
+          }
+        }
         user.status = 'active';
         user.emailVerified = true;
         user.emailVerificationToken = undefined;
         user.emailVerificationExpires = undefined;
         await user.save();
+        user.role = { name: isAdminRole ? roleName : 'super_admin' };
       } else {
         console.log('❌ Non-admin user pending verification:', user.username);
         throw new Error('Please verify your email before logging in');

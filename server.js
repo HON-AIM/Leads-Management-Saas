@@ -234,12 +234,7 @@ mongoose.connect(process.env.MONGO_URI)
   const defaultAdminPassword = process.env.DEFAULT_ADMIN_PASSWORD;
   const defaultTenantAdminPassword = process.env.DEFAULT_TENANT_ADMIN_PASSWORD;
 
-  if (adminExists && adminExists.status === 'pending_verification') {
-    adminExists.status = 'active';
-    adminExists.emailVerified = true;
-    await adminExists.save();
-    console.log('✅ Default super admin activated from pending_verification');
-  } else if (!adminExists && superAdminRole) {
+  if (!adminExists && superAdminRole) {
     if (process.env.NODE_ENV === 'production' && !defaultAdminPassword) {
       console.warn('⚠️ DEFAULT_ADMIN_PASSWORD is not set. Skipping default super admin creation in production.');
     } else {
@@ -257,15 +252,28 @@ mongoose.connect(process.env.MONGO_URI)
       await adminUser.save();
       console.log(`✅ Default super admin created: ${adminUser.username} / ${defaultAdminPassword ? '[SECRET_PRIVATE]' : 'admin123'}`);
     }
+  } else if (adminExists && superAdminRole) {
+    let needsUpdate = false;
+    if (adminExists.status !== 'active') {
+      adminExists.status = 'active';
+      needsUpdate = true;
+    }
+    if (!adminExists.emailVerified) {
+      adminExists.emailVerified = true;
+      needsUpdate = true;
+    }
+    if (adminExists.role.toString() !== superAdminRole._id.toString()) {
+      adminExists.role = superAdminRole._id;
+      needsUpdate = true;
+    }
+    if (needsUpdate) {
+      await adminExists.save();
+      console.log('✅ Default super admin corrected and activated');
+    }
   }
 
   const tenantAdminExists = await User.findOne({ username: process.env.DEFAULT_TENANT_ADMIN_USERNAME || 'tenantadmin' });
-  if (tenantAdminExists && tenantAdminExists.status === 'pending_verification') {
-    tenantAdminExists.status = 'active';
-    tenantAdminExists.emailVerified = true;
-    await tenantAdminExists.save();
-    console.log('✅ Default tenant admin activated from pending_verification');
-  } else if (!tenantAdminExists && tenantAdminRole) {
+  if (!tenantAdminExists && tenantAdminRole) {
     if (process.env.NODE_ENV === 'production' && !defaultTenantAdminPassword) {
       console.warn('⚠️ DEFAULT_TENANT_ADMIN_PASSWORD is not set. Skipping default tenant admin creation in production.');
     } else {
@@ -282,6 +290,24 @@ mongoose.connect(process.env.MONGO_URI)
       });
       await taUser.save();
       console.log(`✅ Default tenant admin created: ${taUser.username} / ${defaultTenantAdminPassword ? '[SECRET_PRIVATE]' : 'tenant123'}`);
+    }
+  } else if (tenantAdminExists && tenantAdminRole) {
+    let taNeedsUpdate = false;
+    if (tenantAdminExists.status !== 'active') {
+      tenantAdminExists.status = 'active';
+      taNeedsUpdate = true;
+    }
+    if (!tenantAdminExists.emailVerified) {
+      tenantAdminExists.emailVerified = true;
+      taNeedsUpdate = true;
+    }
+    if (tenantAdminExists.role.toString() !== tenantAdminRole._id.toString()) {
+      tenantAdminExists.role = tenantAdminRole._id;
+      taNeedsUpdate = true;
+    }
+    if (taNeedsUpdate) {
+      await tenantAdminExists.save();
+      console.log('✅ Default tenant admin corrected and activated');
     }
   }
 
