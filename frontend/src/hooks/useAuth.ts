@@ -9,7 +9,7 @@ export function useAuth() {
     loading: store.loading,
     initialized: store.initialized,
     isAuthenticated: !!store.user,
-    isAdmin: store.user?.role === 'admin',
+    isAdmin: store.user?.role === 'super_admin' || store.user?.role === 'tenant_admin',
     isBuyer: store.user?.role === 'buyer',
     isViewer: store.user?.role === 'viewer',
     hasRole: (...roles: UserRole[]) => !!store.user && roles.includes(store.user.role),

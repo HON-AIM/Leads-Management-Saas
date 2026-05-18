@@ -76,7 +76,8 @@ export const useAuthStore = create<AuthState>()(
         const r = role || get().user?.role
         if (!r) return ROUTES.DASHBOARD
         const map: Record<string, string> = {
-          admin: ROUTES.DASHBOARD,
+          super_admin: ROUTES.DASHBOARD,
+          tenant_admin: ROUTES.DASHBOARD,
           buyer: ROUTES.BUYER,
           viewer: ROUTES.DASHBOARD,
         }

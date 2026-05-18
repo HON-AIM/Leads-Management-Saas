@@ -369,21 +369,56 @@ app.get('/api/campaigns', authenticate, tenantIsolation, requirePermission('lead
 
 app.post('/api/campaigns', authenticate, tenantIsolation, requirePermission('leads', 'create'), async (req, res) => {
   try {
-    const campaign = await Campaign.create({ ...req.body, tenantId: req.tenantId, createdBy: req.user._id });
+    const body = { ...req.body };
+
+    if (body.startDate === '') body.startDate = undefined;
+    if (body.endDate === '') body.endDate = undefined;
+
+    if (body.stateRouting && Array.isArray(body.stateRouting)) {
+      body.stateRouting = body.stateRouting.filter(
+        (r) => r.buyerId && r.buyerId.toString().trim() !== ''
+      );
+    }
+
+    if (body.assignedBuyers && Array.isArray(body.assignedBuyers)) {
+      body.assignedBuyers = body.assignedBuyers.filter(
+        (b) => b.buyerId && b.buyerId.toString().trim() !== ''
+      );
+    }
+
+    const campaign = await Campaign.create({ ...body, tenantId: req.tenantId, createdBy: req.user._id });
     await Activity.create({ type: 'campaign_created', message: `Campaign created: ${campaign.name}`, tenantId: req.tenantId });
     res.json({ success: true, campaign });
   } catch (err) {
     console.error('❌ CREATE_CAMPAIGN ERROR:', err);
-    res.status(500).json({ success: false, error: err.message });
+    const statusCode = err.name === 'ValidationError' || err.name === 'CastError' ? 400 : 500;
+    res.status(statusCode).json({ success: false, error: err.message });
   }
 });
 
 app.put('/api/campaigns/:id', authenticate, tenantIsolation, requirePermission('leads', 'update'), async (req, res) => {
   try {
+    const body = { ...req.body };
+
+    if (body.startDate === '') body.startDate = undefined;
+    if (body.endDate === '') body.endDate = undefined;
+
+    if (body.stateRouting && Array.isArray(body.stateRouting)) {
+      body.stateRouting = body.stateRouting.filter(
+        (r) => r.buyerId && r.buyerId.toString().trim() !== ''
+      );
+    }
+
+    if (body.assignedBuyers && Array.isArray(body.assignedBuyers)) {
+      body.assignedBuyers = body.assignedBuyers.filter(
+        (b) => b.buyerId && b.buyerId.toString().trim() !== ''
+      );
+    }
+
     const campaign = await Campaign.findOneAndUpdate(
       { _id: req.params.id, tenantId: req.tenantId },
-      req.body,
-      { new: true }
+      body,
+      { new: true, runValidators: true }
     ).populate('assignedBuyers.buyerId', 'name email state')
      .populate('stateRouting.buyerId', 'name email state');
     if (!campaign) return res.status(404).json({ success: false, message: 'Campaign not found' });
@@ -391,7 +426,8 @@ app.put('/api/campaigns/:id', authenticate, tenantIsolation, requirePermission('
     res.json({ success: true, campaign });
   } catch (err) {
     console.error('❌ UPDATE_CAMPAIGN ERROR:', err);
-    res.status(500).json({ success: false, error: err.message });
+    const statusCode = err.name === 'ValidationError' || err.name === 'CastError' ? 400 : 500;
+    res.status(statusCode).json({ success: false, error: err.message });
   }
 });
 
@@ -1123,7 +1159,17 @@ app.post('/api/auth/change-password', authenticate, async (req, res) => {
 app.get('/api/auth/profile', authenticate, async (req, res) => {
   try {
     const profile = await UserService.getUserProfile(req.user._id);
-    res.json(profile);
+    res.json({
+      id: profile._id,
+      username: profile.username,
+      email: profile.email,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      role: profile.role?.name || profile.role,
+      tenantId: profile.tenantId?._id || profile.tenantId,
+      tenantName: profile.tenantId?.name || 'Default Organization',
+      tenantSlug: profile.tenantId?.slug || 'default'
+    });
   } catch (error) {
     console.error('❌ GET PROFILE ERROR:', error.message);
     res.status(500).json({ message: 'Failed to get profile' });

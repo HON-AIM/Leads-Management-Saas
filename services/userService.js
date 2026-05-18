@@ -231,7 +231,7 @@ class UserService {
   static async getUserProfile(userId) {
     const user = await User.findById(userId)
       .populate('role', 'name description')
-      .populate('tenantId', 'name domain')
+      .populate('tenantId', 'name slug domain')
       .select('-password -refreshTokens -passwordResetToken -emailVerificationToken -mfaSecret -mfaBackupCodes');
 
     if (!user) throw new Error('User not found');

@@ -88,9 +88,14 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
     (b) => !form.assignedBuyers.find((ab) => ab.buyerId === b._id)
   )
 
+  const hasInvalidStateRoutes = form.stateRouting.some((r) => !r.state || !r.buyerId)
+
   const canProceed = () => {
     if (step === 0) return form.name.trim().length > 0
     if (step === 1) return form.sources.length > 0
+    if (step === 2) {
+      if (form.stateRouting.length > 0 && hasInvalidStateRoutes) return false
+    }
     return true
   }
 

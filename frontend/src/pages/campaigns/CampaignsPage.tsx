@@ -38,7 +38,10 @@ export function CampaignsPage() {
       qc.invalidateQueries({ queryKey: QUERY_KEYS.CAMPAIGNS })
       setShowCreate(false)
     },
-    onError: () => addNotification({ type: 'error', title: 'Error', description: 'Failed to create campaign' }),
+    onError: (err: unknown) => {
+      const msg = (err as any)?.response?.data?.error || 'Failed to create campaign'
+      addNotification({ type: 'error', title: 'Error', description: msg })
+    },
   })
 
   const updateMutation = useMutation({
@@ -51,7 +54,10 @@ export function CampaignsPage() {
       qc.invalidateQueries({ queryKey: QUERY_KEYS.CAMPAIGNS })
       setEditCampaign(null)
     },
-    onError: () => addNotification({ type: 'error', title: 'Error', description: 'Failed to update campaign' }),
+    onError: (err: unknown) => {
+      const msg = (err as any)?.response?.data?.error || 'Failed to update campaign'
+      addNotification({ type: 'error', title: 'Error', description: msg })
+    },
   })
 
   const toggleMutation = useMutation({
