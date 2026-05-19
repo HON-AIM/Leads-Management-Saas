@@ -1,9 +1,12 @@
 const Client = require('../models/Client');
 const Activity = require('../models/Activity');
+const Lead = require('../models/Lead');
 const { getEligibleBuyers, findFallbackBuyers } = require('./buyerEligibilityService');
 const { assignLeadIncrement, incrementBuyerUsage } = require('./capService');
 const { getNextRoundRobinBuyer } = require('./roundRobinStateManager');
 const { sendLeadAssignedEmail } = require('./emailService');
+const OwnershipService = require('../src/services/ownership/ownershipService');
+const routingHistoryService = require('../src/services/ownership/routingHistoryService');
 
 const LOG_PREFIX = '[RoutingService]';
 
@@ -72,11 +75,11 @@ function groupByMode(buyers) {
   return grouped;
 }
 
-async function selectRoundRobinBuyer(tenantId, leadState, rrBuyers) {
+async function selectRoundRobinBuyer(tenantId, leadState, leadCountry, rrBuyers) {
   if (!rrBuyers || rrBuyers.length === 0) return null;
 
   try {
-    const buyer = await getNextRoundRobinBuyer(tenantId, leadState, rrBuyers);
+    const buyer = await getNextRoundRobinBuyer(tenantId, leadState, leadCountry, rrBuyers);
     return buyer;
   } catch (err) {
     log('ROUND_ROBIN_ERROR', { error: err.message, buyerCount: rrBuyers.length });
@@ -87,6 +90,7 @@ async function selectRoundRobinBuyer(tenantId, leadState, rrBuyers) {
 async function routeLead(lead, tenantId) {
   // Use normalized region code if available, fall back to raw state
   const leadState = lead.normalized_region_code || lead.state;
+  const leadCountry = lead.normalized_country_code || 'US';
   const result = {
     assignedTo: null,
     assignedBuyer: null,
@@ -95,9 +99,9 @@ async function routeLead(lead, tenantId) {
     routingMode: null,
   };
 
-  log('ROUTE_START', { leadId: lead._id, state: leadState, tenantId });
+  log('ROUTE_START', { leadId: lead._id, state: leadState, country: leadCountry, tenantId });
 
-  const { eligible, reason: eligibilityReason } = await getEligibleBuyers(tenantId, leadState);
+  const { eligible, reason: eligibilityReason } = await getEligibleBuyers(tenantId, leadState, leadCountry);
 
   if (eligible.length === 0) {
     log('NO_ELIGIBLE', { reason: eligibilityReason });
@@ -105,7 +109,7 @@ async function routeLead(lead, tenantId) {
     const fallbackBuyers = await findFallbackBuyers(tenantId, []);
     if (fallbackBuyers.length > 0) {
       log('FALLBACK_FOUND', { count: fallbackBuyers.length });
-      const fallbackResult = await selectFallbackBuyer(tenantId, leadState, fallbackBuyers);
+      const fallbackResult = await selectFallbackBuyer(tenantId, leadState, leadCountry, fallbackBuyers);
       if (fallbackResult) {
         return await assignLeadToBuyer(lead, fallbackResult, tenantId, 'fallback');
       }
@@ -145,7 +149,7 @@ async function routeLead(lead, tenantId) {
   }
 
   if (grouped.round_robin.length > 0) {
-    const rrBuyer = await selectRoundRobinBuyer(tenantId, leadState, grouped.round_robin);
+    const rrBuyer = await selectRoundRobinBuyer(tenantId, leadState, leadCountry, grouped.round_robin);
     if (rrBuyer) {
       log('ROUND_ROBIN_SELECT', { buyer: rrBuyer.name });
       return await assignLeadToBuyer(lead, rrBuyer, tenantId, 'round_robin');
@@ -157,7 +161,7 @@ async function routeLead(lead, tenantId) {
   return result;
 }
 
-async function selectFallbackBuyer(tenantId, leadState, fallbackBuyers) {
+async function selectFallbackBuyer(tenantId, leadState, leadCountry, fallbackBuyers) {
   const grouped = groupByMode(fallbackBuyers);
 
   if (grouped.exclusive.length > 0) {
@@ -173,7 +177,7 @@ async function selectFallbackBuyer(tenantId, leadState, fallbackBuyers) {
   }
 
   if (grouped.round_robin.length > 0) {
-    return selectRoundRobinBuyer(tenantId, leadState, grouped.round_robin);
+    return selectRoundRobinBuyer(tenantId, leadState, leadCountry, grouped.round_robin);
   }
 
   return fallbackBuyers[0] || null;
@@ -205,7 +209,7 @@ async function assignLeadToBuyer(lead, buyer, tenantId, routingMode) {
   }
 
   result.assignedTo = buyer._id;
-  result.assignedBuyer = { id: buyer._id, name: buyer.name, email: buyer.email, state: buyer.state };
+  result.assignedBuyer = { id: buyer._id, name: buyer.name, email: buyer.email, state: buyer.state, country: buyer.country };
   result.status = 'assigned';
   result.reason = 'assigned';
 
@@ -220,8 +224,10 @@ async function assignLeadToBuyer(lead, buyer, tenantId, routingMode) {
         routingMode,
         leadEmail: lead.email,
         leadState: lead.state,
+        leadCountry: lead.normalized_country_code || 'US',
         leadSource: lead.source,
         buyerState: buyer.state,
+        buyerCountry: buyer.country || 'US',
         buyerEmail: buyer.email,
       },
     });
@@ -238,6 +244,16 @@ async function assignLeadToBuyer(lead, buyer, tenantId, routingMode) {
       createdAt: lead.createdAt,
     }).catch(err => log('EMAIL_WARN', { error: err.message }));
   }
+
+  OwnershipService.assignLeadOwner(lead._id, buyer, {
+    tenantId,
+    routingMethod: routingMode,
+    sourcePlatform: lead.source || 'form',
+    campaignId: lead.campaign,
+    campaignName: lead.campaign,
+    performedBy: 'system',
+    notes: `Assigned via ${routingMode} routing`,
+  }).catch(err => log('OWNERSHIP_WARN', { error: err.message, leadId: lead._id }));
 
   log('ASSIGNED', { buyer: buyer.name, mode: routingMode, leadId: lead._id, state: leadStateForLog(buyer, lead) });
   return result;
@@ -273,6 +289,7 @@ async function getRoutingStateSummary(tenantId) {
 
   return {
     states: states.map(s => ({
+      country: s.country,
       state: s.state,
       lastIndex: s.lastIndex,
       version: s.version,
@@ -281,11 +298,13 @@ async function getRoutingStateSummary(tenantId) {
     buyers: buyers.map(b => ({
       id: b._id,
       name: b.name,
+      country: b.country,
       state: b.state,
       routingMode: b.routingMode,
       weight: b.weight,
       priority: b.priority,
       allowedStates: b.allowedStates,
+      allowedCountries: b.allowedCountries,
       status: b.status,
       isPaused: b.isPaused,
       leadsReceived: b.leadsReceived,

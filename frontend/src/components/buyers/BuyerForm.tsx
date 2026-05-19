@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { useNotifications } from '@/hooks/useNotifications'
 import type { Client } from '@/types'
+import type { ICountry, IRegion } from '@/types/location'
 
 interface BuyerFormProps {
   client?: Client
@@ -21,14 +22,6 @@ const ROUTING_MODES = [
   { label: 'Exclusive', value: 'exclusive' },
 ]
 
-const US_STATES = [
-  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
-  'HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
-  'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
-  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
-  'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC',
-]
-
 const STEPS = ['Basic Info', 'Cap Settings', 'Routing Config', 'Delivery & Schedule', 'Review']
 
 export function BuyerForm({ client, onClose }: BuyerFormProps) {
@@ -37,11 +30,32 @@ export function BuyerForm({ client, onClose }: BuyerFormProps) {
   const isEdit = !!client
   const [step, setStep] = useState(0)
 
+  const { data: countriesData } = useQuery<ICountry[]>({
+    queryKey: ['countries'],
+    queryFn: async () => {
+      const { data } = await api.get('/locations/countries')
+      return data.countries || data
+    },
+  })
+  const countries = countriesData || []
+  const selectedCountry = countries.find((c) => c.code === (form.country || 'US'))
+
+  const { data: regionsData } = useQuery<IRegion[]>({
+    queryKey: ['regions', form.country || 'US'],
+    queryFn: async () => {
+      const { data } = await api.get(`/locations/regions?countryCode=${form.country || 'US'}`)
+      return data.regions || data
+    },
+    enabled: !!form.country,
+  })
+  const regions = regionsData || []
+
   const [form, setForm] = useState({
     name: client?.name || '',
     email: client?.email || '',
     phone: client?.phone || '',
     address: client?.address || '',
+    country: client?.country || 'US',
     state: client?.state || '',
     leadCap: client?.leadCap ?? 100,
     dailyCap: client?.dailyCap ?? 0,
@@ -50,6 +64,7 @@ export function BuyerForm({ client, onClose }: BuyerFormProps) {
     weight: client?.weight ?? 1,
     priority: client?.priority ?? 0,
     allowedStates: client?.allowedStates || [],
+    allowedCountries: client?.allowedCountries || [],
     fallbackGroup: client?.fallbackGroup || '',
     provider: client?.delivery?.provider || 'none',
     webhookUrl: client?.delivery?.config?.webhookUrl || '',
@@ -72,6 +87,14 @@ export function BuyerForm({ client, onClose }: BuyerFormProps) {
       allowedStates: form.allowedStates.includes(state)
         ? form.allowedStates.filter((s) => s !== state)
         : [...form.allowedStates, state],
+    })
+  }
+
+  const toggleCountry = (code: string) => {
+    update({
+      allowedCountries: form.allowedCountries.includes(code)
+        ? form.allowedCountries.filter((c) => c !== code)
+        : [...form.allowedCountries, code],
     })
   }
 
@@ -112,10 +135,10 @@ export function BuyerForm({ client, onClose }: BuyerFormProps) {
       delete (payload as any).scheduleDays
 
       if (isEdit) {
-        const res = await api.put(`/clients/${client._id}`, payload)
+        const res = await api.put(`/clients/${client._id}`, { ...payload, country: form.country })
         return res.data
       }
-      const res = await api.post('/clients', payload)
+      const res = await api.post('/clients', { ...payload, country: form.country })
       return res.data
     },
     onSuccess: () => {
@@ -127,7 +150,7 @@ export function BuyerForm({ client, onClose }: BuyerFormProps) {
   })
 
   const canProceed = () => {
-    if (step === 0) return form.name && form.email && form.state
+    if (step === 0) return form.name && form.email && form.country && form.state
     if (step === 1) return form.leadCap > 0
     return true
   }
@@ -169,12 +192,21 @@ export function BuyerForm({ client, onClose }: BuyerFormProps) {
               <Input value={form.phone} onChange={(e) => update({ phone: e.target.value })} placeholder="+1 (555) 123-4567" />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">State *</Label>
+              <Label className="text-xs">Country *</Label>
+              <Select
+                value={form.country}
+                onChange={(e) => update({ country: e.target.value, state: '', allowedStates: [] })}
+                options={countries.map((c) => ({ label: `${c.name} (${c.code})`, value: c.code }))}
+                placeholder="Select country"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">State/Region {form.country ? '*' : ''}</Label>
               <Select
                 value={form.state}
                 onChange={(e) => update({ state: e.target.value })}
-                placeholder="Select state"
-                options={US_STATES.map((s) => ({ label: s, value: s }))}
+                placeholder={form.country ? 'Select state/region' : 'Pick a country first'}
+                options={regions.map((r) => ({ label: `${r.name} (${r.code})`, value: r.code }))}
               />
             </div>
             <div className="col-span-2 space-y-1">
@@ -228,24 +260,48 @@ export function BuyerForm({ client, onClose }: BuyerFormProps) {
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Allowed States ({form.allowedStates.length} selected)</Label>
-            <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto border rounded-lg p-2">
-              {US_STATES.map((s) => (
+            <Label className="text-xs">Allowed Countries ({form.allowedCountries.length} selected)</Label>
+            <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto border rounded-lg p-2">
+              {countries.map((c) => (
                 <button
-                  key={s}
+                  key={c.code}
                   type="button"
-                  onClick={() => toggleState(s)}
+                  onClick={() => toggleCountry(c.code)}
                   className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
-                    form.allowedStates.includes(s)
+                    form.allowedCountries.includes(c.code)
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'bg-background text-muted-foreground border-input hover:border-foreground'
                   }`}
                 >
-                  {s}
+                  {c.code}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground">Leave empty to allow all states</p>
+            <p className="text-xs text-muted-foreground">Leave empty to use buyer's own country</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Allowed States/Regions ({form.allowedStates.length} selected)</Label>
+            <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto border rounded-lg p-2">
+              {regions.length === 0 ? (
+                <p className="text-xs text-muted-foreground p-2">No regions loaded for this country</p>
+              ) : (
+                regions.map((r) => (
+                  <button
+                    key={r.code}
+                    type="button"
+                    onClick={() => toggleState(r.code)}
+                    className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                      form.allowedStates.includes(r.code)
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background text-muted-foreground border-input hover:border-foreground'
+                    }`}
+                  >
+                    {r.code}
+                  </button>
+                ))
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">Leave empty to allow all states/regions</p>
           </div>
         </div>
       )}
@@ -352,6 +408,7 @@ export function BuyerForm({ client, onClose }: BuyerFormProps) {
           <div className="grid grid-cols-2 gap-3 text-sm">
             <ReviewField label="Name" value={form.name} />
             <ReviewField label="Email" value={form.email} />
+            <ReviewField label="Country" value={form.country} />
             <ReviewField label="State" value={form.state} />
             <ReviewField label="Phone" value={form.phone || '-'} />
             <ReviewField label="Lead Cap" value={String(form.leadCap)} />

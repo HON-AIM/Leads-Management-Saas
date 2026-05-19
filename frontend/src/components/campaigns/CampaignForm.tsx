@@ -71,10 +71,10 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
   }
 
   const addStateRoute = () => {
-    update({ stateRouting: [...form.stateRouting, { state: '', buyerId: '', priority: 0 }] })
+    update({ stateRouting: [...form.stateRouting, { country: 'US', state: '', buyerId: '', priority: 0 }] })
   }
 
-  const updateStateRoute = (idx: number, patch: Partial<{ state: string; buyerId: string; priority: number }>) => {
+  const updateStateRoute = (idx: number, patch: Partial<{ country: string; state: string; buyerId: string; priority: number }>) => {
     const next = [...form.stateRouting]
     next[idx] = { ...next[idx], ...patch }
     update({ stateRouting: next })
@@ -245,7 +245,16 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
               )}
               {form.stateRouting.map((rule, idx) => (
                 <div key={idx} className="flex items-center gap-2 rounded-lg border px-3 py-2">
-                  <div className="flex-1 grid grid-cols-3 gap-2">
+                  <div className="flex-1 grid grid-cols-4 gap-2">
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Country</Label>
+                      <Input
+                        value={rule.country}
+                        onChange={(e) => updateStateRoute(idx, { country: e.target.value.toUpperCase() })}
+                        placeholder="US"
+                        className="h-7 text-xs"
+                      />
+                    </div>
                     <div>
                       <Label className="text-[10px] text-muted-foreground">State</Label>
                       <Input

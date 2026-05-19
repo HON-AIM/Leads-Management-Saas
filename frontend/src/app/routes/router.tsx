@@ -15,6 +15,11 @@ import { CampaignsPage } from '@/pages/campaigns/CampaignsPage'
 import { DeliveryPage } from '@/pages/delivery/DeliveryPage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
 import { LocationManagementPage } from '@/pages/locations/LocationManagementPage'
+import { OwnershipPage } from '@/pages/ownership/OwnershipPage'
+import { RoutingHistoryPage } from '@/pages/ownership/RoutingHistoryPage'
+import { SyncMonitorPage } from '@/pages/ownership/SyncMonitorPage'
+import { AuditDashboardPage } from '@/pages/ownership/AuditDashboardPage'
+import { ReassignmentsPage } from '@/pages/ownership/ReassignmentsPage'
 import { ROUTES } from '@/lib/constants'
 
 export function AppRouter() {
@@ -33,6 +38,11 @@ export function AppRouter() {
         <Route path={ROUTES.CAMPAIGNS} element={<CampaignsPage />} />
         <Route path={ROUTES.DELIVERY} element={<DeliveryPage />} />
         <Route path={ROUTES.LOCATIONS} element={<LocationManagementPage />} />
+        <Route path={ROUTES.OWNERSHIP} element={<OwnershipPage />} />
+        <Route path={ROUTES.ROUTING_HISTORY} element={<RoutingHistoryPage />} />
+        <Route path={ROUTES.SYNC_LOGS} element={<SyncMonitorPage />} />
+        <Route path={ROUTES.AUDIT} element={<AuditDashboardPage />} />
+        <Route path={ROUTES.REASSIGNMENTS} element={<ReassignmentsPage />} />
         <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
       </Route>
 

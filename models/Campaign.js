@@ -25,6 +25,7 @@ const campaignSchema = new mongoose.Schema({
   }],
 
   stateRouting: [{
+    country: { type: String, default: 'US', uppercase: true },
     state: { type: String, uppercase: true },
     buyerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client' },
     priority: { type: Number, default: 0 },

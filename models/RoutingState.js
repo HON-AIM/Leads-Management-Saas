@@ -6,6 +6,11 @@ const routingStateSchema = new mongoose.Schema({
     ref: 'Tenant',
     required: true
   },
+  country: {
+    type: String,
+    default: 'US',
+    uppercase: true
+  },
   state: {
     type: String,
     required: true,
@@ -21,6 +26,6 @@ const routingStateSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-routingStateSchema.index({ tenantId: 1, state: 1 }, { unique: true });
+routingStateSchema.index({ tenantId: 1, country: 1, state: 1 }, { unique: true });
 
 module.exports = mongoose.model('RoutingState', routingStateSchema);

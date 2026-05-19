@@ -73,6 +73,72 @@ const leadSchema = new mongoose.Schema({
   metadata: mongoose.Schema.Types.Mixed,
   enrichedMetadata: mongoose.Schema.Types.Mixed,
   trackingMetadata: mongoose.Schema.Types.Mixed,
+
+  // ── Ownership & Routing Metadata ─────────────────────────────────────────
+  assignedBuyerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Client'
+  },
+  assignedBuyerName: String,
+  assignedBuyerEmail: String,
+  assignedBuyerGhlUserId: String,
+  routingMethod: {
+    type: String,
+    enum: ['round_robin', 'weighted', 'priority', 'exclusive', 'state_based', 'fallback', 'manual_reassign', 'api'],
+    default: 'round_robin'
+  },
+  routingPriority: { type: Number, default: 0 },
+  assignmentStatus: {
+    type: String,
+    enum: ['pending', 'assigned', 'reassigned', 'unassigned', 'failed'],
+    default: 'pending'
+  },
+  assignedAt: Date,
+  reassignedAt: Date,
+  reassignmentCount: { type: Number, default: 0 },
+  sourcePlatform: { type: String, default: 'form' },
+  destinationPlatform: String,
+  routingVersion: { type: String, default: '2.0' },
+
+  externalReferences: {
+    facebookLeadId: String,
+    ghlContactId: String,
+    ghlOpportunityId: String,
+    externalCRMLeadId: String
+  },
+
+  ownershipMetadata: {
+    currentOwnerType: {
+      type: String,
+      enum: ['buyer', 'system', 'unassigned'],
+      default: 'unassigned'
+    },
+    currentOwnerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Client'
+    },
+    ownershipLocked: { type: Boolean, default: false },
+    ownershipTransferredAt: Date,
+    originalOwnerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Client'
+    },
+    originalOwnerName: String
+  },
+
+  deliveryMetadata: {
+    lastDeliveryAttempt: Date,
+    deliveryAttempts: { type: Number, default: 0 },
+    deliveryStatus: {
+      type: String,
+      enum: ['pending', 'delivering', 'delivered', 'failed', 'skipped'],
+      default: 'pending'
+    },
+    lastDeliveryResult: String,
+    lastSyncStatus: String,
+    lastSyncAt: Date
+  },
+
   tenantId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Tenant',
@@ -87,8 +153,10 @@ const leadSchema = new mongoose.Schema({
 leadSchema.index({ tenantId: 1, state: 1 });
 leadSchema.index({ tenantId: 1, status: 1 });
 leadSchema.index({ tenantId: 1, assignedTo: 1 });
+leadSchema.index({ tenantId: 1, assignedBuyerId: 1 });
 leadSchema.index({ tenantId: 1, ingestionStatus: 1 });
 leadSchema.index({ tenantId: 1, deliveryStatus: 1 });
+leadSchema.index({ tenantId: 1, 'deliveryMetadata.deliveryStatus': 1 });
 leadSchema.index({ tenantId: 1, email: 1, createdAt: -1 });
 leadSchema.index({ tenantId: 1, phone: 1, createdAt: -1 });
 leadSchema.index({ tenantId: 1, campaign: 1 });
@@ -96,5 +164,9 @@ leadSchema.index({ tenantId: 1, normalized_country_code: 1, normalized_region_co
 leadSchema.index({ tenantId: 1, location_confidence_score: 1 });
 leadSchema.index({ tenantId: 1, location_routable: 1 });
 leadSchema.index({ normalized_region_code: 1, normalized_country_code: 1 });
+leadSchema.index({ 'externalReferences.ghlContactId': 1 }, { sparse: true });
+leadSchema.index({ 'externalReferences.facebookLeadId': 1 }, { sparse: true });
+leadSchema.index({ assignmentStatus: 1, tenantId: 1 });
+leadSchema.index({ 'ownershipMetadata.currentOwnerId': 1, tenantId: 1 });
 
 module.exports = mongoose.model('Lead', leadSchema);

@@ -3,6 +3,7 @@ export interface Client {
   name: string
   email: string
   state: string
+  country: string
   phone?: string
   address?: string
   leadCap: number
@@ -12,6 +13,7 @@ export interface Client {
   weight: number
   priority: number
   allowedStates: string[]
+  allowedCountries: string[]
   isPaused: boolean
   pausedAt?: string
   pausedReason?: string

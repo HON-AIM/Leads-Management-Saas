@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Header } from '@/components/layout/Header'
 import { useIsSidebarCollapsed } from '@/hooks/useMediaQuery'
+import { OwnershipAIWidget } from '@/components/ownership/OwnershipAIWidget'
 
 export function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -20,6 +21,7 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
+      <OwnershipAIWidget />
     </div>
   )
 }

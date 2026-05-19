@@ -4,6 +4,7 @@ const clientSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
   state: { type: String, required: true },
+  country: { type: String, default: 'US', uppercase: true },
   leadCap: { type: Number, required: true },
   leadsReceived: { type: Number, default: 0 },
   status: {
@@ -22,6 +23,7 @@ const clientSchema = new mongoose.Schema({
   weight: { type: Number, default: 1, min: 1 },
   priority: { type: Number, default: 0, min: 0 },
   allowedStates: [{ type: String, uppercase: true }],
+  allowedCountries: [{ type: String, uppercase: true }],
 
   dailyCap: { type: Number, default: 0 },
   monthlyCap: { type: Number, default: 0 },

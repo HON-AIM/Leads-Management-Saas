@@ -18,6 +18,17 @@ async function loadActiveBuyers(tenantId) {
   return buyers;
 }
 
+function filterByCountryEligibility(buyers, leadCountry) {
+  if (!leadCountry) return buyers;
+  const countryUpper = leadCountry.toUpperCase();
+  return buyers.filter(b => {
+    const buyerCountries = (b.allowedCountries && b.allowedCountries.length > 0)
+      ? b.allowedCountries.map(c => c.toUpperCase())
+      : [(b.country || 'US').toUpperCase()];
+    return buyerCountries.includes(countryUpper);
+  });
+}
+
 function filterByStateEligibility(buyers, leadState) {
   if (!leadState) return buyers;
   const stateUpper = leadState.toUpperCase();
@@ -90,7 +101,7 @@ function filterBySchedule(buyers, now = new Date()) {
   return results;
 }
 
-async function getEligibleBuyers(tenantId, leadState) {
+async function getEligibleBuyers(tenantId, leadState, leadCountry) {
   log('LOAD_ACTIVE', { tenantId });
   const activeBuyers = await loadActiveBuyers(tenantId);
   log('ACTIVE_COUNT', { count: activeBuyers.length });
@@ -99,8 +110,16 @@ async function getEligibleBuyers(tenantId, leadState) {
     return { eligible: [], reason: 'no_active_buyers' };
   }
 
+  log('COUNTRY_FILTER', { leadCountry: leadCountry || 'US' });
+  const countryBuyers = filterByCountryEligibility(activeBuyers, leadCountry);
+  log('COUNTRY_COUNT', { count: countryBuyers.length });
+
+  if (countryBuyers.length === 0) {
+    return { eligible: [], reason: `no_buyers_for_country_${(leadCountry || 'US').toUpperCase()}` };
+  }
+
   log('STATE_FILTER', { leadState });
-  const stateBuyers = filterByStateEligibility(activeBuyers, leadState);
+  const stateBuyers = filterByStateEligibility(countryBuyers, leadState);
   log('STATE_COUNT', { count: stateBuyers.length, state: leadState });
 
   if (stateBuyers.length === 0) {

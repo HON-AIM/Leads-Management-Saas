@@ -32,7 +32,7 @@ export interface CampaignFormData {
   routingMode: 'round_robin' | 'weighted' | 'exclusive' | 'state_based'
   sources: string[]
   assignedBuyers: { buyerId: string; weight: number }[]
-  stateRouting: { state: string; buyerId: string; priority: number }[]
+  stateRouting: { country: string; state: string; buyerId: string; priority: number }[]
 }
 
 export const ROUTING_MODES = [

@@ -49,6 +49,7 @@ const { resolveTenant, checkTenantSubscription, optionalTenant } = require('./mi
 const { generalLimiter, authLimiter, loginLimiter, passwordResetLimiter, apiLimiter } = require('./middleware/rateLimiter');
 
 const locationRoutes = require('./routes/locationRoutes');
+const ownershipRoutes = require('./routes/ownershipRoutes');
 
 const app = express();
 
@@ -565,20 +566,17 @@ app.get('/api/clients', authenticate, tenantIsolation, requirePermission('client
 
 app.post('/api/clients', authenticate, tenantIsolation, requirePermission('clients', 'create'), async (req, res) => {
   try {
-    const { name, email, state, leadCap, status = 'active', notes } = req.body;
-    const normalizedState = normalizeState(state);
-    if (!normalizedState) {
-      return res.status(400).json({ success: false, error: `Invalid state: "${state}"` });
-    }
+    const { name, email, state, country, leadCap, status = 'active', notes } = req.body;
     const cap = parseInt(leadCap) || 0;
     if (cap <= 0) return res.status(400).json({ success: false, error: 'Lead cap must be a positive number' });
 
     const client = await Client.create({
-      name, email: email || '', state: normalizedState, leadCap: cap, leadsReceived: 0,
+      name, email: email || '', state: (state || '').toUpperCase(),
+      country: country || 'US', leadCap: cap, leadsReceived: 0,
       status: status || 'active', notes: notes || '', tenantId: req.tenantId, createdBy: req.user._id
     });
 
-    await Activity.create({ type: 'client_created', message: `New client: ${client.name} (${client.state})`, clientId: client._id, tenantId: req.tenantId });
+    await Activity.create({ type: 'client_created', message: `New client: ${client.name} (${client.country}-${client.state})`, clientId: client._id, tenantId: req.tenantId });
     res.json(client);
   } catch (err) {
     console.error('❌ ADD_CLIENT ERROR:', err);
@@ -592,11 +590,7 @@ app.put('/api/clients/:id', authenticate, tenantIsolation, requirePermission('cl
     if (!client) return res.status(404).json({ success: false, message: 'Client not found' });
 
     const updateData = { ...req.body };
-    if (updateData.state) {
-      const normalizedState = normalizeState(updateData.state);
-      if (!normalizedState) return res.status(400).json({ success: false, error: `Invalid state: "${updateData.state}"` });
-      updateData.state = normalizedState;
-    }
+    if (updateData.state) updateData.state = updateData.state.toUpperCase();
     if (updateData.leadCap) updateData.leadCap = parseInt(updateData.leadCap);
 
     const updated = await Client.findOneAndUpdate(
@@ -1522,6 +1516,9 @@ app.post('/api/admin/normalize-states', authenticate, authorize('super_admin'), 
 
 // ─── Location Intelligence API Routes ──────────────────────────────────────────
 app.use('/api/locations', locationRoutes);
+
+// ─── Ownership, Routing History & CRM Sync Routes ──────────────────────────────
+app.use('/api', ownershipRoutes);
 
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
@@ -9,21 +9,13 @@ import { Select } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { useNotifications } from '@/hooks/useNotifications'
 import type { Client } from '@/types'
+import type { IRegion } from '@/types/location'
 
 const ROUTING_MODES = [
   { label: 'Round Robin', value: 'round_robin' },
   { label: 'Weighted', value: 'weighted' },
   { label: 'Priority', value: 'priority' },
   { label: 'Exclusive', value: 'exclusive' },
-]
-
-const US_STATES = [
-  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
-  'HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
-  'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
-  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
-  'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY',
-  'DC',
 ]
 
 interface RoutingSettingsProps {
@@ -38,6 +30,15 @@ export function RoutingSettings({ client }: RoutingSettingsProps) {
   const [priority, setPriority] = useState(client.priority)
   const [allowedStates, setAllowedStates] = useState<string[]>(client.allowedStates || [])
   const [fallbackGroup, setFallbackGroup] = useState(client.fallbackGroup || '')
+
+  const { data: regionsData } = useQuery<IRegion[]>({
+    queryKey: ['regions', client.country || 'US'],
+    queryFn: async () => {
+      const { data } = await api.get(`/locations/regions?countryCode=${client.country || 'US'}`)
+      return data.regions || data
+    },
+  })
+  const regions = regionsData || []
 
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -126,24 +127,28 @@ export function RoutingSettings({ client }: RoutingSettingsProps) {
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs">Allowed States ({allowedStates.length} selected)</Label>
+        <Label className="text-xs">Allowed States/Regions for {client.country || 'US'} ({allowedStates.length} selected)</Label>
         <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto border rounded-lg p-2">
-          {US_STATES.map((state) => (
-            <button
-              key={state}
-              type="button"
-              onClick={() => toggleState(state)}
-              className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
-                allowedStates.includes(state)
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-background text-muted-foreground border-input hover:border-foreground'
-              }`}
-            >
-              {state}
-            </button>
-          ))}
+          {regions.length === 0 ? (
+            <p className="text-xs text-muted-foreground p-2">No regions data available</p>
+          ) : (
+            regions.map((r) => (
+              <button
+                key={r.code}
+                type="button"
+                onClick={() => toggleState(r.code)}
+                className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                  allowedStates.includes(r.code)
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-background text-muted-foreground border-input hover:border-foreground'
+                }`}
+              >
+                {r.code}
+              </button>
+            ))
+          )}
         </div>
-        <p className="text-xs text-muted-foreground">Leave empty to allow all states</p>
+        <p className="text-xs text-muted-foreground">Leave empty to allow all states/regions</p>
       </div>
 
       <Button size="sm" onClick={handleSave} disabled={updateMutation.isPending}>

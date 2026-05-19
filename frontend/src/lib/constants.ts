@@ -15,6 +15,11 @@ export const ROUTES = {
   SETTINGS: '/settings',
   SESSIONS: '/settings/sessions',
   LOCATIONS: '/locations',
+  OWNERSHIP: '/ownership',
+  ROUTING_HISTORY: '/ownership/history',
+  SYNC_LOGS: '/sync/logs',
+  AUDIT: '/audit',
+  REASSIGNMENTS: '/reassignments',
 } as const
 
 export const QUERY_KEYS = {
@@ -48,6 +53,11 @@ export const QUERY_KEYS = {
   LOCATION_ANALYTICS: ['location-analytics'],
   NORMALIZATION_RUNS: ['normalization-runs'],
   AMBIGUOUS_LEADS: ['ambiguous-leads'],
+  OWNERSHIP: ['ownership'],
+  ROUTING_HISTORY: ['routing-history'],
+  SYNC_LOGS: ['sync-logs'],
+  AUDIT: ['audit'],
+  REASSIGNMENTS: ['reassignments'],
 } as const
 
 export const ROLE_HIERARCHY: Record<string, number> = {
@@ -64,5 +74,10 @@ export const NAV_ITEMS = [
   { label: 'Buyers', href: ROUTES.CLIENTS, icon: 'Building2' },
   { label: 'Delivery', href: ROUTES.DELIVERY, icon: 'Delivery' },
   { label: 'Locations', href: ROUTES.LOCATIONS, icon: 'MapPin' },
+  { label: 'Ownership', href: ROUTES.OWNERSHIP, icon: 'Shield' },
+  { label: 'Routing History', href: ROUTES.ROUTING_HISTORY, icon: 'History' },
+  { label: 'Sync Monitor', href: ROUTES.SYNC_LOGS, icon: 'RefreshCw' },
+  { label: 'Audit', href: ROUTES.AUDIT, icon: 'FileText' },
+  { label: 'Reassignments', href: ROUTES.REASSIGNMENTS, icon: 'Shuffle' },
   { label: 'Settings', href: ROUTES.SETTINGS, icon: 'Settings' },
 ] as const

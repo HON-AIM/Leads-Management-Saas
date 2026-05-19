@@ -1,8 +1,13 @@
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import api from '@/lib/api'
 import { formatNumber, formatDate } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import type { Client } from '@/types'
+import type { ICountry } from '@/types/location'
 
 interface BuyersTableProps {
   clients: Client[]
@@ -19,28 +24,42 @@ const statusStyles: Record<string, string> = {
   inactive: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
 }
 
-const US_STATES_FILTER = [
-  'All', 'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
-  'HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
-  'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
-  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
-  'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC',
-]
-
 export function BuyersTable({ clients, isLoading, stateFilter, onStateFilterChange, onEdit, onDelete }: BuyersTableProps) {
-  const filtered = stateFilter && stateFilter !== 'All'
-    ? clients.filter((c) => c.state === stateFilter)
-    : clients
+  const { data: countriesData } = useQuery<ICountry[]>({
+    queryKey: ['countries'],
+    queryFn: async () => {
+      const { data } = await api.get('/locations/countries')
+      return data.countries || data
+    },
+  })
+  const countries = countriesData || []
+  const [countryFilter, setCountryFilter] = useState('')
+
+  const filtered = clients.filter((c) => {
+    if (stateFilter && stateFilter !== 'All' && c.state !== stateFilter) return false
+    if (countryFilter && c.country !== countryFilter) return false
+    return true
+  })
 
   return (
     <div>
       <div className="flex items-center gap-2 px-4 py-3 border-b">
-        <span className="text-xs text-muted-foreground">State:</span>
+        <span className="text-xs text-muted-foreground">Country:</span>
         <Select
-          value={stateFilter}
-          onChange={(e) => onStateFilterChange(e.target.value)}
-          options={US_STATES_FILTER.map((s) => ({ label: s === 'All' ? 'All States' : s, value: s }))}
-          className="w-32"
+          value={countryFilter}
+          onChange={(e) => setCountryFilter(e.target.value)}
+          options={[
+            { label: 'All Countries', value: '' },
+            ...countries.map((c) => ({ label: `${c.name} (${c.code})`, value: c.code })),
+          ]}
+          className="w-40"
+        />
+        <span className="text-xs text-muted-foreground">State:</span>
+        <Input
+          value={stateFilter === 'All' ? '' : stateFilter}
+          onChange={(e) => onStateFilterChange(e.target.value.toUpperCase() || 'All')}
+          placeholder="Filter state..."
+          className="w-24 h-7 text-xs"
         />
         <span className="text-xs text-muted-foreground ml-auto">{filtered.length} buyer(s)</span>
       </div>
@@ -85,7 +104,11 @@ export function BuyersTable({ clients, isLoading, stateFilter, onStateFilterChan
                         <p className="text-xs text-muted-foreground">{client.email}</p>
                       </div>
                     </td>
-                    <td className="px-4 py-3">{client.state}</td>
+                    <td className="px-4 py-3">
+                      <span className="text-xs text-muted-foreground">{client.country || 'US'}</span>
+                      <span className="mx-1">-</span>
+                      <span>{client.state}</span>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
                         <Badge className={statusStyles[client.status] || ''}>{client.status}</Badge>

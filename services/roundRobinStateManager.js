@@ -7,88 +7,91 @@ function log(step, details = {}) {
   console.log(`${LOG_PREFIX} ${ts} | Step: ${step}`, details);
 }
 
-async function getOrCreateState(tenantId, state) {
+async function getOrCreateState(tenantId, state, country) {
+  const countryUpper = (country || 'US').toUpperCase();
+  const stateUpper = state.toUpperCase();
   const routingState = await RoutingState.findOneAndUpdate(
-    { tenantId, state: state.toUpperCase() },
-    { $setOnInsert: { tenantId, state: state.toUpperCase(), lastIndex: 0, version: 1 } },
+    { tenantId, country: countryUpper, state: stateUpper },
+    { $setOnInsert: { tenantId, country: countryUpper, state: stateUpper, lastIndex: 0, version: 1 } },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
   return routingState;
 }
 
-async function getNextRoundRobinIndex(tenantId, state, buyerCount) {
+async function getNextRoundRobinIndex(tenantId, state, country, buyerCount) {
   if (buyerCount === 0) return -1;
 
-  const routingState = await getOrCreateState(tenantId, state);
+  const routingState = await getOrCreateState(tenantId, state, country);
   const nextIndex = routingState.lastIndex % buyerCount;
 
   await RoutingState.findOneAndUpdate(
-    { tenantId, state: state.toUpperCase() },
+    { tenantId, country: (country || 'US').toUpperCase(), state: state.toUpperCase() },
     { $inc: { lastIndex: 1, version: 1 } }
   );
 
-  log('NEXT_INDEX', { state, lastIndex: routingState.lastIndex, nextIndex, buyerCount });
+  log('NEXT_INDEX', { state, country: country || 'US', lastIndex: routingState.lastIndex, nextIndex, buyerCount });
   return nextIndex;
 }
 
-async function getNextRoundRobinBuyer(tenantId, state, buyers) {
+async function getNextRoundRobinBuyer(tenantId, state, country, buyers) {
   if (!buyers || buyers.length === 0) return null;
 
   const stateUpper = state.toUpperCase();
+  const countryUpper = (country || 'US').toUpperCase();
   const buyerCount = buyers.length;
 
   if (buyerCount === 0) return null;
 
-  const routingState = await getOrCreateState(tenantId, state);
+  const routingState = await getOrCreateState(tenantId, state, country);
 
-  const totalBuyers = await RoutingState.findOne({ tenantId, state: stateUpper });
+  const totalBuyers = await RoutingState.findOne({ tenantId, country: countryUpper, state: stateUpper });
 
   for (let attempt = 0; attempt < buyerCount; attempt++) {
     const index = (totalBuyers.lastIndex + attempt) % buyerCount;
     const buyer = buyers[index];
     if (buyer) {
       if (attempt > 0) {
-        log('SKIP_UNAVAILABLE', { state, attemptedIndex: totalBuyers.lastIndex, chosenIndex: index });
+        log('SKIP_UNAVAILABLE', { state, country: countryUpper, attemptedIndex: totalBuyers.lastIndex, chosenIndex: index });
       }
       await RoutingState.findOneAndUpdate(
-        { tenantId, state: stateUpper },
+        { tenantId, country: countryUpper, state: stateUpper },
         { $inc: { lastIndex: 1 } }
       );
-      log('NEXT_BUYER', { state, index, buyerName: buyer.name, buyerId: buyer._id });
+      log('NEXT_BUYER', { state, country: countryUpper, index, buyerName: buyer.name, buyerId: buyer._id });
       return buyer;
     }
   }
 
   await RoutingState.findOneAndUpdate(
-    { tenantId, state: stateUpper },
+    { tenantId, country: countryUpper, state: stateUpper },
     { $inc: { lastIndex: 1 } }
   );
 
-  log('ALL_UNAVAILABLE', { state, buyerCount });
+  log('ALL_UNAVAILABLE', { state, country: countryUpper, buyerCount });
   return null;
 }
 
-async function advanceIndex(tenantId, state) {
+async function advanceIndex(tenantId, state, country) {
   await RoutingState.findOneAndUpdate(
-    { tenantId, state: state.toUpperCase() },
+    { tenantId, country: (country || 'US').toUpperCase(), state: state.toUpperCase() },
     { $inc: { lastIndex: 1, version: 1 } }
   );
 }
 
-async function peekNextIndex(tenantId, state, buyerCount) {
+async function peekNextIndex(tenantId, state, country, buyerCount) {
   if (buyerCount === 0) return -1;
 
-  const routingState = await getOrCreateState(tenantId, state);
+  const routingState = await getOrCreateState(tenantId, state, country);
   return routingState.lastIndex % buyerCount;
 }
 
-async function resetState(tenantId, state) {
+async function resetState(tenantId, state, country) {
   await RoutingState.findOneAndUpdate(
-    { tenantId, state: state.toUpperCase() },
+    { tenantId, country: (country || 'US').toUpperCase(), state: state.toUpperCase() },
     { $set: { lastIndex: 0 }, $inc: { version: 1 } }
   );
-  log('RESET', { tenantId, state });
+  log('RESET', { tenantId, state, country: country || 'US' });
 }
 
 async function resetAllForTenant(tenantId) {
@@ -99,13 +102,13 @@ async function resetAllForTenant(tenantId) {
   log('RESET_ALL', { tenantId });
 }
 
-async function getStateInfo(tenantId, state) {
-  const routingState = await RoutingState.findOne({ tenantId, state: state.toUpperCase() });
+async function getStateInfo(tenantId, state, country) {
+  const routingState = await RoutingState.findOne({ tenantId, country: (country || 'US').toUpperCase(), state: state.toUpperCase() });
   return routingState;
 }
 
 async function listStates(tenantId) {
-  return RoutingState.find({ tenantId }).sort({ state: 1 });
+  return RoutingState.find({ tenantId }).sort({ country: 1, state: 1 });
 }
 
 module.exports = {
