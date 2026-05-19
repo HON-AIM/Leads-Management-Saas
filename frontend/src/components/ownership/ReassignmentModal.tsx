@@ -8,12 +8,13 @@ import type { Client } from '@/types'
 interface ReassignmentModalProps {
   leadId: string
   leadName: string
+  currentBuyerId?: string
   currentBuyerName: string | null
   onClose: () => void
   onSuccess: () => void
 }
 
-export function ReassignmentModal({ leadId, leadName, currentBuyerName, onClose, onSuccess }: ReassignmentModalProps) {
+export function ReassignmentModal({ leadId, leadName, currentBuyerId = '', currentBuyerName, onClose, onSuccess }: ReassignmentModalProps) {
   const [buyerId, setBuyerId] = useState('')
   const [reason, setReason] = useState('')
   const [syncCrm, setSyncCrm] = useState(false)
@@ -29,7 +30,7 @@ export function ReassignmentModal({ leadId, leadName, currentBuyerName, onClose,
   })
 
   const buyers = buyersData?.filter((b: Client) =>
-    b.status !== 'inactive' && b._id !== currentBuyerName
+    b.status !== 'inactive' && b._id !== currentBuyerId
   ) || []
 
   const mutation = useMutation({

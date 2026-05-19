@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { useSocket } from '@/hooks/useSocket'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AuditTable } from '@/components/ownership/AuditTable'
 import type { AuditEvent } from '@/types/ownership'
@@ -22,6 +23,16 @@ export function AuditDashboardPage() {
   })
 
   const audit = data?.audit || []
+  const queryClient = useQueryClient()
+  const { subscribe } = useSocket()
+
+  useEffect(() => {
+    const unsubscribe = subscribe('ownership_event', () => {
+      queryClient.invalidateQueries({ queryKey: ['audit-ownership', eventTypeFilter, buyerFilter] })
+    })
+
+    return () => unsubscribe()
+  }, [buyerFilter, eventTypeFilter, queryClient, subscribe])
 
   const eventCounts = audit.reduce<Record<string, number>>((acc, e) => {
     acc[e.eventType] = (acc[e.eventType] || 0) + 1

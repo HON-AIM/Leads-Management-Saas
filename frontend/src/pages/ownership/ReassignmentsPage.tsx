@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { useSocket } from '@/hooks/useSocket'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ReassignmentModal } from '@/components/ownership/ReassignmentModal'
@@ -32,11 +33,24 @@ export function ReassignmentsPage() {
 
   const recentReassignments = auditData?.audit || []
 
+  const queryClient = useQueryClient()
+  const { subscribe } = useSocket()
   const selectedLead = leads.find((l) => l._id === selectedLeadId)
+
+  useEffect(() => {
+    const unsubscribe = subscribe('reassignment', () => {
+      queryClient.invalidateQueries({ queryKey: ['leads', 'assigned'] })
+      queryClient.invalidateQueries({ queryKey: ['audit', 'reassignments'] })
+    })
+
+    return () => unsubscribe()
+  }, [queryClient, subscribe])
 
   const handleReassignSuccess = () => {
     setModalOpen(false)
     setSelectedLeadId(null)
+    queryClient.invalidateQueries({ queryKey: ['leads', 'assigned'] })
+    queryClient.invalidateQueries({ queryKey: ['audit', 'reassignments'] })
   }
 
   return (
@@ -116,6 +130,7 @@ export function ReassignmentsPage() {
         <ReassignmentModal
           leadId={selectedLeadId}
           leadName={selectedLead.name}
+          currentBuyerId={selectedLead.assignedTo?._id || ''}
           currentBuyerName={selectedLead.assignedTo?.name || null}
           onClose={() => { setModalOpen(false); setSelectedLeadId(null) }}
           onSuccess={handleReassignSuccess}

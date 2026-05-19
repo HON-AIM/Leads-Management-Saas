@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { useSocket } from '@/hooks/useSocket'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { SyncStatusBadge } from '@/components/ownership/SyncStatusBadge'
@@ -32,6 +33,16 @@ export function SyncMonitorPage() {
   })
 
   const logs = data?.logs || []
+
+  const { subscribe } = useSocket()
+
+  useEffect(() => {
+    const unsubscribe = subscribe('crm_sync_update', () => {
+      queryClient.invalidateQueries({ queryKey: ['sync-logs', platformFilter] })
+    })
+
+    return () => unsubscribe()
+  }, [platformFilter, queryClient, subscribe])
 
   const stats = {
     total: logs.length,

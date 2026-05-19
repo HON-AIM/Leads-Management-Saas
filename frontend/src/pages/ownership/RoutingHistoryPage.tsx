@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { useSocket } from '@/hooks/useSocket'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { RoutingTimeline } from '@/components/ownership/RoutingTimeline'
@@ -23,9 +24,22 @@ export function RoutingHistoryPage() {
   const history = data?.history || []
   const summary = data?.summary
 
+  const queryClient = useQueryClient()
+  const { subscribe } = useSocket()
+
   const filtered = eventFilter
     ? history.filter((e) => e.eventType === eventFilter)
     : history
+
+  useEffect(() => {
+    if (!searchedId) return
+
+    const unsubscribe = subscribe('routing_event', () => {
+      queryClient.invalidateQueries({ queryKey: ['routing-history', searchedId] })
+    })
+
+    return () => unsubscribe()
+  }, [searchedId, queryClient, subscribe])
 
   const handleSearch = () => {
     if (leadId.trim()) {

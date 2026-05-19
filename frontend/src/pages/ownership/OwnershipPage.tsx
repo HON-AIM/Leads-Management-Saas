@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useCallback, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { useSocket } from '@/hooks/useSocket'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { OwnershipCard } from '@/components/ownership/OwnershipCard'
 import { RoutingTimeline } from '@/components/ownership/RoutingTimeline'
@@ -38,6 +39,9 @@ export function OwnershipPage() {
     enabled: !!selectedLeadId,
   })
 
+  const queryClient = useQueryClient()
+  const { subscribe } = useSocket()
+
   const { data: historyData, isLoading: historyLoading } = useQuery<RoutingHistoryResponse>({
     queryKey: ['routing-history', selectedLeadId],
     queryFn: async () => {
@@ -46,6 +50,31 @@ export function OwnershipPage() {
     },
     enabled: !!selectedLeadId,
   })
+
+  useEffect(() => {
+    if (!selectedLeadId) return
+
+    const unsubscribeAssignment = subscribe('lead_assignment', () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.LEADS })
+      queryClient.invalidateQueries({ queryKey: ['ownership', selectedLeadId] })
+      queryClient.invalidateQueries({ queryKey: ['routing-history', selectedLeadId] })
+    })
+    const unsubscribeReassignment = subscribe('lead_reassigned', () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.LEADS })
+      queryClient.invalidateQueries({ queryKey: ['ownership', selectedLeadId] })
+      queryClient.invalidateQueries({ queryKey: ['routing-history', selectedLeadId] })
+    })
+    const unsubscribeSync = subscribe('crm_sync_update', () => {
+      queryClient.invalidateQueries({ queryKey: ['sync-logs'] })
+      queryClient.invalidateQueries({ queryKey: ['ownership', selectedLeadId] })
+    })
+
+    return () => {
+      unsubscribeAssignment()
+      unsubscribeReassignment()
+      unsubscribeSync()
+    }
+  }, [selectedLeadId, queryClient, subscribe])
 
   const buildDeliveryStages = (lead: Lead): DeliveryStage[] => {
     return [
@@ -68,9 +97,11 @@ export function OwnershipPage() {
   const handleReassignSuccess = useCallback(() => {
     setReassignModalOpen(false)
     if (selectedLeadId) {
-      api.get(`/leads/${selectedLeadId}/ownership`).catch(() => {})
+      queryClient.invalidateQueries({ queryKey: ['ownership', selectedLeadId] })
+      queryClient.invalidateQueries({ queryKey: ['routing-history', selectedLeadId] })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.LEADS })
     }
-  }, [selectedLeadId])
+  }, [selectedLeadId, queryClient])
 
   return (
     <div className="space-y-6">
@@ -218,6 +249,7 @@ export function OwnershipPage() {
         <ReassignmentModal
           leadId={selectedLeadId}
           leadName={selectedLead.name}
+          currentBuyerId={selectedLead.assignedTo?._id || ''}
           currentBuyerName={selectedLead.assignedTo?.name || null}
           onClose={() => setReassignModalOpen(false)}
           onSuccess={handleReassignSuccess}
