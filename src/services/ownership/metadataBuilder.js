@@ -1,7 +1,9 @@
 class MetadataBuilder {
   static buildOutboundPayload(lead, { platform = 'GHL' } = {}) {
+    const nameParts = this._splitName(lead.name || 'Unknown');
     const base = {
-      name: lead.name,
+      first_name: nameParts.first_name,
+      last_name: nameParts.last_name,
       email: lead.email,
       phone: lead.phone || '',
       source: lead.source || 'form',
@@ -14,33 +16,48 @@ class MetadataBuilder {
     return base;
   }
 
-  static injectOwnershipMetadata(payload, lead) {
+  static _buildRoutingMetadata(lead) {
     return {
-      ...payload,
-      assignedBuyerId: lead.assignedBuyerId ? lead.assignedBuyerId.toString() : null,
-      assignedBuyerName: lead.assignedBuyerName || null,
-      assignedBuyerEmail: lead.assignedBuyerEmail || null,
-      assignmentStatus: lead.assignmentStatus || 'unassigned',
-      assignedAt: lead.assignedAt || null,
-      ownershipLocked: lead.ownershipMetadata?.ownershipLocked || false,
-      originalOwnerId: lead.ownershipMetadata?.originalOwnerId ? lead.ownershipMetadata.originalOwnerId.toString() : null,
-    };
-  }
-
-  static injectAuditReferences(payload, { routingHistoryId = null, ownershipAuditId = null, crmSyncLogId = null }) {
-    return {
-      ...payload,
-      _audit: {
-        routingHistoryId: routingHistoryId?.toString() || null,
-        ownershipAuditId: ownershipAuditId?.toString() || null,
-        crmSyncLogId: crmSyncLogId?.toString() || null,
+      internal_lead_id: lead._id ? lead._id.toString() : null,
+      buyer_id: lead.assignedBuyerId ? lead.assignedBuyerId.toString() : null,
+      buyer_name: lead.assignedBuyerName || null,
+      routing_method: lead.routingMethod || 'round_robin',
+      routing_priority: lead.routingPriority || 0,
+      campaign_id: lead.campaign || null,
+      source_platform: lead.sourcePlatform || lead.source || 'form',
+      destination_platform: lead.destinationPlatform || null,
+      routing_version: lead.routingVersion || null,
+      assignment_status: lead.assignmentStatus || 'pending',
+      external_references: {
+        facebookLeadId: lead.externalReferences?.facebookLeadId || null,
+        ghlContactId: lead.externalReferences?.ghlContactId || null,
+        ghlOpportunityId: lead.externalReferences?.ghlOpportunityId || null,
+        externalCRMLeadId: lead.externalReferences?.externalCRMLeadId || null,
       },
     };
   }
 
+  static _splitName(name) {
+    if (!name || typeof name !== 'string') {
+      return { first_name: 'Unknown', last_name: '' };
+    }
+
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) {
+      return { first_name: parts[0], last_name: '' };
+    }
+
+    return {
+      first_name: parts[0],
+      last_name: parts.slice(1).join(' '),
+    };
+  }
+
   static _buildGhlPayload(lead, base) {
-    const ghlContact = {
+    const payload = {
       ...base,
+      agent: lead.assignedBuyerGhlUserId || undefined,
+      routing_metadata: this._buildRoutingMetadata(lead),
       customField: [],
     };
 
@@ -62,19 +79,16 @@ class MetadataBuilder {
       customFields.push({ key: 'state', value: lead.state });
     }
 
-    const ownershipMeta = this.injectOwnershipMetadata({}, lead);
-    Object.entries(ownershipMeta).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        customFields.push({ key: `lead_${key}`, value: String(value) });
-      }
-    });
-
     if (lead.externalReferences?.ghlContactId) {
-      ghlContact.id = lead.externalReferences.ghlContactId;
+      payload.id = lead.externalReferences.ghlContactId;
     }
 
-    ghlContact.customField = customFields;
-    return ghlContact;
+    if (lead.externalReferences?.ghlOpportunityId) {
+      payload.opportunity_id = lead.externalReferences.ghlOpportunityId;
+    }
+
+    payload.customField = customFields;
+    return payload;
   }
 }
 

@@ -6,7 +6,7 @@ const { getLogger } = require('../../utils/logger');
 const logger = getLogger('OwnershipService');
 
 class OwnershipService {
-  static async assignLeadOwner(leadId, buyer, { tenantId, routingMethod = 'round_robin', campaignId, campaignName, sourcePlatform = 'form', performedBy = 'system', performedByUserId = null, notes = '' }) {
+  static async assignLeadOwner(leadId, buyer, { tenantId, routingMethod = 'round_robin', routingPriority = 0, campaignId, campaignName, sourcePlatform = 'form', destinationPlatform = null, routingVersion = '2.0', performedBy = 'system', performedByUserId = null, notes = '' }) {
     const lead = await Lead.findById(leadId);
     if (!lead) throw new Error(`Lead ${leadId} not found`);
 
@@ -24,10 +24,13 @@ class OwnershipService {
       assignedBuyerEmail: buyer.email || '',
       assignedBuyerGhlUserId: buyer.ghlUserId || '',
       assignedTo: buyer._id,
-      assignmentStatus: 'assigned',
+      assignmentStatus: isReassignment ? 'reassigned' : 'assigned',
       assignedAt: new Date(),
       routingMethod,
+      routingPriority,
+      routingVersion,
       sourcePlatform,
+      destinationPlatform,
       'ownershipMetadata.currentOwnerType': 'buyer',
       'ownershipMetadata.currentOwnerId': buyer._id,
       'ownershipMetadata.ownershipLocked': false,
@@ -40,6 +43,7 @@ class OwnershipService {
 
     if (isReassignment) {
       update.reassignedAt = new Date();
+      update['ownershipMetadata.ownershipTransferredAt'] = new Date();
       update.$inc = { reassignmentCount: 1 };
     }
 
@@ -89,7 +93,7 @@ class OwnershipService {
     return { leadId, buyerId: buyer._id, eventType };
   }
 
-  static async transferOwnership(leadId, newBuyer, { tenantId, reason = 'manual', performedBy = 'system', performedByUserId = null }) {
+  static async transferOwnership(leadId, newBuyer, { tenantId, reason = 'manual', routingMethod = 'manual_reassign', routingPriority = 0, destinationPlatform = null, routingVersion = null, performedBy = 'system', performedByUserId = null }) {
     const lead = await Lead.findById(leadId);
     if (!lead) throw new Error(`Lead ${leadId} not found`);
 
@@ -108,6 +112,10 @@ class OwnershipService {
       assignedTo: newBuyer._id,
       assignmentStatus: 'reassigned',
       reassignedAt: new Date(),
+      routingMethod,
+      routingPriority,
+      destinationPlatform,
+      ...(routingVersion ? { routingVersion } : {}),
       'ownershipMetadata.currentOwnerType': 'buyer',
       'ownershipMetadata.currentOwnerId': newBuyer._id,
       'ownershipMetadata.ownershipTransferredAt': new Date(),

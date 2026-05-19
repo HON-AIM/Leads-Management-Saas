@@ -32,7 +32,7 @@ class CrmSyncService {
     let statusCode = null;
 
     try {
-      const result = await this._executeSync(platform, payload, { webhookUrl, ghlApiKey });
+      const result = await this._executeSync(platform, payload, { webhookUrl, ghlApiKey, syncType });
       success = true;
       responsePayload = result.data;
       statusCode = result.status;
@@ -48,7 +48,7 @@ class CrmSyncService {
       } else {
         externalUpdate['externalReferences.externalCRMLeadId'] = externalId;
       }
-      if (externalId) {
+      if (externalId || Object.keys(externalUpdate).length) {
         await Lead.findByIdAndUpdate(leadId, {
           ...externalUpdate,
           'deliveryMetadata.lastSyncStatus': 'synced',
@@ -188,17 +188,26 @@ class CrmSyncService {
     return { success, syncLogId: syncLog._id };
   }
 
-  static async _executeSync(platform, payload, { webhookUrl = null, ghlApiKey = null } = {}) {
+  static async _executeSync(platform, payload, { webhookUrl = null, ghlApiKey = null, syncType = 'create_contact' } = {}) {
     const axios = require('axios');
 
     switch (platform) {
       case 'GHL': {
         if (!ghlApiKey) throw Object.assign(new Error('GHL API key not configured'), { code: 'MISSING_CONFIG', status: 400 });
+        const contactId = payload.id || null;
+        if (syncType === 'update_contact' && contactId) {
+          const response = await axios.put(`https://rest.gohighlevel.com/v1/contacts/${contactId}`, payload, {
+            headers: { Authorization: `Bearer ${ghlApiKey}`, 'Content-Type': 'application/json' },
+            timeout: 15000,
+          });
+          return { status: response.status, data: response.data, externalId: contactId };
+        }
+
         const response = await axios.post('https://rest.gohighlevel.com/v1/contacts/', payload, {
           headers: { Authorization: `Bearer ${ghlApiKey}`, 'Content-Type': 'application/json' },
           timeout: 15000,
         });
-        return { status: response.status, data: response.data, externalId: response.data?.contact?.id };
+        return { status: response.status, data: response.data, externalId: response.data?.contact?.id || response.data?.id || null };
       }
 
       case 'webhook': {
