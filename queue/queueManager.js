@@ -59,13 +59,31 @@ class QueueManager {
     });
 
     this.connection.on('error', (err) => {
-      if (err.message?.includes('ECONNREFUSED') || err.message?.includes('connect')) return;
-      console.error(`${LOG_PREFIX} Redis error:`, err.message);
+      try {
+        if (err && (err.message?.includes('ECONNREFUSED') || err.message?.includes('connect'))) {
+          console.error(`${LOG_PREFIX} Redis connection error:`, err.message);
+        } else {
+          console.error(`${LOG_PREFIX} Redis error:`, err && err.message ? err.message : err, err && err.stack ? err.stack : 'no-stack');
+        }
+      } catch (e) {
+        console.error(`${LOG_PREFIX} Redis error handler exception:`, e && e.message ? e.message : e);
+      }
     });
 
-    await this.connection.connect();
-    this.connectionState.status = 'ready';
-    this.connectionState.lastConnected = new Date();
+    this.connection.on('end', () => {
+      this.connectionState.status = 'ended';
+      console.warn(`${LOG_PREFIX} Redis connection ended`);
+    });
+
+    try {
+      await this.connection.connect();
+      this.connectionState.status = 'ready';
+      this.connectionState.lastConnected = new Date();
+    } catch (err) {
+      console.error(`${LOG_PREFIX} Failed to connect to Redis:`, err && err.message ? err.message : err, err && err.stack ? err.stack : 'no-stack');
+      this.connectionState.status = 'error';
+      throw err;
+    }
     this._startHealthCheck();
 
     return this;

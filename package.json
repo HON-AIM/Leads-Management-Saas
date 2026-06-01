@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "node dev.js",
+    "dev:noredis": "node server.js",
+    "redis": ".redis\\redis-server.exe --port 6379"
   },
   "keywords": [
     "leads",

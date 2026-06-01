@@ -29,31 +29,47 @@ const analyticsWrite = [authenticate, tenantIsolation, requirePermission('analyt
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────────
 
+async function getDashboardMetrics(tenantId, period) {
+  const cacheKey = `dashboard_${period}`;
+  const cached = await AnalyticsCache.findOne({ tenantId, type: 'realtime', period: cacheKey });
+  if (cached && Date.now() - cached.computedAt < 60000) {
+    return { ...cached.data, cached: true };
+  }
+
+  const [leadSummary, deliverySummary, buyerSummary] = await Promise.all([
+    leadAnalytics.getLeadSummary(tenantId, period),
+    deliveryAnalytics.getDeliverySummary(tenantId, period),
+    buyerAnalytics.getBuyerSummary(tenantId, period),
+  ]);
+
+  const result = { leadSummary, deliverySummary, buyerSummary };
+
+  await AnalyticsCache.updateOne(
+    { tenantId, type: 'realtime', period: cacheKey },
+    { $set: { data: result, computedAt: new Date(), expiresAt: new Date(Date.now() + 60000) } },
+    { upsert: true }
+  );
+
+  return result;
+}
+
 router.get('/dashboard', ...analyticsAuth, async (req, res) => {
   try {
     const tenantId = req.tenantId;
     const period = req.query.period || '30d';
+    const result = await getDashboardMetrics(tenantId, period);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    log('DASHBOARD_ERROR', { error: err.message });
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
-    const cacheKey = `dashboard_${period}`;
-    const cached = await AnalyticsCache.findOne({ tenantId, type: 'realtime', period: cacheKey });
-    if (cached && Date.now() - cached.computedAt < 60000) {
-      return res.json({ success: true, ...cached.data, cached: true });
-    }
-
-    const [leadSummary, deliverySummary, buyerSummary] = await Promise.all([
-      leadAnalytics.getLeadSummary(tenantId, period),
-      deliveryAnalytics.getDeliverySummary(tenantId, period),
-      buyerAnalytics.getBuyerSummary(tenantId, period),
-    ]);
-
-    const result = { leadSummary, deliverySummary, buyerSummary };
-
-    await AnalyticsCache.updateOne(
-      { tenantId, type: 'realtime', period: cacheKey },
-      { $set: { data: result, computedAt: new Date(), expiresAt: new Date(Date.now() + 60000) } },
-      { upsert: true }
-    );
-
+router.get('/stats', ...analyticsAuth, async (req, res) => {
+  try {
+    const tenantId = req.tenantId;
+    const period = req.query.period || '30d';
+    const result = await getDashboardMetrics(tenantId, period);
     res.json({ success: true, ...result });
   } catch (err) {
     log('DASHBOARD_ERROR', { error: err.message });

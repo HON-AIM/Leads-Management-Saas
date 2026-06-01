@@ -34,6 +34,9 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 
+# Redis binaries (download via npm run redis or use Docker)
+.redis/
+
 # Misc
 *.tgz
 .cache/
