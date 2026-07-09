@@ -23,7 +23,7 @@ const COLUMNS: { key: string; label: string; sortable: boolean }[] = [
   { key: 'campaign', label: 'Campaign', sortable: true },
   { key: 'status', label: 'Status', sortable: true },
   { key: 'deliveryStatus', label: 'Delivery', sortable: true },
-  { key: 'assignedTo', label: 'Assigned To', sortable: false },
+  { key: 'assignedTo', label: 'Assignment', sortable: false },
   { key: 'createdAt', label: 'Created', sortable: true },
 ]
 
@@ -82,6 +82,31 @@ export function LeadTable({
     } else {
       onSort({ key, direction: 'asc' })
     }
+  }
+
+  const getRoutingBadges = (lead: Lead) => {
+    const badges: Array<{ label: string; className: string }> = []
+
+    if (lead.isDuplicate) {
+      badges.push({ label: 'Duplicate', className: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400' })
+    } else if (lead.assignmentStatus === 'assigned' || lead.assignedTo) {
+      badges.push({ label: 'Assigned', className: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400' })
+    } else if (lead.assignmentStatus === 'pending' || lead.status === 'pending') {
+      badges.push({ label: 'Pending', className: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' })
+    } else {
+      badges.push({ label: 'Unassigned', className: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400' })
+    }
+
+    if (lead.routingMethod) {
+      const label = lead.routingMethod.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
+      badges.push({ label, className: 'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-400' })
+    }
+
+    if (lead.ingestionStatus === 'ping_pending') {
+      badges.push({ label: 'Ping Pending', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' })
+    }
+
+    return badges
   }
 
   return (
@@ -152,8 +177,17 @@ export function LeadTable({
                   <td className="px-3 py-3">
                     <Badge className={DELIVERY_STYLES[lead.deliveryStatus] || ''}>{lead.deliveryStatus}</Badge>
                   </td>
-                  <td className="px-3 py-3 text-muted-foreground text-xs">
-                    {lead.assignedTo ? lead.assignedTo.name : '-'}
+                  <td className="px-3 py-3">
+                    <div className="space-y-1.5">
+                      <p className="text-sm font-medium text-foreground">
+                        {lead.assignedTo ? truncate(lead.assignedTo.name, 24) : 'Unassigned'}
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {getRoutingBadges(lead).map((badge) => (
+                          <Badge key={`${lead._id}-${badge.label}`} className={badge.className}>{badge.label}</Badge>
+                        ))}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-3 py-3 text-muted-foreground text-xs whitespace-nowrap">
                     {formatDate(lead.createdAt)}

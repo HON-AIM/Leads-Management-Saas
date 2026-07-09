@@ -10,6 +10,11 @@ export interface Lead {
   status: 'assigned' | 'unassigned' | 'pending' | 'contacted' | 'converted'
   ingestionStatus: 'received' | 'queued' | 'routing' | 'ping_pending' | 'delivered' | 'failed' | 'duplicate'
   deliveryStatus: 'pending' | 'delivering' | 'delivered' | 'failed' | 'skipped'
+  routingMethod?: 'round_robin' | 'weighted' | 'priority' | 'exclusive' | 'ping_post' | 'state_based' | 'fallback' | 'manual_reassign' | 'api'
+  assignmentStatus?: 'pending' | 'assigned' | 'reassigned' | 'unassigned' | 'failed'
+  isDuplicate?: boolean
+  duplicateOf?: { _id: string; name: string; email: string } | null
+  duplicateReason?: string | null
   notes?: string
   tenantId: string
   createdAt: string

@@ -128,6 +128,15 @@ export function DashboardPage() {
     refetchInterval: 60_000,
   })
 
+  const { data: recentLeadsData } = useQuery({
+    queryKey: ['dashboard-recent-leads'],
+    queryFn: async () => {
+      const { data } = await api.get('/leads?limit=8')
+      return data
+    },
+    refetchInterval: 30_000,
+  })
+
   const { data: health } = useQuery<SystemHealth>({
     queryKey: QUERY_KEYS.SYSTEM_HEALTH,
     queryFn: async () => {
@@ -144,6 +153,13 @@ export function DashboardPage() {
   const sourceData = sources || []
   const failedData = failedDeliveries || []
   const campaignData = campaigns || []
+  const routingSnapshot = (recentLeadsData?.leads || []).reduce((acc: any, lead: any) => {
+    if (lead.isDuplicate) acc.duplicates += 1
+    if (lead.ingestionStatus === 'ping_pending') acc.pingPending += 1
+    if (lead.assignmentStatus === 'assigned' || lead.assignedTo) acc.assigned += 1
+    else acc.unassigned += 1
+    return acc
+  }, { assigned: 0, unassigned: 0, duplicates: 0, pingPending: 0 })
 
   return (
     <div className="space-y-6">
@@ -214,6 +230,33 @@ export function DashboardPage() {
           )
         })}
       </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Routing Snapshot</CardTitle>
+            <span className="text-xs text-muted-foreground">Recent lead outcomes at a glance</span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              { label: 'Assigned', value: routingSnapshot.assigned, tone: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400' },
+              { label: 'Unassigned', value: routingSnapshot.unassigned, tone: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400' },
+              { label: 'Duplicates', value: routingSnapshot.duplicates, tone: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400' },
+              { label: 'Ping Pending', value: routingSnapshot.pingPending, tone: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' },
+            ].map((item) => (
+              <div key={item.label} className="rounded-lg border bg-background/60 p-3">
+                <p className="text-xs text-muted-foreground">{item.label}</p>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <span className="text-xl font-semibold">{formatNumber(item.value)}</span>
+                  <span className={`rounded-full px-2 py-1 text-[10px] font-medium ${item.tone}`}>{item.label}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-7">
         <Card className="lg:col-span-4">
