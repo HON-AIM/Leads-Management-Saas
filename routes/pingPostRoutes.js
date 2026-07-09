@@ -15,6 +15,7 @@ const {
 const { resolveCampaign, loadCampaignBuyers, applyCampaignWeights } = require('../services/campaignResolver');
 const { filterEligibleFromList } = require('../services/buyerEligibilityService');
 const { assignLeadToBuyer } = require('../services/routingService');
+const { shouldBlockRouting } = require('../services/deduplicationService');
 const { pushToDeliveryQueue } = require('../queue/deliveryQueue');
 const Campaign = require('../models/Campaign');
 

@@ -32,6 +32,13 @@ function normalizePhoneForDedup(phone) {
   return digits.slice(-10);
 }
 
+function shouldBlockRouting(lead = {}) {
+  if (!lead) return false;
+  if (lead.isDuplicate || lead.ingestionStatus === 'duplicate' || lead.status === 'duplicate') return true;
+  if (lead.assignmentStatus === 'assigned' || lead.assignedBuyerId || lead.assignedTo) return true;
+  return false;
+}
+
 function applyNormalizedFields(data) {
   return {
     ...data,
@@ -195,6 +202,7 @@ module.exports = {
   DEFAULT_DEDUP_WINDOW_HOURS,
   normalizeEmailForDedup,
   normalizePhoneForDedup,
+  shouldBlockRouting,
   applyNormalizedFields,
   resolveDedupWindowHours,
   resolveOriginalLeadId,

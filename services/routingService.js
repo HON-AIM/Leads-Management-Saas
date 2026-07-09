@@ -7,6 +7,7 @@ const { sendLeadAssignedEmail } = require('./emailService');
 const { resolveCampaign, loadCampaignBuyers, applyCampaignWeights } = require('./campaignResolver');
 const { runPingPostAuction } = require('./pingPostService');
 const { recordLeadFinancials } = require('./financialService');
+const { shouldBlockRouting } = require('./deduplicationService');
 const OwnershipService = require('../src/services/ownership/ownershipService');
 
 const LOG_PREFIX = '[RoutingService]';
@@ -61,6 +62,19 @@ async function selectByMode(buyers, mode, tenantId, leadState, leadCountry) {
 async function routeLead(lead, tenantId) {
   const leadState = (lead.normalized_region_code || lead.state || '').toUpperCase();
   const leadCountry = (lead.normalized_country_code || 'US').toUpperCase();
+
+  if (shouldBlockRouting(lead)) {
+    log('ROUTE_BLOCKED', { leadId: lead._id, reason: 'duplicate_or_already_assigned' });
+    return {
+      assignedTo: null,
+      assignedBuyer: null,
+      status: 'unassigned',
+      reason: 'duplicate_or_already_assigned',
+      routingMode: lead.routingMethod || 'round_robin',
+      campaignId: lead.campaignId || null,
+      campaignName: lead.campaign || null,
+    };
+  }
 
   log('ROUTE_START', { leadId: lead._id, state: leadState, source: lead.source, campaign: lead.campaign });
 
@@ -240,6 +254,16 @@ async function getRoutingAudit(tenantId, limit = 50) {
     .lean();
 }
 
+async function getRoutingSummary(tenantId) {
+  const [assigned, duplicates, unassigned] = await Promise.all([
+    Lead.countDocuments({ tenantId, assignmentStatus: 'assigned' }),
+    Lead.countDocuments({ tenantId, isDuplicate: true }),
+    Lead.countDocuments({ tenantId, assignmentStatus: { $in: ['pending', 'unassigned'] } }),
+  ]);
+
+  return { assigned, duplicates, unassigned };
+}
+
 async function getRoutingStateSummary(tenantId) {
   const { listStates } = require('./roundRobinStateManager');
   const states = await listStates(tenantId);
@@ -276,5 +300,6 @@ module.exports = {
   selectWeighted,
   selectPriority,
   getRoutingAudit,
+  getRoutingSummary,
   getRoutingStateSummary,
 };
