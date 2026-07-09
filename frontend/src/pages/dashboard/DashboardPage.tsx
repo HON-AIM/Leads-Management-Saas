@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
-// import {
-//   PieChart, Pie, Cell,
-//   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-//   AreaChart, Area,
-// } from 'recharts'
+import {
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
+} from 'recharts'
 import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { useAuth } from '@/hooks/useAuth'
@@ -13,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { LoadingScreen } from '@/components/feedback/LoadingScreen'
 import { formatNumber, formatDate, cn } from '@/lib/utils'
+import { FinancialOverviewPanel } from '@/components/analytics/FinancialOverviewPanel'
 import type {
   DashboardStats, Activity, BuyerDistribution, SourceAnalytic,
   FailedDelivery, CampaignOverview, SystemHealth, LiveLeadEvent,
@@ -148,6 +147,8 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <FinancialOverviewPanel />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>

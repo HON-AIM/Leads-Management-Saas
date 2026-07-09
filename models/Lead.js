@@ -4,6 +4,9 @@ const leadSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
   phone: String,
+  normalizedEmail: { type: String, lowercase: true },
+  normalizedPhone: String,
+  isDuplicate: { type: Boolean, default: false },
   state: { type: String, required: true },
 
   // ── Location Intelligence Fields ─────────────────────────────────────────
@@ -39,18 +42,32 @@ const leadSchema = new mongoose.Schema({
   // ── Existing Fields ──────────────────────────────────────────────────────
   source: { type: String, default: 'form' },
   campaign: String,
+  campaignId: { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign' },
+
+  // Financial tracking (P&L)
+  revenue: { type: Number, default: 0 },
+  cost: { type: Number, default: 0 },
+  profit: { type: Number, default: 0 },
+  bidAmount: { type: Number, default: 0 },
+  financialStatus: {
+    type: String,
+    enum: ['pending', 'accepted', 'returned'],
+    default: 'pending',
+  },
+  pingSessionId: { type: mongoose.Schema.Types.ObjectId, ref: 'PingSession' },
+
   assignedTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Client'
   },
   status: {
     type: String,
-    enum: ['assigned', 'unassigned', 'pending', 'contacted', 'converted'],
+    enum: ['assigned', 'unassigned', 'pending', 'contacted', 'converted', 'duplicate'],
     default: 'pending'
   },
   ingestionStatus: {
     type: String,
-    enum: ['received', 'queued', 'routing', 'delivered', 'failed', 'duplicate', 'ambiguous'],
+    enum: ['received', 'queued', 'routing', 'ping_pending', 'delivered', 'failed', 'duplicate', 'ambiguous'],
     default: 'received'
   },
   deliveryStatus: {
@@ -84,7 +101,7 @@ const leadSchema = new mongoose.Schema({
   assignedBuyerGhlUserId: String,
   routingMethod: {
     type: String,
-    enum: ['round_robin', 'weighted', 'priority', 'exclusive', 'state_based', 'fallback', 'manual_reassign', 'api'],
+    enum: ['round_robin', 'weighted', 'priority', 'exclusive', 'ping_post', 'state_based', 'fallback', 'manual_reassign', 'api'],
     default: 'round_robin'
   },
   routingPriority: { type: Number, default: 0 },
@@ -159,6 +176,16 @@ leadSchema.index({ tenantId: 1, deliveryStatus: 1 });
 leadSchema.index({ tenantId: 1, 'deliveryMetadata.deliveryStatus': 1 });
 leadSchema.index({ tenantId: 1, email: 1, createdAt: -1 });
 leadSchema.index({ tenantId: 1, phone: 1, createdAt: -1 });
+leadSchema.index({ tenantId: 1, normalizedEmail: 1, createdAt: -1 });
+leadSchema.index({ tenantId: 1, normalizedPhone: 1, createdAt: -1 });
+leadSchema.index({ tenantId: 1, isDuplicate: 1, ingestionStatus: 1 });
+
+leadSchema.pre('save', function setNormalizedDedupFields(next) {
+  const { normalizeEmailForDedup, normalizePhoneForDedup } = require('../services/deduplicationService');
+  if (this.email) this.normalizedEmail = normalizeEmailForDedup(this.email);
+  if (this.phone) this.normalizedPhone = normalizePhoneForDedup(this.phone);
+  next();
+});
 leadSchema.index({ tenantId: 1, campaign: 1 });
 leadSchema.index({ tenantId: 1, normalized_country_code: 1, normalized_region_code: 1 });
 leadSchema.index({ tenantId: 1, location_confidence_score: 1 });

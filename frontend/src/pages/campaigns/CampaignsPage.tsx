@@ -93,7 +93,7 @@ export function CampaignsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Campaigns</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Create and manage lead campaigns with routing and source mapping
+            Configure campaigns, routing modes, and buyer destinations
           </p>
         </div>
         <Button onClick={() => setShowCreate(true)}>

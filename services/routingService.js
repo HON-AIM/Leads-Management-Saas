@@ -1,234 +1,206 @@
 const Client = require('../models/Client');
 const Activity = require('../models/Activity');
-const Lead = require('../models/Lead');
-const { getEligibleBuyers, findFallbackBuyers } = require('./buyerEligibilityService');
+const { filterEligibleFromList, findFallbackBuyer } = require('./buyerEligibilityService');
 const { assignLeadIncrement, incrementBuyerUsage } = require('./capService');
 const { getNextRoundRobinBuyer } = require('./roundRobinStateManager');
 const { sendLeadAssignedEmail } = require('./emailService');
+const { resolveCampaign, loadCampaignBuyers, applyCampaignWeights } = require('./campaignResolver');
+const { runPingPostAuction } = require('./pingPostService');
+const { recordLeadFinancials } = require('./financialService');
 const OwnershipService = require('../src/services/ownership/ownershipService');
-const routingHistoryService = require('../src/services/ownership/routingHistoryService');
 
 const LOG_PREFIX = '[RoutingService]';
 
 function log(step, details = {}) {
-  const ts = new Date().toISOString();
-  console.log(`${LOG_PREFIX} ${ts} | Step: ${step}`, details);
+  console.log(`${LOG_PREFIX} ${new Date().toISOString()} | ${step}`, details);
 }
 
 function selectWeighted(buyers) {
   const totalWeight = buyers.reduce((sum, b) => sum + (b.weight || 1), 0);
   let random = Math.random() * totalWeight;
-
   for (const buyer of buyers) {
     random -= buyer.weight || 1;
     if (random <= 0) return buyer;
   }
-
   return buyers[buyers.length - 1];
 }
 
 function selectPriority(buyers) {
   const sorted = [...buyers].sort((a, b) => (a.priority || 0) - (b.priority || 0));
   const topPriority = sorted[0].priority || 0;
-  const topTier = sorted.filter(b => (b.priority || 0) === topPriority);
+  const topTier = sorted.filter((b) => (b.priority || 0) === topPriority);
   return topTier[Math.floor(Math.random() * topTier.length)];
 }
 
 function selectExclusive(buyers) {
-  const sorted = [...buyers].sort((a, b) => (a.priority || 0) - (b.priority || 0));
-  const exclusives = sorted.filter(b => b.routingMode === 'exclusive');
-  if (exclusives.length === 0) return null;
-  const topTier = [exclusives[0]];
-  for (let i = 1; i < exclusives.length; i++) {
-    if ((exclusives[i].priority || 0) === (exclusives[0].priority || 0)) {
-      topTier.push(exclusives[i]);
-    }
-  }
-  return topTier[Math.floor(Math.random() * topTier.length)];
+  return buyers[0] || null;
 }
 
-function selectByMode(buyers, mode) {
+async function selectByMode(buyers, mode, tenantId, leadState, leadCountry) {
+  if (!buyers.length) return null;
+
   switch (mode) {
-    case 'weighted':
-      return selectWeighted(buyers);
-    case 'priority':
-      return selectPriority(buyers);
     case 'exclusive':
       return selectExclusive(buyers);
+    case 'priority':
+      return selectPriority(buyers);
+    case 'weighted':
+      return selectWeighted(buyers);
+    case 'round_robin':
     default:
-      return null;
+      return getNextRoundRobinBuyer(tenantId, leadState, leadCountry, buyers).catch(() => buyers[0]);
   }
 }
 
-function groupByMode(buyers) {
-  const grouped = { round_robin: [], weighted: [], priority: [], exclusive: [] };
-
-  for (const buyer of buyers) {
-    const mode = buyer.routingMode || 'round_robin';
-    if (grouped[mode]) {
-      grouped[mode].push(buyer);
-    } else {
-      grouped.round_robin.push(buyer);
-    }
-  }
-
-  return grouped;
-}
-
-async function selectRoundRobinBuyer(tenantId, leadState, leadCountry, rrBuyers) {
-  if (!rrBuyers || rrBuyers.length === 0) return null;
-
-  try {
-    const buyer = await getNextRoundRobinBuyer(tenantId, leadState, leadCountry, rrBuyers);
-    return buyer;
-  } catch (err) {
-    log('ROUND_ROBIN_ERROR', { error: err.message, buyerCount: rrBuyers.length });
-    return rrBuyers[0] || null;
-  }
-}
-
+/**
+ * Lead Distro-style routing:
+ * 1. Resolve campaign (by source/name)
+ * 2. Filter buyers (state, caps, schedule)
+ * 3. Apply campaign routing mode to pick one buyer
+ */
 async function routeLead(lead, tenantId) {
-  // Use normalized region code if available, fall back to raw state
-  const leadState = lead.normalized_region_code || lead.state;
-  const leadCountry = lead.normalized_country_code || 'US';
-  const result = {
-    assignedTo: null,
-    assignedBuyer: null,
-    status: 'unassigned',
-    reason: 'unknown',
-    routingMode: null,
-  };
+  const leadState = (lead.normalized_region_code || lead.state || '').toUpperCase();
+  const leadCountry = (lead.normalized_country_code || 'US').toUpperCase();
 
-  log('ROUTE_START', { leadId: lead._id, state: leadState, country: leadCountry, tenantId });
+  log('ROUTE_START', { leadId: lead._id, state: leadState, source: lead.source, campaign: lead.campaign });
 
-  const { eligible, reason: eligibilityReason } = await getEligibleBuyers(tenantId, leadState, leadCountry);
+  const campaign = await resolveCampaign(lead, tenantId);
+  const routingMode = campaign?.routingMode || 'round_robin';
+
+  let candidates = await loadCampaignBuyers(campaign, tenantId);
+  candidates = applyCampaignWeights(candidates, campaign);
+
+  log('CANDIDATES', { count: candidates.length, routingMode, campaign: campaign?.name || 'default' });
+
+  let { eligible, reason, audit } = await filterEligibleFromList(candidates, lead, campaign);
 
   if (eligible.length === 0) {
-    log('NO_ELIGIBLE', { reason: eligibilityReason });
-
-    const fallbackBuyers = await findFallbackBuyers(tenantId, []);
-    if (fallbackBuyers.length > 0) {
-      log('FALLBACK_FOUND', { count: fallbackBuyers.length });
-      const fallbackResult = await selectFallbackBuyer(tenantId, leadState, leadCountry, fallbackBuyers);
-      if (fallbackResult) {
-        return await assignLeadToBuyer(lead, fallbackResult, tenantId, 'fallback');
+    const fallback = await findFallbackBuyer(tenantId, campaign);
+    if (fallback) {
+      const fbCheck = await filterEligibleFromList([fallback], lead, null);
+      if (fbCheck.eligible.length > 0) {
+        eligible = fbCheck.eligible;
+        reason = null;
+        log('FALLBACK_BUYER', { buyer: fallback.name });
       }
     }
-
-    result.reason = eligibilityReason || 'no_eligible_buyers';
-    log('ROUTE_FAIL', { reason: result.reason });
-    return result;
   }
 
-  log('ELIGIBLE_BUYERS', { count: eligible.length });
-
-  const grouped = groupByMode(eligible);
-  log('MODE_GROUPS', {
-    round_robin: grouped.round_robin.length,
-    weighted: grouped.weighted.length,
-    priority: grouped.priority.length,
-    exclusive: grouped.exclusive.length,
-  });
-
-  const exclusiveBuyer = selectByMode(eligible, 'exclusive');
-  if (exclusiveBuyer) {
-    log('EXCLUSIVE_SELECT', { buyer: exclusiveBuyer.name, priority: exclusiveBuyer.priority });
-    return await assignLeadToBuyer(lead, exclusiveBuyer, tenantId, 'exclusive');
+  if (eligible.length === 0) {
+    log('ROUTE_FAIL', { reason, auditCount: audit?.length });
+    return {
+      assignedTo: null,
+      assignedBuyer: null,
+      status: 'unassigned',
+      reason: reason || 'no_eligible_buyers',
+      routingMode,
+      campaignId: campaign?._id || null,
+      campaignName: campaign?.name || null,
+      routingAudit: audit,
+    };
   }
 
-  const priorityBuyer = selectByMode(grouped.priority, 'priority');
-  if (priorityBuyer) {
-    log('PRIORITY_SELECT', { buyer: priorityBuyer.name, priority: priorityBuyer.priority });
-    return await assignLeadToBuyer(lead, priorityBuyer, tenantId, 'priority');
-  }
-
-  if (grouped.weighted.length > 0) {
-    const weightedBuyer = selectByMode(grouped.weighted, 'weighted');
-    log('WEIGHTED_SELECT', { buyer: weightedBuyer.name, weight: weightedBuyer.weight });
-    return await assignLeadToBuyer(lead, weightedBuyer, tenantId, 'weighted');
-  }
-
-  if (grouped.round_robin.length > 0) {
-    const rrBuyer = await selectRoundRobinBuyer(tenantId, leadState, leadCountry, grouped.round_robin);
-    if (rrBuyer) {
-      log('ROUND_ROBIN_SELECT', { buyer: rrBuyer.name });
-      return await assignLeadToBuyer(lead, rrBuyer, tenantId, 'round_robin');
+  if (routingMode === 'ping_post') {
+    const auction = await runPingPostAuction(lead, tenantId, campaign, eligible);
+    if (!auction.success || !auction.buyer) {
+      return {
+        assignedTo: null,
+        assignedBuyer: null,
+        status: 'unassigned',
+        reason: auction.reason || 'ping_post_failed',
+        routingMode,
+        campaignId: campaign?._id || null,
+        campaignName: campaign?.name || null,
+        pingSessionId: auction.pingSessionId || null,
+      };
     }
+    return assignLeadToBuyer(lead, auction.buyer, tenantId, 'ping_post', campaign, {
+      bidAmount: auction.winningBid,
+      pingSessionId: auction.pingSessionId,
+    });
   }
 
-  result.reason = 'routing_failure_all_modes_exhausted';
-  log('ROUTE_FAIL', { reason: result.reason });
-  return result;
+  const buyer = await selectByMode(eligible, routingMode, tenantId, leadState, leadCountry);
+
+  if (!buyer) {
+    return {
+      assignedTo: null,
+      assignedBuyer: null,
+      status: 'unassigned',
+      reason: 'routing_failure',
+      routingMode,
+      campaignId: campaign?._id || null,
+      campaignName: campaign?.name || null,
+    };
+  }
+
+  return assignLeadToBuyer(lead, buyer, tenantId, routingMode, campaign);
 }
 
-async function selectFallbackBuyer(tenantId, leadState, leadCountry, fallbackBuyers) {
-  const grouped = groupByMode(fallbackBuyers);
-
-  if (grouped.exclusive.length > 0) {
-    return selectByMode(fallbackBuyers, 'exclusive');
-  }
-
-  if (grouped.priority.length > 0) {
-    return selectByMode(grouped.priority, 'priority');
-  }
-
-  if (grouped.weighted.length > 0) {
-    return selectByMode(grouped.weighted, 'weighted');
-  }
-
-  if (grouped.round_robin.length > 0) {
-    return selectRoundRobinBuyer(tenantId, leadState, leadCountry, grouped.round_robin);
-  }
-
-  return fallbackBuyers[0] || null;
-}
-
-async function assignLeadToBuyer(lead, buyer, tenantId, routingMode) {
+async function assignLeadToBuyer(lead, buyer, tenantId, routingMode, campaign = null, options = {}) {
+  const { bidAmount = null, pingSessionId = null } = options;
   const result = {
     assignedTo: null,
     assignedBuyer: null,
     status: 'unassigned',
     reason: 'unknown',
     routingMode,
+    campaignId: campaign?._id || null,
+    campaignName: campaign?.name || null,
+    pingSessionId,
+    winningBid: bidAmount,
   };
 
-  const leadCap = buyer.leadCap || 0;
-
-  const updatedClient = await assignLeadIncrement(buyer._id, leadCap);
-
+  const updatedClient = await assignLeadIncrement(buyer._id, buyer.leadCap || 0);
   if (!updatedClient) {
-    log('RACE_CONDITION', { buyerId: buyer._id, buyerName: buyer.name, leadCap });
-    result.reason = 'race_condition';
+    result.reason = 'buyer_at_capacity';
     return result;
   }
 
   try {
     await incrementBuyerUsage(buyer._id, tenantId);
   } catch (err) {
-    log('CAP_INCREMENT_WARN', { buyerId: buyer._id, error: err.message });
+    log('CAP_INCREMENT_WARN', { error: err.message });
   }
 
   result.assignedTo = buyer._id;
-  result.assignedBuyer = { id: buyer._id, name: buyer.name, email: buyer.email, state: buyer.state, country: buyer.country };
+  result.assignedBuyer = {
+    id: buyer._id,
+    name: buyer.name,
+    email: buyer.email,
+    state: buyer.state,
+    country: buyer.country,
+  };
   result.status = 'assigned';
   result.reason = 'assigned';
+
+  if (lead._id && lead._id !== 'temp') {
+    try {
+      const financials = await recordLeadFinancials(lead._id, { buyer, campaign, bidAmount });
+      result.financials = financials;
+      if (pingSessionId) {
+        await require('../models/Lead').findByIdAndUpdate(lead._id, { pingSessionId });
+      }
+    } catch (err) {
+      log('FINANCIAL_WARN', { error: err.message });
+    }
+  }
+
+  const campaignLabel = campaign?.name ? ` via ${campaign.name}` : '';
 
   try {
     await Activity.create({
       type: 'lead_assigned',
-      message: `Lead ${lead.name} assigned to ${buyer.name} (${routingMode})`,
+      message: `Lead ${lead.name} → ${buyer.name} (${routingMode.replace(/_/g, ' ')})${campaignLabel}`,
       clientId: buyer._id,
       leadId: lead._id,
       tenantId,
       metadata: {
         routingMode,
-        leadEmail: lead.email,
+        campaignId: campaign?._id,
+        campaignName: campaign?.name,
         leadState: lead.state,
-        leadCountry: lead.normalized_country_code || 'US',
         leadSource: lead.source,
-        buyerState: buyer.state,
-        buyerCountry: buyer.country || 'US',
-        buyerEmail: buyer.email,
       },
     });
   } catch (err) {
@@ -242,73 +214,58 @@ async function assignLeadToBuyer(lead, buyer, tenantId, routingMode) {
       phone: lead.phone,
       state: lead.state,
       createdAt: lead.createdAt,
-    }).catch(err => log('EMAIL_WARN', { error: err.message }));
+    }).catch((err) => log('EMAIL_WARN', { error: err.message }));
   }
 
   OwnershipService.assignLeadOwner(lead._id, buyer, {
     tenantId,
     routingMethod: routingMode,
     sourcePlatform: lead.source || 'form',
-    campaignId: lead.campaign,
-    campaignName: lead.campaign,
+    campaignId: campaign?._id,
+    campaignName: campaign?.name,
     performedBy: 'system',
-    notes: `Assigned via ${routingMode} routing`,
-  }).catch(err => log('OWNERSHIP_WARN', { error: err.message, leadId: lead._id }));
+    notes: `Campaign routing (${routingMode})`,
+  }).catch((err) => log('OWNERSHIP_WARN', { error: err.message }));
 
-  log('ASSIGNED', { buyer: buyer.name, mode: routingMode, leadId: lead._id, state: leadStateForLog(buyer, lead) });
+  log('ASSIGNED', { buyer: buyer.name, mode: routingMode, campaign: campaign?.name });
   return result;
 }
 
-function leadStateForLog(buyer, lead) {
-  if (buyer.allowedStates?.length > 0) {
-    return `${lead.state}→allowed(${buyer.allowedStates.join(',')})`;
-  }
-  return `${lead.state}→${buyer.state}`;
-}
-
 async function getRoutingAudit(tenantId, limit = 50) {
-  return Activity.find({
-    tenantId,
-    type: 'lead_assigned',
-  })
+  return Activity.find({ tenantId, type: 'lead_assigned' })
     .sort({ createdAt: -1 })
     .limit(limit)
-    .populate('clientId', 'name email state routingMode')
-    .populate('leadId', 'name email state source')
+    .populate('clientId', 'name email state')
+    .populate('leadId', 'name email state source campaign')
     .lean();
 }
 
 async function getRoutingStateSummary(tenantId) {
   const { listStates } = require('./roundRobinStateManager');
   const states = await listStates(tenantId);
-
   const buyers = await Client.find({ tenantId, status: { $ne: 'inactive' } })
-    .select('name state routingMode weight priority allowedStates status leadsReceived leadCap isPaused')
+    .select('name state allowedStates status leadsReceived leadCap isPaused priority weight')
     .sort({ name: 1 })
     .lean();
 
   return {
-    states: states.map(s => ({
+    states: states.map((s) => ({
       country: s.country,
       state: s.state,
       lastIndex: s.lastIndex,
-      version: s.version,
       updatedAt: s.updatedAt,
     })),
-    buyers: buyers.map(b => ({
+    buyers: buyers.map((b) => ({
       id: b._id,
       name: b.name,
-      country: b.country,
       state: b.state,
-      routingMode: b.routingMode,
-      weight: b.weight,
-      priority: b.priority,
       allowedStates: b.allowedStates,
-      allowedCountries: b.allowedCountries,
       status: b.status,
       isPaused: b.isPaused,
       leadsReceived: b.leadsReceived,
       leadCap: b.leadCap,
+      priority: b.priority,
+      weight: b.weight,
     })),
   };
 }
@@ -318,9 +275,6 @@ module.exports = {
   assignLeadToBuyer,
   selectWeighted,
   selectPriority,
-  selectExclusive,
-  selectByMode,
-  groupByMode,
   getRoutingAudit,
   getRoutingStateSummary,
 };

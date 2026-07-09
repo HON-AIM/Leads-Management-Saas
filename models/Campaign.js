@@ -13,9 +13,27 @@ const campaignSchema = new mongoose.Schema({
 
   routingMode: {
     type: String,
-    enum: ['round_robin', 'weighted', 'exclusive', 'state_based'],
+    enum: ['round_robin', 'weighted', 'priority', 'exclusive', 'ping_post'],
     default: 'round_robin'
   },
+
+  costPerLead: { type: Number, default: 0, min: 0 },
+  pingTimeoutMs: { type: Number, default: 3000, min: 500, max: 30000 },
+
+  dedupEnabled: { type: Boolean, default: true },
+  dedupWindowHours: { type: Number, default: 720, min: 1, max: 8760 },
+
+  fallbackBuyerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client' },
+
+  inboundFilters: [{
+    field: String,
+    operator: {
+      type: String,
+      enum: ['eq', 'ne', 'in', 'not_in', 'contains', 'gte', 'lte', 'exists', 'not_exists'],
+      default: 'eq',
+    },
+    value: mongoose.Schema.Types.Mixed,
+  }],
 
   sources: [{ type: String, trim: true, lowercase: true }],
 

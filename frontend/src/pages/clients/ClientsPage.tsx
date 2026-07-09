@@ -73,7 +73,7 @@ export function ClientsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Buyers</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage buyer configurations, caps, and routing
+            Manage buyer destinations, caps, and delivery
           </p>
         </div>
         <Button onClick={() => setShowCreate(true)}>
@@ -164,7 +164,7 @@ export function ClientsPage() {
                 {[
                   { key: 'overview', label: 'Overview' },
                   { key: 'caps', label: 'Caps' },
-                  { key: 'routing', label: 'Routing' },
+                  { key: 'filters', label: 'Routing Rules' },
                   { key: 'webhook', label: 'Webhook' },
                 ].map((tab) => (
                   <button
@@ -186,7 +186,7 @@ export function ClientsPage() {
                   <PerformanceMetrics stats={computeStats(selectedClient)} />
                 )}
                 {detailTab === 'caps' && <CapManagement client={selectedClient} />}
-                {detailTab === 'routing' && <RoutingSettings client={selectedClient} />}
+                {detailTab === 'filters' && <RoutingSettings client={selectedClient} />}
                 {detailTab === 'webhook' && <WebhookTester client={selectedClient} />}
               </div>
             </div>

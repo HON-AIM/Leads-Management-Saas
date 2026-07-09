@@ -71,7 +71,7 @@ export function BuyersTable({ clients, isLoading, stateFilter, onStateFilterChan
               <th className="text-left font-medium px-4 py-3">Name</th>
               <th className="text-left font-medium px-4 py-3">State</th>
               <th className="text-left font-medium px-4 py-3">Status</th>
-              <th className="text-left font-medium px-4 py-3">Routing</th>
+              <th className="text-left font-medium px-4 py-3">Priority</th>
               <th className="text-left font-medium px-4 py-3">Cap Usage</th>
               <th className="text-left font-medium px-4 py-3">Daily</th>
               <th className="text-left font-medium px-4 py-3">Monthly</th>
@@ -118,7 +118,7 @@ export function BuyersTable({ clients, isLoading, stateFilter, onStateFilterChan
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-xs capitalize">{client.routingMode.replace(/_/g, ' ')}</span>
+                      <span className="text-xs text-muted-foreground">P{client.priority ?? 0}</span>
                     </td>
                     <td className="px-4 py-3 min-w-[120px]">
                       <div className="flex items-center gap-2">

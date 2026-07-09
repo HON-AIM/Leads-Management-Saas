@@ -57,6 +57,9 @@ async function registerIngestionQueue() {
         lead.assignedTo = routeResult.assignedTo;
         lead.status = 'assigned';
         lead.ingestionStatus = 'delivered';
+        if (routeResult.campaignName && !lead.campaign) {
+          lead.campaign = routeResult.campaignName;
+        }
       } else {
         lead.status = 'unassigned';
         lead.ingestionStatus = 'delivered';

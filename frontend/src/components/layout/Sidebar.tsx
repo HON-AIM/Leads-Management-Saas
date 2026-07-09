@@ -109,16 +109,9 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     { icon: 'LayoutDashboard', label: 'Dashboard', href: '/dashboard' },
     { icon: 'BarChart3', label: 'Analytics', href: '/analytics' },
     { icon: 'Users', label: 'Leads', href: '/leads' },
-    { icon: 'UserPlus', label: 'Add Lead', href: '/leads/add' },
     { icon: 'Campaign', label: 'Campaigns', href: '/campaigns' },
     { icon: 'Building2', label: 'Buyers', href: '/clients' },
     { icon: 'Delivery', label: 'Delivery', href: '/delivery' },
-    { icon: 'MapPin', label: 'Locations', href: '/locations' },
-    { icon: 'Shield', label: 'Ownership', href: '/ownership' },
-    { icon: 'History', label: 'History', href: '/ownership/history' },
-    { icon: 'RefreshCw', label: 'Sync Monitor', href: '/sync/logs' },
-    { icon: 'FileText', label: 'Audit', href: '/audit' },
-    { icon: 'Shuffle', label: 'Reassign', href: '/reassignments' },
     { icon: 'Settings', label: 'Settings', href: '/settings' },
   ]
 
@@ -142,7 +135,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                 LD
               </div>
               {!collapsed && (
-                <span className="text-sm font-semibold">LeadDistribute</span>
+                <span className="text-sm font-semibold">Lead Distro</span>
               )}
             </div>
           ) : (
@@ -160,7 +153,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
 
         <div className={cn('border-t p-3', collapsed && !isMobile ? 'text-center' : '')}>
           <p className={cn('text-xs text-sidebar-muted', collapsed && !isMobile ? 'hidden' : '')}>
-            {!collapsed && 'Lead Distribution SaaS'}
+            {!collapsed && 'Lead Distribution'}
           </p>
           <p className={cn('text-[10px] text-sidebar-muted/60', collapsed && !isMobile ? 'hidden' : '')}>
             v2.0.0

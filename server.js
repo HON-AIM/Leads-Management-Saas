@@ -48,6 +48,8 @@ const {
 const { resolveTenant, checkTenantSubscription, optionalTenant } = require('./middleware/tenant');
 const { generalLimiter, authLimiter, loginLimiter, passwordResetLimiter, apiLimiter } = require('./middleware/rateLimiter');
 
+const pingPostRoutes = require('./routes/pingPostRoutes');
+const routingRulesRoutes = require('./routes/routingRulesRoutes');
 const locationRoutes = require('./routes/locationRoutes');
 const ownershipRoutes = require('./routes/ownershipRoutes');
 
@@ -352,6 +354,8 @@ app.get('/api/stats', authenticate, tenantIsolation, requirePermission('analytic
 });
 
 app.use('/api/analytics', analyticsRouter);
+app.use('/api', pingPostRoutes);
+app.use('/api', routingRulesRoutes);
 app.use('/api/leads', leadRoutes);
 app.use('/api/ai', aiRoutes);
 
@@ -566,18 +570,38 @@ app.get('/api/clients', authenticate, tenantIsolation, requirePermission('client
 
 app.post('/api/clients', authenticate, tenantIsolation, requirePermission('clients', 'create'), async (req, res) => {
   try {
-    const { name, email, state, country, leadCap, status = 'active', notes } = req.body;
+    const {
+      name, email, state, country = 'US', leadCap, dailyCap, monthlyCap,
+      priority, allowedStates, pricePerLead, minBid, delivery, schedule, phone, address,
+      status = 'active',
+    } = req.body;
     const cap = parseInt(leadCap) || 0;
     if (cap <= 0) return res.status(400).json({ success: false, error: 'Lead cap must be a positive number' });
 
     const client = await Client.create({
-      name, email: email || '', state: (state || '').toUpperCase(),
-      country: country || 'US', leadCap: cap, leadsReceived: 0,
-      status: status || 'active', notes: notes || '', tenantId: req.tenantId, createdBy: req.user._id
+      name,
+      email: email || '',
+      state: (state || '').toUpperCase(),
+      country: country || 'US',
+      leadCap: cap,
+      dailyCap: dailyCap || 0,
+      monthlyCap: monthlyCap || 0,
+      priority: priority || 0,
+      allowedStates: allowedStates || [],
+      pricePerLead: pricePerLead || 0,
+      minBid: minBid || 0,
+      delivery: delivery || { provider: 'none', config: {} },
+      schedule: schedule || { enabled: false, timezone: 'America/New_York', days: [], startTime: '09:00', endTime: '17:00' },
+      phone,
+      address,
+      leadsReceived: 0,
+      status: status || 'active',
+      tenantId: req.tenantId,
+      createdBy: req.user._id,
     });
 
-    await Activity.create({ type: 'client_created', message: `New client: ${client.name} (${client.country}-${client.state})`, clientId: client._id, tenantId: req.tenantId });
-    res.json(client);
+    await Activity.create({ type: 'client_created', message: `New buyer: ${client.name} (${client.country}-${client.state})`, clientId: client._id, tenantId: req.tenantId });
+    res.json({ success: true, client });
   } catch (err) {
     console.error('❌ ADD_CLIENT ERROR:', err);
     res.status(500).json({ success: false, error: err.message });

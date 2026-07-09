@@ -12,6 +12,7 @@ const buyerAnalytics = require('./buyerAnalyticsService');
 const trendAnalytics = require('./trendAnalyticsService');
 const aggregationService = require('./aggregationService');
 const reportingService = require('./reportingService');
+const financialAnalytics = require('./financialAnalyticsService');
 
 const { authenticate, requirePermission, tenantIsolation } = require('../../middleware/auth');
 
@@ -505,6 +506,50 @@ router.get('/reports/export', ...analyticsAuth, async (req, res) => {
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
     res.send(result.csv);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── Financial P&L ───────────────────────────────────────────────────────────────
+
+router.get('/financial/overview', ...analyticsAuth, async (req, res) => {
+  try {
+    const result = await financialAnalytics.getFinancialOverview(req.tenantId, req.query.period || '7d');
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.get('/financial/daily', ...analyticsAuth, async (req, res) => {
+  try {
+    const daily = await financialAnalytics.getDailyPnL(req.tenantId, req.query.period || '7d');
+    res.json({ success: true, daily });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.get('/financial/report', ...analyticsAuth, async (req, res) => {
+  try {
+    const report = await financialAnalytics.getFinancialReport(
+      req.tenantId,
+      req.query.period || '30d',
+      req.query.granularity || 'weekly'
+    );
+    res.json({ success: true, report });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/financial/return/:leadId', ...analyticsWrite, async (req, res) => {
+  try {
+    const { markLeadReturned } = require('../financialService');
+    const lead = await markLeadReturned(req.params.leadId, req.tenantId);
+    if (!lead) return res.status(404).json({ success: false, error: 'Lead not found' });
+    res.json({ success: true, lead: { _id: lead._id, financialStatus: lead.financialStatus, profit: lead.profit } });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

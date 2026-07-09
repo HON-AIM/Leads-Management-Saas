@@ -1,74 +1,12 @@
 const Client = require('../models/Client');
 const { filterByCaps } = require('./capService');
+const { evaluateBuyerRules } = require('./buyerRuleEngine');
+const { evaluateCustomFilter } = require('./buyerRuleEngine');
 
 const LOG_PREFIX = '[BuyerEligibility]';
 
 function log(step, details = {}) {
-  const ts = new Date().toISOString();
-  console.log(`${LOG_PREFIX} ${ts} | Step: ${step}`, details);
-}
-
-async function loadActiveBuyers(tenantId) {
-  const buyers = await Client.find({
-    tenantId,
-    status: { $ne: 'inactive' },
-    isPaused: false,
-  }).sort({ priority: 1, name: 1 }).lean();
-
-  return buyers;
-}
-
-function filterByCountryEligibility(buyers, leadCountry) {
-  if (!leadCountry) return buyers;
-  const countryUpper = leadCountry.toUpperCase();
-  return buyers.filter(b => {
-    const buyerCountries = (b.allowedCountries && b.allowedCountries.length > 0)
-      ? b.allowedCountries.map(c => c.toUpperCase())
-      : [(b.country || 'US').toUpperCase()];
-    return buyerCountries.includes(countryUpper);
-  });
-}
-
-function filterByStateEligibility(buyers, leadState) {
-  if (!leadState) return buyers;
-  const stateUpper = leadState.toUpperCase();
-  return buyers.filter(b => {
-    const buyerRegions = b.allowed_regions && b.allowed_regions.length > 0
-      ? b.allowed_regions
-      : (b.allowedStates && b.allowedStates.length > 0 ? b.allowedStates : []);
-    if (buyerRegions.length > 0) {
-      return buyerRegions.map(r => r.toUpperCase()).includes(stateUpper);
-    }
-    return (b.state || '').toUpperCase() === stateUpper;
-  });
-}
-
-function getBuyerTime(now, timezone) {
-  try {
-    const formatter = new Intl.DateTimeFormat('en-CA', {
-      timeZone: timezone,
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-      weekday: 'short',
-    });
-    const parts = formatter.formatToParts(now);
-    const hour = parseInt(parts.find(p => p.type === 'hour')?.value || '0', 10);
-    const minute = parseInt(parts.find(p => p.type === 'minute')?.value || '0', 10);
-    const weekday = parts.find(p => p.type === 'weekday')?.value || '';
-
-    const dayMap = { mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6, sun: 0 };
-    const dayOfWeek = dayMap[weekday.toLowerCase().slice(0, 3)] ?? now.getDay();
-    const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-
-    return { dayOfWeek, timeStr };
-  } catch {
-    const d = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
-    return {
-      dayOfWeek: d.getDay(),
-      timeStr: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
-    };
-  }
+  console.log(`${LOG_PREFIX} ${new Date().toISOString()} | ${step}`, details);
 }
 
 function filterBySchedule(buyers, now = new Date()) {
@@ -81,19 +19,35 @@ function filterBySchedule(buyers, now = new Date()) {
     }
 
     const schedule = buyer.schedule;
-    const buyerTime = getBuyerTime(now, schedule.timezone || 'America/New_York');
-
-    if (schedule.days && schedule.days.length > 0 && !schedule.days.includes(buyerTime.dayOfWeek)) {
-      continue;
+    let buyerTime;
+    try {
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: schedule.timezone || 'America/New_York',
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        weekday: 'short',
+      });
+      const parts = formatter.formatToParts(now);
+      const hour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0', 10);
+      const minute = parseInt(parts.find((p) => p.type === 'minute')?.value || '0', 10);
+      const weekday = parts.find((p) => p.type === 'weekday')?.value || '';
+      const dayMap = { mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6, sun: 0 };
+      buyerTime = {
+        dayOfWeek: dayMap[weekday.toLowerCase().slice(0, 3)] ?? now.getDay(),
+        timeStr: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+      };
+    } catch {
+      const d = new Date(now.toLocaleString('en-US', { timeZone: schedule.timezone || 'America/New_York' }));
+      buyerTime = {
+        dayOfWeek: d.getDay(),
+        timeStr: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
+      };
     }
 
-    if (schedule.startTime && buyerTime.timeStr < schedule.startTime) {
-      continue;
-    }
-
-    if (schedule.endTime && buyerTime.timeStr > schedule.endTime) {
-      continue;
-    }
+    if (schedule.days?.length && !schedule.days.includes(buyerTime.dayOfWeek)) continue;
+    if (schedule.startTime && buyerTime.timeStr < schedule.startTime) continue;
+    if (schedule.endTime && buyerTime.timeStr > schedule.endTime) continue;
 
     results.push(buyer);
   }
@@ -101,87 +55,107 @@ function filterBySchedule(buyers, now = new Date()) {
   return results;
 }
 
-async function getEligibleBuyers(tenantId, leadState, leadCountry) {
-  log('LOAD_ACTIVE', { tenantId });
-  const activeBuyers = await loadActiveBuyers(tenantId);
-  log('ACTIVE_COUNT', { count: activeBuyers.length });
-
-  if (activeBuyers.length === 0) {
-    return { eligible: [], reason: 'no_active_buyers' };
+function passesCampaignInboundFilters(campaign, lead) {
+  const filters = campaign?.inboundFilters || [];
+  for (const filter of filters) {
+    if (!evaluateCustomFilter(lead, filter)) {
+      return { pass: false, reason: `campaign_filter_failed_${filter.field}` };
+    }
   }
-
-  log('COUNTRY_FILTER', { leadCountry: leadCountry || 'US' });
-  const countryBuyers = filterByCountryEligibility(activeBuyers, leadCountry);
-  log('COUNTRY_COUNT', { count: countryBuyers.length });
-
-  if (countryBuyers.length === 0) {
-    return { eligible: [], reason: `no_buyers_for_country_${(leadCountry || 'US').toUpperCase()}` };
-  }
-
-  log('STATE_FILTER', { leadState });
-  const stateBuyers = filterByStateEligibility(countryBuyers, leadState);
-  log('STATE_COUNT', { count: stateBuyers.length, state: leadState });
-
-  if (stateBuyers.length === 0) {
-    return { eligible: [], reason: `no_buyers_for_state_${leadState}` };
-  }
-
-  log('CAP_FILTER', {});
-  const capBuyers = await filterByCaps(stateBuyers);
-  log('CAP_COUNT', { count: capBuyers.length });
-
-  if (capBuyers.length === 0) {
-    return { eligible: [], reason: 'all_buyers_at_capacity' };
-  }
-
-  log('SCHEDULE_FILTER', {});
-  const scheduledBuyers = filterBySchedule(capBuyers);
-  log('SCHEDULE_COUNT', { count: scheduledBuyers.length });
-
-  if (scheduledBuyers.length === 0) {
-    return { eligible: [], reason: 'no_buyers_available_on_schedule' };
-  }
-
-  log('ELIGIBLE', { count: scheduledBuyers.length });
-  return { eligible: scheduledBuyers, reason: null };
+  return { pass: true };
 }
 
-async function findFallbackBuyers(tenantId, excludedBuyerIds = []) {
-  log('FALLBACK_SEARCH', { tenantId, excludedCount: excludedBuyerIds.length });
+/**
+ * Lead Distro evaluation order:
+ * 1. Campaign inbound filters
+ * 2. Geo + quality rules per buyer (buyerRuleEngine)
+ * 3. Caps
+ * 4. Schedule
+ */
+async function filterEligibleFromList(buyers, lead, campaign = null) {
+  if (!buyers.length) {
+    return { eligible: [], reason: 'no_buyers_in_campaign', audit: [] };
+  }
 
-  const query = {
+  if (campaign) {
+    const inbound = passesCampaignInboundFilters(campaign, lead);
+    if (!inbound.pass) {
+      return { eligible: [], reason: inbound.reason, audit: [] };
+    }
+  }
+
+  const audit = [];
+  const afterRules = [];
+
+  for (const buyer of buyers) {
+    const result = evaluateBuyerRules(buyer, lead);
+    audit.push({
+      buyerId: buyer._id,
+      buyerName: buyer.name,
+      eligible: result.eligible,
+      stage: result.stage,
+      reason: result.reason,
+    });
+    if (result.eligible) afterRules.push(buyer);
+  }
+
+  if (afterRules.length === 0) {
+    return { eligible: [], reason: 'no_buyers_match_rules', audit };
+  }
+
+  const capBuyers = await filterByCaps(afterRules);
+  if (capBuyers.length === 0) {
+    return { eligible: [], reason: 'all_buyers_at_capacity', audit };
+  }
+
+  const scheduledBuyers = filterBySchedule(capBuyers);
+  if (scheduledBuyers.length === 0) {
+    return { eligible: [], reason: 'no_buyers_available_on_schedule', audit };
+  }
+
+  return { eligible: scheduledBuyers, reason: null, audit };
+}
+
+async function loadActiveBuyers(tenantId) {
+  return Client.find({
     tenantId,
     status: { $ne: 'inactive' },
     isPaused: false,
-  };
-
-  if (excludedBuyerIds.length > 0) {
-    query._id = { $nin: excludedBuyerIds };
-  }
-
-  const fallbackBuyers = await Client.find({
-    ...query,
-    fallbackGroup: { $ne: null },
   }).sort({ priority: 1, name: 1 }).lean();
+}
 
-  if (fallbackBuyers.length > 0) {
-    log('FALLBACK_GROUP_FOUND', { count: fallbackBuyers.length });
-    return fallbackBuyers;
+async function getEligibleBuyers(tenantId, lead, campaign = null) {
+  const activeBuyers = await loadActiveBuyers(tenantId);
+  if (activeBuyers.length === 0) {
+    return { eligible: [], reason: 'no_active_buyers', audit: [] };
+  }
+  return filterEligibleFromList(activeBuyers, lead, campaign);
+}
+
+async function findFallbackBuyer(tenantId, campaign) {
+  if (campaign?.fallbackBuyerId) {
+    const fb = await Client.findOne({
+      _id: campaign.fallbackBuyerId,
+      tenantId,
+      status: { $ne: 'inactive' },
+      isPaused: false,
+    }).lean();
+    if (fb) return fb;
   }
 
-  const anyActive = await Client.find(query)
-    .sort({ priority: 1, name: 1 })
-    .limit(5)
-    .lean();
-
-  log('FALLBACK_ANY_ACTIVE', { count: anyActive.length });
-  return anyActive;
+  return Client.findOne({
+    tenantId,
+    status: { $ne: 'inactive' },
+    isPaused: false,
+    isFallbackBuyer: true,
+  }).lean();
 }
 
 module.exports = {
   loadActiveBuyers,
-  filterByStateEligibility,
   filterBySchedule,
+  filterEligibleFromList,
   getEligibleBuyers,
-  findFallbackBuyers,
+  findFallbackBuyer,
+  passesCampaignInboundFilters,
 };

@@ -1,5 +1,14 @@
 const Lead = require('../models/Lead');
-const { normalizeLocation } = require('../src/services/location/locationIntelligenceService');
+const Activity = require('../models/Activity');
+const { normalizeState: normalizeUsState } = require('./stateNormalizer');
+const {
+  findDuplicate,
+  buildDuplicateLeadData,
+  applyNormalizedFields,
+  resolveDedupWindowHours,
+  normalizeEmailForDedup,
+  normalizePhoneForDedup,
+} = require('./deduplicationService');
 
 const LOG_PREFIX = '[IngestionService]';
 
@@ -58,8 +67,7 @@ function normalizeFieldNames(body) {
 }
 
 function normalizeState(state) {
-  if (!state) return null;
-  return state.trim();
+  return normalizeUsState(state);
 }
 
 function sanitizeInputs(fields) {
@@ -70,7 +78,7 @@ function sanitizeInputs(fields) {
   }
 
   if (fields.email) {
-    sanitized.email = fields.email.trim().toLowerCase();
+    sanitized.email = normalizeEmailForDedup(fields.email) || fields.email.trim().toLowerCase();
   }
 
   if (fields.phone) {
@@ -80,26 +88,14 @@ function sanitizeInputs(fields) {
   return sanitized;
 }
 
-async function checkDuplicate(email, phone, tenantId, windowHours = 24) {
-  if (!email && !phone) return null;
-
-  const since = new Date(Date.now() - windowHours * 60 * 60 * 1000);
-  const conditions = [];
-
-  if (email) conditions.push({ email, tenantId, createdAt: { $gte: since } });
-  if (phone) conditions.push({ phone, tenantId, createdAt: { $gte: since } });
-
-  if (conditions.length === 0) return null;
-
-  const existing = await Lead.findOne({
-    $or: conditions,
-    ingestionStatus: { $ne: 'failed' },
-  }).select('_id email phone createdAt ingestionStatus').sort({ createdAt: -1 }).lean();
-
-  if (!existing) return null;
-
-  const reason = existing.email === email ? 'email' : 'phone';
-  return { duplicateOf: existing._id, reason };
+async function checkDuplicate(email, phone, tenantId, windowHours = 720, options = {}) {
+  return findDuplicate({
+    email,
+    phone,
+    tenantId,
+    windowHours,
+    excludeLeadId: options.excludeLeadId,
+  });
 }
 
 function buildTrackingMetadata(body) {
@@ -127,13 +123,17 @@ function buildTrackingMetadata(body) {
 async function createLeadRecord({
   name, email, phone, state, source, campaign, notes,
   rawPayload, trackingMetadata, enrichedMetadata, metadata,
-  tenantId, geoResult,
+  tenantId, country, city, postal_code,
 }) {
   const leadData = {
     name: name || 'Unknown',
     email: email || 'unknown@lead.local',
     phone: phone || undefined,
     state: state || 'UNKNOWN',
+    normalized_country_code: country || 'US',
+    normalized_region_code: state || undefined,
+    normalized_city: city,
+    postal_code,
     source: source || 'api',
     campaign: campaign || undefined,
     notes: notes || undefined,
@@ -146,42 +146,6 @@ async function createLeadRecord({
     status: 'pending',
     deliveryStatus: 'pending',
   };
-
-  if (geoResult) {
-    leadData.raw_country = geoResult.raw_country;
-    leadData.raw_state = geoResult.raw_state;
-    leadData.raw_city = geoResult.raw_city;
-    leadData.raw_postal = geoResult.raw_postal;
-    leadData.normalized_country_code = geoResult.normalized_country_code;
-    leadData.normalized_region_code = geoResult.normalized_region_code;
-    leadData.normalized_country_name = geoResult.normalized_country_name;
-    leadData.normalized_region_name = geoResult.normalized_region_name;
-    leadData.normalized_city = geoResult.normalized_city;
-    leadData.postal_code = geoResult.postal_code;
-    leadData.phone_country_code = geoResult.phone_country_code;
-    leadData.country_ambiguous = geoResult.country_ambiguous || false;
-    leadData.possible_countries = geoResult.possible_countries || [];
-    leadData.location_confidence_score = geoResult.confidence_score;
-    leadData.location_confidence_level = geoResult.confidence_level;
-    leadData.location_routable = geoResult.routable;
-    leadData.location_detection_methods = geoResult.detection_methods;
-    leadData.location_enriched_at = geoResult.enriched_at;
-    leadData.location_pipeline_duration_ms = geoResult.pipeline_duration_ms;
-
-    if (geoResult.territory_match) {
-      leadData.territory_match_id = geoResult.territory_match.territory_id;
-      leadData.territory_match_name = geoResult.territory_match.territory_name;
-      leadData.territory_match_score = geoResult.territory_match.match_score;
-    }
-
-    if (geoResult.normalized_region_code) {
-      leadData.state = geoResult.normalized_region_code;
-    }
-
-    if (!geoResult.routable) {
-      leadData.ingestionStatus = 'ambiguous';
-    }
-  }
 
   return Lead.create(leadData);
 }
@@ -208,22 +172,9 @@ async function ingestLead(body, tenantId, options = {}) {
     return { success: false, statusCode: 400, error: 'Name and at least one contact method (email or phone) required' };
   }
 
-  // ── Geo Intelligence: Normalize location via engine ──────────────────────
-  const geoPayload = { country, state, city, phone, postal_code, address };
-  let geoResult = null;
-  try {
-    geoResult = await normalizeLocation(geoPayload, { tenantId });
-    ingestLog('GEO_RESULT', {
-      country: geoResult.normalized_country_code,
-      region: geoResult.normalized_region_code,
-      confidence: geoResult.confidence_score,
-      methods: geoResult.detection_methods,
-    });
-  } catch (geoErr) {
-    ingestLog('GEO_ERROR', { error: geoErr.message });
-  }
-
-  const resolvedState = geoResult?.normalized_region_code || state || 'UNKNOWN';
+  // Simple state normalization (Lead Distro-style — no heavy geo pipeline)
+  const resolvedState = normalizeUsState(state) || (state ? String(state).trim().toUpperCase().slice(0, 2) : 'UNKNOWN');
+  const resolvedCountry = (country || 'US').toUpperCase().slice(0, 2);
 
   const duplicate = await checkDuplicate(email, phone, tenantId, dedupWindowHours);
   if (duplicate) {
@@ -256,12 +207,10 @@ async function ingestLead(body, tenantId, options = {}) {
   const trackingMetadata = buildTrackingMetadata(body);
   const enrichedMetadata = {
     resolvedState,
+    resolvedCountry,
     sanitizedName: name,
     sanitizedEmail: email,
     sanitizedPhone: phone,
-    geoEnriched: !!geoResult,
-    geoConfidence: geoResult?.confidence_score || 0,
-    geoMethods: geoResult?.detection_methods || [],
     receivedAt: new Date().toISOString(),
   };
 
@@ -278,10 +227,25 @@ async function ingestLead(body, tenantId, options = {}) {
     enrichedMetadata,
     metadata: metadata || {},
     tenantId,
-    geoResult,
+    country: resolvedCountry,
+    city: city || undefined,
+    postal_code: postal_code || undefined,
   });
 
-  ingestLog('LEAD_CREATED', 'OK', { leadId: lead._id, source: lead.source, state: resolvedState, geoConfidence: geoResult?.confidence_score });
+  try {
+    const { resolveCampaign } = require('./campaignResolver');
+    const matchedCampaign = await resolveCampaign(lead, tenantId);
+    if (matchedCampaign) {
+      lead.campaignId = matchedCampaign._id;
+      lead.campaign = matchedCampaign.name;
+      lead.cost = matchedCampaign.costPerLead || 0;
+      await lead.save();
+    }
+  } catch (campErr) {
+    ingestLog('CAMPAIGN_MATCH_WARN', { error: campErr.message });
+  }
+
+  ingestLog('LEAD_CREATED', 'OK', { leadId: lead._id, source: lead.source, state: resolvedState });
 
   return {
     success: true,

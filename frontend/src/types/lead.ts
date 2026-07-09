@@ -8,7 +8,7 @@ export interface Lead {
   campaign?: string
   assignedTo?: { _id: string; name: string; email: string; state: string; routingMode: string }
   status: 'assigned' | 'unassigned' | 'pending' | 'contacted' | 'converted'
-  ingestionStatus: 'received' | 'queued' | 'routing' | 'delivered' | 'failed' | 'duplicate'
+  ingestionStatus: 'received' | 'queued' | 'routing' | 'ping_pending' | 'delivered' | 'failed' | 'duplicate'
   deliveryStatus: 'pending' | 'delivering' | 'delivered' | 'failed' | 'skipped'
   notes?: string
   tenantId: string

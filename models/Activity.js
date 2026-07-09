@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const activitySchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: ['lead_received', 'lead_assigned', 'client_created', 'client_updated', 'client_deleted', 'lead_cap_reset', 'campaign_created', 'campaign_updated'],
+    enum: ['lead_received', 'lead_assigned', 'lead_duplicate', 'client_created', 'client_updated', 'client_deleted', 'lead_cap_reset', 'campaign_created', 'campaign_updated'],
     required: true
   },
   message: { type: String, required: true },

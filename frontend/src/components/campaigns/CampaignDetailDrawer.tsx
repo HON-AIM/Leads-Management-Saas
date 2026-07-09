@@ -122,22 +122,6 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
                       </div>
                     )}
                   </div>
-                  {campaign.stateRouting.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium mb-2">State Routing Rules ({campaign.stateRouting.length})</h4>
-                      <div className="space-y-1.5">
-                        {campaign.stateRouting.map((r, i) => (
-                          <div key={i} className="flex items-center justify-between rounded-lg border px-3 py-2">
-                            <div>
-                              <p className="text-sm font-medium">{r.state}</p>
-                              <p className="text-xs text-muted-foreground">→ {r.buyerId.name}</p>
-                            </div>
-                            <span className="text-xs text-muted-foreground">Priority: {r.priority}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
 

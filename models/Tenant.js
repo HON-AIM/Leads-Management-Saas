@@ -44,7 +44,8 @@ const tenantSchema = new mongoose.Schema({
     },
     requireEmailVerification: { type: Boolean, default: true },
     sessionTimeout: { type: Number, default: 60 },
-    mfaRequired: { type: Boolean, default: false }
+    mfaRequired: { type: Boolean, default: false },
+    dedupWindowHours: { type: Number, default: 720, min: 1, max: 8760 }
   },
   subscription: {
     plan: {

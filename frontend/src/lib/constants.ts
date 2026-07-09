@@ -68,16 +68,10 @@ export const ROLE_HIERARCHY: Record<string, number> = {
 
 export const NAV_ITEMS = [
   { label: 'Dashboard', href: ROUTES.DASHBOARD, icon: 'LayoutDashboard' },
+  { label: 'Analytics', href: ROUTES.ANALYTICS, icon: 'BarChart3' },
   { label: 'Leads', href: ROUTES.LEADS, icon: 'Users' },
-  { label: 'Add Lead', href: ROUTES.ADD_LEAD, icon: 'UserPlus' },
   { label: 'Campaigns', href: ROUTES.CAMPAIGNS, icon: 'Campaign' },
   { label: 'Buyers', href: ROUTES.CLIENTS, icon: 'Building2' },
   { label: 'Delivery', href: ROUTES.DELIVERY, icon: 'Delivery' },
-  { label: 'Locations', href: ROUTES.LOCATIONS, icon: 'MapPin' },
-  { label: 'Ownership', href: ROUTES.OWNERSHIP, icon: 'Shield' },
-  { label: 'Routing History', href: ROUTES.ROUTING_HISTORY, icon: 'History' },
-  { label: 'Sync Monitor', href: ROUTES.SYNC_LOGS, icon: 'RefreshCw' },
-  { label: 'Audit', href: ROUTES.AUDIT, icon: 'FileText' },
-  { label: 'Reassignments', href: ROUTES.REASSIGNMENTS, icon: 'Shuffle' },
   { label: 'Settings', href: ROUTES.SETTINGS, icon: 'Settings' },
 ] as const

@@ -15,6 +15,9 @@ const clientSchema = new mongoose.Schema({
   phone: String,
   address: String,
 
+  pricePerLead: { type: Number, default: 0, min: 0 },
+  minBid: { type: Number, default: 0, min: 0 },
+
   routingMode: {
     type: String,
     enum: ['round_robin', 'weighted', 'priority', 'exclusive'],
@@ -24,6 +27,28 @@ const clientSchema = new mongoose.Schema({
   priority: { type: Number, default: 0, min: 0 },
   allowedStates: [{ type: String, uppercase: true }],
   allowedCountries: [{ type: String, uppercase: true }],
+
+  // Lead Distro-style routing rules (geo, quality, custom field filters)
+  routingRules: {
+    allowedZips: [{ type: String }],
+    blockedZips: [{ type: String }],
+    acceptAllStates: { type: Boolean, default: false },
+    requiredFields: [{ type: String }],
+    allowedSources: [{ type: String, lowercase: true }],
+    blockedSources: [{ type: String, lowercase: true }],
+    minQualityScore: { type: Number, default: 0, min: 0, max: 100 },
+    customFilters: [{
+      field: { type: String, required: true },
+      operator: {
+        type: String,
+        enum: ['eq', 'ne', 'in', 'not_in', 'contains', 'gte', 'lte', 'exists', 'not_exists'],
+        default: 'eq',
+      },
+      value: mongoose.Schema.Types.Mixed,
+    }],
+  },
+
+  isFallbackBuyer: { type: Boolean, default: false },
 
   dailyCap: { type: Number, default: 0 },
   monthlyCap: { type: Number, default: 0 },
@@ -53,6 +78,7 @@ const clientSchema = new mongoose.Schema({
     },
     config: {
       webhookUrl: String,
+      pingUrl: String,
       apiKey: String,
       locationId: String,
       customHeaders: mongoose.Schema.Types.Mixed,

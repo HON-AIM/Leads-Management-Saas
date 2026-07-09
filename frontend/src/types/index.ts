@@ -21,6 +21,18 @@ export interface Client {
   monthlyCap: number
   dailyLeadsReceived: number
   monthlyLeadsReceived: number
+  pricePerLead?: number
+  minBid?: number
+  isFallbackBuyer?: boolean
+  routingRules?: {
+    allowedZips?: string[]
+    blockedZips?: string[]
+    requiredFields?: string[]
+    allowedSources?: string[]
+    blockedSources?: string[]
+    minQualityScore?: number
+    customFilters?: { field: string; operator: string; value?: unknown }[]
+  }
   lastAssignedAt?: string
   schedule: {
     enabled: boolean
