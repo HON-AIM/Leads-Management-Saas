@@ -31,13 +31,15 @@ export function DeliverySuccessRate() {
   const [period, setPeriod] = useState('30d')
   const [chartView, setChartView] = useState<'donut' | 'trend' | 'provider'>('donut')
 
-  const { data: deliveryData, isLoading } = useQuery<DeliveryRateData>({
+  const { data: deliveryData, isLoading, error } = useQuery<DeliveryRateData>({
     queryKey: [...QUERY_KEYS.DELIVERY_RATES, period],
     queryFn: async () => {
       const { data } = await api.get(`/analytics/delivery/rates?period=${period}`)
       return data
     },
   })
+
+  const errorMessage = error instanceof Error ? error.message : null
 
   const pieData = [
     { name: 'Success', value: deliveryData?.success || 0, color: PIE_COLORS.success },
@@ -79,6 +81,12 @@ export function DeliverySuccessRate() {
         </div>
       </CardHeader>
       <CardContent>
+        {errorMessage && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+            <p className="font-medium">Delivery analytics unavailable</p>
+            <p className="mt-1">{errorMessage}</p>
+          </div>
+        )}
         <div className="grid grid-cols-4 gap-3 mb-4">
           <div className="rounded-lg border p-3">
             <p className="text-xs text-muted-foreground">Success Rate</p>

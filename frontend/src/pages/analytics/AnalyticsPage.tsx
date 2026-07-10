@@ -16,6 +16,7 @@ import { DeliverySuccessRate } from '@/components/analytics/DeliverySuccessRate'
 import { CampaignAnalytics } from '@/components/analytics/CampaignAnalytics'
 import { ExportableReports } from '@/components/analytics/ExportableReports'
 import { LoadingScreen } from '@/components/feedback/LoadingScreen'
+import { AnalyticsErrorAlert } from '@/components/analytics/AnalyticsErrorAlert'
 import { formatNumber, cn } from '@/lib/utils'
 import type { DashboardStats } from '@/types'
 
@@ -70,7 +71,7 @@ export function AnalyticsPage() {
   const { user, isAdmin } = useAuth()
   const [period, setPeriod] = useState('30d')
 
-  const { data: stats, isLoading } = useQuery<DashboardStats>({
+  const { data: stats, isLoading, error } = useQuery<DashboardStats>({
     queryKey: [...QUERY_KEYS.STATS, 'analytics', period],
     queryFn: async () => {
       const { data } = await api.get(`/analytics/stats?period=${period}`)
@@ -78,6 +79,8 @@ export function AnalyticsPage() {
     },
     refetchInterval: 30_000,
   })
+
+  const errorMessage = error instanceof Error ? error.message : null
 
   if (isLoading) return <LoadingScreen fullScreen={false} />
 
@@ -97,6 +100,8 @@ export function AnalyticsPage() {
           className="h-9 w-[140px]"
         />
       </div>
+
+      {errorMessage && <AnalyticsErrorAlert message={errorMessage} />}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {EXEC_STATS.map((card) => {

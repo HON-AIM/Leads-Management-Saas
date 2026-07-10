@@ -44,7 +44,7 @@ export function TrendCharts() {
   const [metric, setMetric] = useState('all')
   const [chartType, setChartType] = useState<'area' | 'line' | 'bar'>('area')
 
-  const { data: trendData, isLoading } = useQuery<{ success: boolean; trend: TrendDataPoint[] }>({
+  const { data: trendData, isLoading, error: trendError } = useQuery<{ success: boolean; trend: TrendDataPoint[] }>({
     queryKey: [...QUERY_KEYS.TRENDS, granularity, period],
     queryFn: async () => {
       const { data } = await api.get(`/analytics/trends/full?granularity=${granularity}&period=${period}`)
@@ -52,7 +52,7 @@ export function TrendCharts() {
     },
   })
 
-  const { data: summaryData } = useQuery<{ success: boolean } & TrendSummary>({
+  const { data: summaryData, error: summaryError } = useQuery<{ success: boolean } & TrendSummary>({
     queryKey: [...QUERY_KEYS.TREND_SUMMARY, period],
     queryFn: async () => {
       const { data } = await api.get(`/analytics/leads/period-comparison?period=${period}`)
@@ -61,6 +61,7 @@ export function TrendCharts() {
   })
 
   const trends = trendData?.trend || []
+  const errorMessage = trendError instanceof Error ? trendError.message : summaryError instanceof Error ? summaryError.message : null
 
   const summaryCards = useMemo(() => {
     if (!summaryData) return []
@@ -202,6 +203,12 @@ export function TrendCharts() {
         </div>
       </CardHeader>
       <CardContent>
+        {errorMessage && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+            <p className="font-medium">Trend analytics unavailable</p>
+            <p className="mt-1">{errorMessage}</p>
+          </div>
+        )}
         <div className="grid grid-cols-4 gap-3 mb-4">
           {summaryCards.map((card) => (
             <div key={card.label} className="rounded-lg border p-3">

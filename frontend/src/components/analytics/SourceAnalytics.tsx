@@ -30,7 +30,7 @@ export function SourceAnalytics() {
   const [period, setPeriod] = useState('30d')
   const [view, setView] = useState('combined')
 
-  const { data, isLoading } = useQuery<{ success: boolean; sources: SourceBreakdown[] }>({
+  const { data, isLoading, error } = useQuery<{ success: boolean; sources: SourceBreakdown[] }>({
     queryKey: [...QUERY_KEYS.SOURCE_BREAKDOWN, period],
     queryFn: async () => {
       const { data } = await api.get(`/analytics/leads/sources?period=${period}`)
@@ -39,6 +39,7 @@ export function SourceAnalytics() {
   })
 
   const sources = data?.sources || []
+  const errorMessage = error instanceof Error ? error.message : null
 
   const sortedByCount = [...sources].sort((a, b) => b.count - a.count)
   const total = sources.reduce((s, src) => s + src.count, 0)
@@ -68,6 +69,12 @@ export function SourceAnalytics() {
         </div>
       </CardHeader>
       <CardContent>
+        {errorMessage && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+            <p className="font-medium">Source analytics unavailable</p>
+            <p className="mt-1">{errorMessage}</p>
+          </div>
+        )}
         <div className="grid grid-cols-3 gap-3 mb-4">
           <div className="rounded-lg border p-3">
             <p className="text-xs text-muted-foreground">Total Sources</p>

@@ -29,7 +29,7 @@ export function CampaignAnalytics() {
   const [period, setPeriod] = useState('30d')
   const [sortBy, setSortBy] = useState('conversionRate')
 
-  const { data, isLoading } = useQuery<{ success: boolean; campaigns: CampaignAnalyticsData[] }>({
+  const { data, isLoading, error } = useQuery<{ success: boolean; campaigns: CampaignAnalyticsData[] }>({
     queryKey: [...QUERY_KEYS.CAMPAIGN_ANALYTICS, period],
     queryFn: async () => {
       const { data } = await api.get(`/analytics/leads/campaigns?period=${period}`)
@@ -38,6 +38,7 @@ export function CampaignAnalytics() {
   })
 
   const campaigns = data?.campaigns || []
+  const errorMessage = error instanceof Error ? error.message : null
 
   const sorted = useMemo(() => {
     return [...campaigns].sort((a, b) => {
@@ -73,6 +74,12 @@ export function CampaignAnalytics() {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        {errorMessage && (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+            <p className="font-medium">Campaign analytics unavailable</p>
+            <p className="mt-1">{errorMessage}</p>
+          </div>
+        )}
         <div className="grid grid-cols-4 gap-3">
           <div className="rounded-lg border p-3">
             <p className="text-xs text-muted-foreground">Total Campaigns</p>

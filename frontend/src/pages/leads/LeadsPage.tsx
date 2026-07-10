@@ -4,10 +4,13 @@ import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { LeadFilters } from '@/components/leads/LeadFilters'
 import { LeadTable } from '@/components/leads/LeadTable'
 import { LeadDetailDrawer } from '@/components/leads/LeadDetailDrawer'
 import { BulkActions } from '@/components/leads/BulkActions'
+import { STATUS_OPTIONS, DELIVERY_STATUS_OPTIONS } from '@/types/lead'
 import type { Lead, LeadFilters as Filters, SortConfig, LeadsResponse } from '@/types/lead'
 
 const DEFAULT_FILTERS: Filters = {}
@@ -36,7 +39,7 @@ export function LeadsPage() {
   if (filters.dateFrom) queryParams.set('dateFrom', filters.dateFrom)
   if (filters.dateTo) queryParams.set('dateTo', filters.dateTo)
 
-  const { data, isLoading } = useQuery<LeadsResponse>({
+  const { data, isLoading, error } = useQuery<LeadsResponse>({
     queryKey: [...QUERY_KEYS.LEADS, 'list', { ...filters, ...sort, page }],
     queryFn: async () => {
       const { data } = await api.get(`/leads?${queryParams.toString()}`)
@@ -83,14 +86,15 @@ export function LeadsPage() {
   }, [])
 
   const leads = data?.leads || []
+  const errorMessage = error instanceof Error ? error.message : 'Unable to load leads right now.'
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">My Leads</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage, filter, and route your leads
+            Review, filter, and manage every lead assigned to your pipeline
           </p>
         </div>
         <Button asChild>
@@ -103,9 +107,16 @@ export function LeadsPage() {
         </Button>
       </div>
 
+      {errorMessage && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+          <p className="font-medium">Unable to load leads</p>
+          <p className="mt-1">{errorMessage}</p>
+        </div>
+      )}
+
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Filters</CardTitle>
+          <CardTitle className="text-base">Lead Filters</CardTitle>
         </CardHeader>
         <CardContent>
           <LeadFilters
@@ -116,10 +127,29 @@ export function LeadsPage() {
         </CardContent>
       </Card>
 
+      <div className="grid gap-3 md:grid-cols-4">
+        <div className="rounded-xl border bg-card p-3">
+          <p className="text-xs text-muted-foreground">Total</p>
+          <p className="text-lg font-semibold">{data?.pagination?.total ?? 0}</p>
+        </div>
+        <div className="rounded-xl border bg-card p-3">
+          <p className="text-xs text-muted-foreground">Assigned</p>
+          <p className="text-lg font-semibold">{leads.filter((lead) => lead.status === 'assigned').length}</p>
+        </div>
+        <div className="rounded-xl border bg-card p-3">
+          <p className="text-xs text-muted-foreground">Pending</p>
+          <p className="text-lg font-semibold">{leads.filter((lead) => lead.status === 'pending').length}</p>
+        </div>
+        <div className="rounded-xl border bg-card p-3">
+          <p className="text-xs text-muted-foreground">Delivered</p>
+          <p className="text-lg font-semibold">{leads.filter((lead) => lead.deliveryStatus === 'delivered').length}</p>
+        </div>
+      </div>
+
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">
-            All Leads
+            Lead Queue
             {data?.pagination && (
               <span className="text-sm font-normal text-muted-foreground ml-2">
                 ({data.pagination.total})

@@ -31,7 +31,7 @@ export function BuyerPerformance() {
   const [period, setPeriod] = useState('30d')
   const [sortMetric, setSortMetric] = useState('deliveryRate')
 
-  const { data, isLoading } = useQuery<{ success: boolean; buyers: BuyerPerformanceData[] }>({
+  const { data, isLoading, error } = useQuery<{ success: boolean; buyers: BuyerPerformanceData[] }>({
     queryKey: [...QUERY_KEYS.BUYER_PERFORMANCE, period],
     queryFn: async () => {
       const { data } = await api.get(`/analytics/buyers/performance?period=${period}`)
@@ -48,6 +48,7 @@ export function BuyerPerformance() {
   })
 
   const buyers = data?.buyers || []
+  const errorMessage = error instanceof Error ? error.message : null
 
   const sortedBuyers = useMemo(() => {
     return [...buyers].sort((a, b) => {
@@ -99,6 +100,12 @@ export function BuyerPerformance() {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        {errorMessage && (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+            <p className="font-medium">Buyer performance unavailable</p>
+            <p className="mt-1">{errorMessage}</p>
+          </div>
+        )}
         <div className="grid grid-cols-3 gap-3">
           <div className="rounded-lg border p-3">
             <p className="text-xs text-muted-foreground">Avg Delivery Rate</p>
