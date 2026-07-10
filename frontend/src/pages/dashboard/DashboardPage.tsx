@@ -163,6 +163,22 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-900 p-5 text-white shadow-[0_16px_50px_rgba(15,23,42,0.12)]">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-300">Operations overview</p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Stay ahead of every new lead and payout.</h2>
+            <p className="mt-2 max-w-2xl text-sm text-slate-300">
+              Track routing health, buyer performance, and delivery issues from one calm workspace.
+            </p>
+          </div>
+          <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm text-slate-100 backdrop-blur">
+            <p className="font-medium">Live snapshot</p>
+            <p className="text-xs text-slate-300">{formatNumber((stats as any)?.totalLeads ?? 0)} leads in motion</p>
+          </div>
+        </div>
+      </div>
+
       <FinancialOverviewPanel />
 
       <div className="flex items-center justify-between">

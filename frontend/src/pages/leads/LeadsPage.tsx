@@ -90,6 +90,22 @@ export function LeadsPage() {
 
   return (
     <div className="space-y-6">
+      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-900 p-5 text-white shadow-[0_16px_50px_rgba(15,23,42,0.12)]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-300">Queue overview</p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight">My Leads</h2>
+            <p className="mt-2 max-w-2xl text-sm text-slate-300">
+              Review every lead in your pipeline and keep routing decisions visible at a glance.
+            </p>
+          </div>
+          <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm text-slate-100 backdrop-blur">
+            <p className="font-medium">Focus</p>
+            <p className="text-xs text-slate-300">{data?.pagination?.total ?? 0} leads currently visible</p>
+          </div>
+        </div>
+      </div>
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">My Leads</h1>
@@ -128,19 +144,19 @@ export function LeadsPage() {
       </Card>
 
       <div className="grid gap-3 md:grid-cols-4">
-        <div className="rounded-xl border bg-card p-3">
+        <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-br from-blue-500/10 to-indigo-600/10 p-4">
           <p className="text-xs text-muted-foreground">Total</p>
           <p className="text-lg font-semibold">{data?.pagination?.total ?? 0}</p>
         </div>
-        <div className="rounded-xl border bg-card p-3">
+        <div className="rounded-2xl border border-slate-200/80 bg-card p-4">
           <p className="text-xs text-muted-foreground">Assigned</p>
           <p className="text-lg font-semibold">{leads.filter((lead) => lead.status === 'assigned').length}</p>
         </div>
-        <div className="rounded-xl border bg-card p-3">
+        <div className="rounded-2xl border border-slate-200/80 bg-card p-4">
           <p className="text-xs text-muted-foreground">Pending</p>
           <p className="text-lg font-semibold">{leads.filter((lead) => lead.status === 'pending').length}</p>
         </div>
-        <div className="rounded-xl border bg-card p-3">
+        <div className="rounded-2xl border border-slate-200/80 bg-card p-4">
           <p className="text-xs text-muted-foreground">Delivered</p>
           <p className="text-lg font-semibold">{leads.filter((lead) => lead.deliveryStatus === 'delivered').length}</p>
         </div>

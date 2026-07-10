@@ -90,42 +90,45 @@ export function CampaignsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Campaigns</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Configure campaigns, routing modes, and buyer destinations
-          </p>
+      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-900 p-5 text-white shadow-[0_16px_50px_rgba(15,23,42,0.12)]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-300">Campaign control center</p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Campaigns</h2>
+            <p className="mt-2 max-w-2xl text-sm text-slate-300">
+              Manage routing behavior, buyer destinations, and performance from a single workspace.
+            </p>
+          </div>
+          <Button onClick={() => setShowCreate(true)}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+            New Campaign
+          </Button>
         </div>
-        <Button onClick={() => setShowCreate(true)}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
-          New Campaign
-        </Button>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
-        <Card>
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card className="border-blue-100 bg-gradient-to-br from-blue-500/10 to-indigo-600/10">
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground">Total Campaigns</p>
-            <p className="text-2xl font-semibold mt-1">{formatNumber(campaigns.length)}</p>
+            <p className="mt-1 text-2xl font-semibold">{formatNumber(campaigns.length)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground">Active</p>
-            <p className="text-2xl font-semibold mt-1 text-emerald-600 dark:text-emerald-400">{formatNumber(activeCampaigns.length)}</p>
+            <p className="mt-1 text-2xl font-semibold text-emerald-600 dark:text-emerald-400">{formatNumber(activeCampaigns.length)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground">Total Leads</p>
-            <p className="text-2xl font-semibold mt-1">{formatNumber(totalLeads)}</p>
+            <p className="mt-1 text-2xl font-semibold">{formatNumber(totalLeads)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground">Conversion Rate</p>
-            <p className="text-2xl font-semibold mt-1">{formatPercentage(overallConvRate)}</p>
+            <p className="mt-1 text-2xl font-semibold">{formatPercentage(overallConvRate)}</p>
           </CardContent>
         </Card>
       </div>

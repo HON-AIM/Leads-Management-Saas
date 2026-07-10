@@ -69,42 +69,45 @@ export function ClientsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Buyers</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage buyer destinations, caps, and delivery
-          </p>
+      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-900 p-5 text-white shadow-[0_16px_50px_rgba(15,23,42,0.12)]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-300">Buyer operations</p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Buyers</h2>
+            <p className="mt-2 max-w-2xl text-sm text-slate-300">
+              Manage buyer destinations, delivery health, and caps with the same clarity as the routing engine.
+            </p>
+          </div>
+          <Button onClick={() => setShowCreate(true)}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+            Add Buyer
+          </Button>
         </div>
-        <Button onClick={() => setShowCreate(true)}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
-          Add Buyer
-        </Button>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
-        <Card>
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card className="border-blue-100 bg-gradient-to-br from-blue-500/10 to-indigo-600/10">
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground">Total Buyers</p>
-            <p className="text-2xl font-semibold mt-1">{formatNumber(list.length)}</p>
+            <p className="mt-1 text-2xl font-semibold">{formatNumber(list.length)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground">Active</p>
-            <p className="text-2xl font-semibold mt-1 text-emerald-600 dark:text-emerald-400">{formatNumber(activeBuyers.length)}</p>
+            <p className="mt-1 text-2xl font-semibold text-emerald-600 dark:text-emerald-400">{formatNumber(activeBuyers.length)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground">Avg Delivery Rate</p>
-            <p className="text-2xl font-semibold mt-1">{formatPercentage(avgDeliveryRate)}</p>
+            <p className="mt-1 text-2xl font-semibold">{formatPercentage(avgDeliveryRate)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground">Total Leads</p>
-            <p className="text-2xl font-semibold mt-1">{formatNumber(totalLeadsReceived)}</p>
+            <p className="mt-1 text-2xl font-semibold">{formatNumber(totalLeadsReceived)}</p>
           </CardContent>
         </Card>
       </div>

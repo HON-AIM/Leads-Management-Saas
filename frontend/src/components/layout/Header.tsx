@@ -21,7 +21,7 @@ export function Header({ onMenuToggle }: { onMenuToggle: () => void }) {
     : 'U'
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-slate-200/70 bg-background/90 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/70 lg:px-6">
       {isCollapsed && (
         <Button variant="ghost" size="icon" onClick={onMenuToggle} className="-ml-2">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -30,7 +30,14 @@ export function Header({ onMenuToggle }: { onMenuToggle: () => void }) {
         </Button>
       )}
 
-      <div className="flex-1" />
+      <div className="flex flex-1 items-center gap-3">
+        <div className="hidden rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 sm:block">
+          Operations workspace
+        </div>
+        <div className="text-sm text-muted-foreground">
+          Live lead distribution intelligence
+        </div>
+      </div>
 
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" onClick={toggleTheme}>

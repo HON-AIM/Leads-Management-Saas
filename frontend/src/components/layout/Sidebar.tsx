@@ -91,8 +91,8 @@ function SidebarItem({ icon, label, href, collapsed }: SidebarItemProps) {
           'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
           collapsed ? 'justify-center px-2' : '',
           isActive
-            ? 'bg-primary/10 text-primary'
-            : 'text-sidebar-foreground hover:bg-sidebar-muted/50 hover:text-foreground'
+            ? 'bg-white/10 text-white shadow-sm'
+            : 'text-slate-300 hover:bg-white/10 hover:text-white'
         )
       }
     >
@@ -122,7 +122,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       )}
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 flex h-full flex-col border-r bg-sidebar transition-all duration-300',
+          'fixed left-0 top-0 z-50 flex h-full flex-col border-r border-slate-800/70 bg-slate-950 text-slate-100 shadow-[8px_0_30px_rgba(2,6,23,0.25)] transition-all duration-300',
           collapsed && !isMobile ? 'w-16' : 'w-60',
           isMobile && !collapsed ? 'translate-x-0' : '',
           isMobile && collapsed ? '-translate-x-full' : ''
@@ -131,7 +131,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         <div className={cn('flex h-14 items-center border-b px-4', collapsed && !isMobile ? 'justify-center' : '')}>
           {!collapsed || isMobile ? (
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
                 LD
               </div>
               {!collapsed && (
@@ -139,7 +139,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
               )}
             </div>
           ) : (
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
               LD
             </div>
           )}
