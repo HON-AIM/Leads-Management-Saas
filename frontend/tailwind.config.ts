@@ -24,16 +24,6 @@ const config: Config = {
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
-          50: 'hsl(var(--primary-50))',
-          100: 'hsl(var(--primary-100))',
-          200: 'hsl(var(--primary-200))',
-          300: 'hsl(var(--primary-300))',
-          400: 'hsl(var(--primary-400))',
-          500: 'hsl(var(--primary-500))',
-          600: 'hsl(var(--primary-600))',
-          700: 'hsl(var(--primary-700))',
-          800: 'hsl(var(--primary-800))',
-          900: 'hsl(var(--primary-900))',
         },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
@@ -59,12 +49,11 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        sidebar: {
-          DEFAULT: 'hsl(var(--sidebar))',
-          foreground: 'hsl(var(--sidebar-foreground))',
-          muted: 'hsl(var(--sidebar-muted))',
-          accent: 'hsl(var(--sidebar-accent))',
-          border: 'hsl(var(--sidebar-border))',
+        surface: {
+          dark: '#070b16',
+          card: '#0c1021',
+          hover: 'rgba(255, 255, 255, 0.02)',
+          border: 'rgba(255, 255, 255, 0.06)',
         },
       },
       borderRadius: {
@@ -73,8 +62,8 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       keyframes: {
         'fade-in': {
@@ -82,23 +71,34 @@ const config: Config = {
           to: { opacity: '1' },
         },
         'fade-up': {
-          from: { opacity: '0', transform: 'translateY(8px)' },
+          from: { opacity: '0', transform: 'translateY(6px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
-        'slide-in': {
-          from: { transform: 'translateX(-100%)' },
+        'slide-in-right': {
+          from: { transform: 'translateX(100%)' },
           to: { transform: 'translateX(0)' },
         },
-        'slide-out': {
+        'slide-out-right': {
           from: { transform: 'translateX(0)' },
           to: { transform: 'translateX(100%)' },
         },
+        'scale-in': {
+          from: { opacity: '0', transform: 'scale(0.96)' },
+          to: { opacity: '1', transform: 'scale(1)' },
+        },
       },
       animation: {
-        'fade-in': 'fade-in 0.3s ease-out',
-        'fade-up': 'fade-up 0.4s ease-out',
-        'slide-in': 'slide-in 0.3s ease-out',
-        'slide-out': 'slide-out 0.3s ease-out',
+        'fade-in': 'fade-in 0.2s ease-out',
+        'fade-up': 'fade-up 0.3s ease-out',
+        'slide-in-right': 'slide-in-right 0.25s ease-out',
+        'slide-out-right': 'slide-out-right 0.25s ease-out',
+        'scale-in': 'scale-in 0.15s ease-out',
+      },
+      boxShadow: {
+        'card': '0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02)',
+        'card-hover': '0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.03)',
+        'elevated': '0 8px 24px rgba(0, 0, 0, 0.08)',
+        'drawer': '-4px 0 24px rgba(0, 0, 0, 0.12)',
       },
     },
   },

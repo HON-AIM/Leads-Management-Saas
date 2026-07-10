@@ -2,14 +2,13 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useNotifications } from '@/hooks/useNotifications'
-import { CampaignsTable } from '@/components/campaigns/CampaignsTable'
+import { CampaignCard } from '@/components/campaigns/CampaignCard'
 import { CampaignForm } from '@/components/campaigns/CampaignForm'
 import { CampaignDetailDrawer } from '@/components/campaigns/CampaignDetailDrawer'
-import { formatNumber, formatPercentage } from '@/lib/utils'
 import type { Campaign, CampaignFormData } from '@/types/campaign'
+import { Search, Plus } from 'lucide-react'
 
 export function CampaignsPage() {
   const qc = useQueryClient()
@@ -17,8 +16,9 @@ export function CampaignsPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
   const [editCampaign, setEditCampaign] = useState<Campaign | null>(null)
+  const [search, setSearch] = useState('')
 
-  const { data, isLoading } = useQuery<{ success: boolean; campaigns: Campaign[] }>({
+  const { data, isLoading } = useQuery<{ success: boolean; data: Campaign[] }>({
     queryKey: QUERY_KEYS.CAMPAIGNS,
     queryFn: async () => {
       const { data } = await api.get('/campaigns')
@@ -26,7 +26,7 @@ export function CampaignsPage() {
     },
   })
 
-  const campaigns = data?.campaigns || []
+  const campaigns = data?.data || []
 
   const createMutation = useMutation({
     mutationFn: async (formData: CampaignFormData) => {
@@ -71,85 +71,68 @@ export function CampaignsPage() {
     onError: () => addNotification({ type: 'error', title: 'Error', description: 'Failed to toggle campaign' }),
   })
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/campaigns/${id}`)
-    },
-    onSuccess: (result: any) => {
-      const description = result?.archived ? 'Campaign archived successfully' : 'Campaign deleted successfully'
-      addNotification({ type: 'success', title: result?.archived ? 'Archived' : 'Deleted', description })
-      qc.invalidateQueries({ queryKey: QUERY_KEYS.CAMPAIGNS })
-    },
-    onError: () => addNotification({ type: 'error', title: 'Error', description: 'Failed to update campaign state' }),
-  })
-
-  const activeCampaigns = campaigns.filter((c) => c.status === 'active')
-  const totalLeads = campaigns.reduce((s, c) => s + c.totalLeads, 0)
-  const totalConverted = campaigns.reduce((s, c) => s + c.convertedLeads, 0)
-  const overallConvRate = totalLeads > 0 ? (totalConverted / totalLeads) * 100 : 0
+  const filtered = campaigns.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    (c.source || '').toLowerCase().includes(search.toLowerCase())
+  )
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-900 p-5 text-white shadow-[0_16px_50px_rgba(15,23,42,0.12)]">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-slate-300">Campaign control center</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Campaigns</h2>
-            <p className="mt-2 max-w-2xl text-sm text-slate-300">
-              Manage routing behavior, buyer destinations, and performance from a single workspace.
-            </p>
-          </div>
-          <Button onClick={() => setShowCreate(true)}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
-            New Campaign
-          </Button>
+    <div className="space-y-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-[18px] font-semibold text-white tracking-tight">Campaigns</h1>
+          <p className="text-[13px] text-muted-foreground mt-0.5">Manage routing, buyer assignments, and lead flow</p>
         </div>
+        <Button onClick={() => setShowCreate(true)} size="sm">
+          <Plus size={14} className="mr-1.5" />
+          New Campaign
+        </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card className="border-blue-100 bg-gradient-to-br from-blue-500/10 to-indigo-600/10">
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Total Campaigns</p>
-            <p className="mt-1 text-2xl font-semibold">{formatNumber(campaigns.length)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Active</p>
-            <p className="mt-1 text-2xl font-semibold text-emerald-600 dark:text-emerald-400">{formatNumber(activeCampaigns.length)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Total Leads</p>
-            <p className="mt-1 text-2xl font-semibold">{formatNumber(totalLeads)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Conversion Rate</p>
-            <p className="mt-1 text-2xl font-semibold">{formatPercentage(overallConvRate)}</p>
-          </CardContent>
-        </Card>
+      <div className="relative">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search campaigns..."
+          className="w-full rounded-lg border border-white/[0.08] bg-[#0c1021] pl-9 pr-3 py-2 text-[13px] text-white/90 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-colors"
+        />
       </div>
 
-      <Card>
-        <CardHeader className="pb-0">
-          <CardTitle className="text-base">All Campaigns</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <CampaignsTable
-            campaigns={campaigns}
-            isLoading={isLoading}
-            onEdit={setSelectedCampaign}
-            onToggle={(c) => toggleMutation.mutate(c)}
-            onDelete={(c) => {
-              const action = c.status === 'active' ? 'archive' : 'delete'
-              if (confirm(`This will ${action} campaign "${c.name}". Continue?`)) deleteMutation.mutate(c._id)
-            }}
-          />
-        </CardContent>
-      </Card>
+      {isLoading ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-[180px] rounded-xl border border-white/[0.06] bg-[#0c1021] skeleton" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.03] mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/10">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          </div>
+          <p className="text-[13px] text-muted-foreground">
+            {search ? 'No campaigns match your search' : 'No campaigns yet'}
+          </p>
+          {!search && (
+            <Button variant="outline" size="sm" className="mt-3" onClick={() => setShowCreate(true)}>
+              Create your first campaign
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((c) => (
+            <CampaignCard
+              key={c._id}
+              campaign={c}
+              onClick={setSelectedCampaign}
+              onToggle={(c) => toggleMutation.mutate(c)}
+            />
+          ))}
+        </div>
+      )}
 
       <CampaignDetailDrawer
         campaign={selectedCampaign}
@@ -163,9 +146,9 @@ export function CampaignsPage() {
       {(showCreate || editCampaign) && (
         <>
           <div className="fixed inset-0 z-50" onClick={() => { setShowCreate(false); setEditCampaign(null) }}>
-            <div className="absolute inset-0 bg-black/30" />
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           </div>
-          <div className="fixed top-0 right-0 z-50 h-full w-full max-w-xl border-l bg-background shadow-xl overflow-y-auto">
+          <div className="fixed top-0 right-0 z-50 h-full w-full max-w-xl border-l border-white/[0.06] bg-[#0c1021] shadow-drawer overflow-y-auto animate-slide-in-right">
             <div className="p-6">
               <CampaignForm
                 campaign={editCampaign || undefined}

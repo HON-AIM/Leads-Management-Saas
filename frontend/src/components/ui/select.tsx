@@ -1,3 +1,5 @@
+import { cn } from '@/lib/utils'
+
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   options: { label: string; value: string }[]
   placeholder?: string
@@ -6,7 +8,16 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
 export function Select({ options, placeholder, className = '', ...props }: SelectProps) {
   return (
     <select
-      className={`flex h-9 w-full rounded-md border border-sky-200 bg-sky-50/80 px-3 py-1 text-sm text-sky-900 shadow-sm transition-colors placeholder:text-sky-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100 dark:placeholder:text-slate-400 ${className}`}
+      className={cn(
+        'flex h-9 w-full rounded-lg border bg-transparent px-3 py-1.5 text-[13px]',
+        'ring-offset-background transition-colors duration-150',
+        'placeholder:text-muted-foreground/60',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500/40',
+        'disabled:cursor-not-allowed disabled:opacity-40',
+        'border-[hsl(var(--input))] text-[hsl(var(--foreground))]',
+        'dark:border-white/[0.08] dark:text-white',
+        className
+      )}
       {...props}
     >
       {placeholder && <option value="">{placeholder}</option>}

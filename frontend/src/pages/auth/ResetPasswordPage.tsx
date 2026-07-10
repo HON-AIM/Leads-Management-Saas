@@ -3,12 +3,13 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
-import { useAuth } from '@/hooks/useAuth'
 import { useNotifications } from '@/hooks/useNotifications'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ROUTES } from '@/lib/constants'
+import api from '@/lib/api'
+import { Loader2, CheckCircle, XCircle } from 'lucide-react'
 
 const resetSchema = z
   .object({
@@ -30,7 +31,6 @@ type ResetForm = z.infer<typeof resetSchema>
 export function ResetPasswordPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { resetPassword } = useAuth()
   const { addNotification } = useNotifications()
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
@@ -63,9 +63,9 @@ export function ResetPasswordPage() {
     }
     setLoading(true)
     try {
-      await resetPassword({ token, password: data.password })
+      await api.post('/auth/reset-password', { token, password: data.password })
       setDone(true)
-      addNotification({ type: 'success', title: 'Password reset', description: 'Your password has been updated. Please sign in.' })
+      addNotification({ type: 'success', title: 'Password reset', description: 'Your password has been updated.' })
       setTimeout(() => navigate(ROUTES.LOGIN, { replace: true }), 2000)
     } catch (err: any) {
       const message = err?.response?.data?.message || 'Failed to reset password'
@@ -77,18 +77,15 @@ export function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
-        <div className="w-full max-w-sm rounded-xl border bg-card p-8 text-center shadow-sm">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-destructive">
-              <circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" />
-            </svg>
+      <div className="flex min-h-screen items-center justify-center bg-[#070b16] px-4">
+        <div className="fixed inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(59,130,246,0.08),transparent)]" />
+        <div className="relative w-full max-w-[360px] rounded-xl border border-white/[0.06] bg-[#0c1021] p-8 text-center shadow-elevated">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10">
+            <XCircle size={22} className="text-red-400" />
           </div>
-          <h2 className="text-lg font-semibold">Invalid reset link</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            This link is invalid or has expired. Request a new one.
-          </p>
-          <Button asChild variant="outline" className="mt-6">
+          <h2 className="text-[15px] font-semibold text-white">Invalid reset link</h2>
+          <p className="mt-2 text-[12px] text-muted-foreground">This link is invalid or has expired.</p>
+          <Button asChild variant="outline" size="sm" className="mt-6">
             <Link to={ROUTES.FORGOT_PASSWORD}>Request new link</Link>
           </Button>
         </div>
@@ -98,39 +95,41 @@ export function ResetPasswordPage() {
 
   if (done) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
-        <div className="w-full max-w-sm rounded-xl border bg-card p-8 text-center shadow-sm">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600 dark:text-emerald-400">
-              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" /><path d="m9 12 2 2 4-4" />
-            </svg>
+      <div className="flex min-h-screen items-center justify-center bg-[#070b16] px-4">
+        <div className="fixed inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(59,130,246,0.08),transparent)]" />
+        <div className="relative w-full max-w-[360px] rounded-xl border border-white/[0.06] bg-[#0c1021] p-8 text-center shadow-elevated">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
+            <CheckCircle size={22} className="text-emerald-400" />
           </div>
-          <h2 className="text-lg font-semibold">Password reset successful</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Redirecting you to sign in...
-          </p>
+          <h2 className="text-[15px] font-semibold text-white">Password reset successful</h2>
+          <p className="mt-2 text-[12px] text-muted-foreground">Redirecting you to sign in...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <Link to={ROUTES.LOGIN} className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
+    <div className="flex min-h-screen items-center justify-center bg-[#070b16] px-4">
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(59,130,246,0.08),transparent)]" />
+
+      <div className="relative w-full max-w-[360px] space-y-8">
+        <div className="flex items-center justify-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-[11px] font-bold text-white tracking-wider">
             LD
-          </Link>
+          </div>
+          <span className="text-[15px] font-semibold text-white tracking-tight">Lead Distro</span>
         </div>
 
-        <div className="rounded-xl border bg-card p-8 shadow-sm">
-          <h1 className="text-xl font-semibold tracking-tight">Set new password</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Must be at least 8 characters with uppercase, lowercase, and a number.
-          </p>
+        <div className="rounded-xl border border-white/[0.06] bg-[#0c1021] p-6 shadow-elevated">
+          <div className="mb-6 space-y-1">
+            <h1 className="text-[15px] font-semibold text-white tracking-tight">Set new password</h1>
+            <p className="text-[12px] text-muted-foreground">
+              Must be at least 8 characters with uppercase, lowercase, and a number.
+            </p>
+          </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
-            <div className="space-y-2">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-1.5">
               <Label htmlFor="password">New password</Label>
               <Input
                 id="password"
@@ -140,61 +139,36 @@ export function ResetPasswordPage() {
                 autoFocus
                 {...register('password')}
               />
-              {errors.password && (
-                <p className="text-xs text-destructive">{errors.password.message}</p>
-              )}
+              {errors.password && <p className="text-[11px] text-red-400">{errors.password.message}</p>}
               {password.length > 0 && (
-                <div className="space-y-1 pt-1">
-                  <div className="flex h-1.5 gap-1">
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex h-1 gap-1">
                     {[1, 2, 3, 4].map((i) => (
                       <div
                         key={i}
                         className={`h-full flex-1 rounded-full transition-colors ${
                           i <= strength
-                            ? strength <= 2
-                              ? 'bg-destructive'
-                              : strength === 3
-                              ? 'bg-amber-500'
-                              : 'bg-emerald-500'
-                            : 'bg-muted'
+                            ? strength <= 2 ? 'bg-red-500' : strength === 3 ? 'bg-amber-500' : 'bg-emerald-500'
+                            : 'bg-white/[0.06]'
                         }`}
                       />
                     ))}
                   </div>
-                  <ul className="space-y-0.5">
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                     {strengthChecks.map((check) => (
-                      <li
+                      <span
                         key={check.label}
-                        className={`flex items-center gap-1.5 text-xs ${
-                          check.pass ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'
-                        }`}
+                        className={`text-[10px] ${check.pass ? 'text-emerald-400' : 'text-muted-foreground/60'}`}
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="10"
-                          height="10"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          {check.pass ? (
-                            <polyline points="20 6 9 17 4 12" />
-                          ) : (
-                            <line x1="18" x2="6" y1="6" y2="18" />
-                          )}
-                        </svg>
-                        {check.label}
-                      </li>
+                        {check.pass ? '✓' : '○'} {check.label}
+                      </span>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="confirmPassword">Confirm password</Label>
               <Input
                 id="confirmPassword"
@@ -203,13 +177,16 @@ export function ResetPasswordPage() {
                 autoComplete="new-password"
                 {...register('confirmPassword')}
               />
-              {errors.confirmPassword && (
-                <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>
-              )}
+              {errors.confirmPassword && <p className="text-[11px] text-red-400">{errors.confirmPassword.message}</p>}
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Resetting...' : 'Reset password'}
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 size={14} className="animate-spin" />
+                  Resetting...
+                </span>
+              ) : 'Reset password'}
             </Button>
           </form>
         </div>

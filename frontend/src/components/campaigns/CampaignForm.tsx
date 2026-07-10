@@ -5,11 +5,10 @@ import { QUERY_KEYS } from '@/lib/constants'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ROUTING_MODES, SOURCE_OPTIONS } from '@/types/campaign'
 import type { Campaign, CampaignFormData } from '@/types/campaign'
-import type { Client } from '@/types'
+import type { Buyer } from '@/types/buyer'
 
 interface CampaignFormProps {
   campaign?: Campaign
@@ -18,7 +17,7 @@ interface CampaignFormProps {
   isPending: boolean
 }
 
-const STEPS = ['Campaign', 'Sources & Routing', 'Buyers', 'Review']
+const STEPS = ['Name', 'Source & Webhook', 'Routing', 'Buyers', 'Finish']
 
 export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignFormProps) {
   const isEdit = !!campaign
@@ -27,37 +26,32 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
   const [form, setForm] = useState<CampaignFormData>({
     name: campaign?.name || '',
     description: campaign?.description || '',
-    startDate: campaign?.startDate ? campaign.startDate.slice(0, 10) : '',
-    endDate: campaign?.endDate ? campaign.endDate.slice(0, 10) : '',
+    source: campaign?.source || 'webhook',
+    webhookUrl: campaign?.webhookUrl || '',
     routingMode: campaign?.routingMode || 'round_robin',
-    sources: campaign?.sources || [],
-    assignedBuyers: campaign?.assignedBuyers?.map((b) => ({ buyerId: b.buyerId._id, weight: b.weight })) || [],
+    assignedBuyers: campaign?.assignedBuyers?.map((b) => ({
+      buyerId: typeof b.buyerId === 'object' ? b.buyerId._id : b.buyerId,
+      weight: b.weight,
+      priority: b.priority ?? 0,
+    })) || [],
     costPerLead: campaign?.costPerLead ?? 0,
-    pingTimeoutMs: campaign?.pingTimeoutMs ?? 3000,
+    dedupWindowHours: campaign?.dedupWindowHours ?? 720,
   })
 
   const update = (patch: Partial<CampaignFormData>) => setForm((prev) => ({ ...prev, ...patch }))
 
-  const { data: clientsData } = useQuery<Client[]>({
-    queryKey: QUERY_KEYS.CLIENTS,
+  const { data: buyersData } = useQuery({
+    queryKey: QUERY_KEYS.BUYERS,
     queryFn: async () => {
-      const { data } = await api.get('/clients')
-      return data.clients || data
+      const { data } = await api.get('/buyers')
+      return data.data ?? data.buyers ?? data ?? []
     },
   })
-  const buyers = clientsData || []
-
-  const toggleSource = (src: string) => {
-    update({
-      sources: form.sources.includes(src)
-        ? form.sources.filter((s) => s !== src)
-        : [...form.sources, src],
-    })
-  }
+  const buyers: Buyer[] = Array.isArray(buyersData) ? buyersData : []
 
   const addBuyer = (buyerId: string) => {
     if (!form.assignedBuyers.find((b) => b.buyerId === buyerId)) {
-      update({ assignedBuyers: [...form.assignedBuyers, { buyerId, weight: 1 }] })
+      update({ assignedBuyers: [...form.assignedBuyers, { buyerId, weight: 1, priority: 0 }] })
     }
   }
 
@@ -71,13 +65,20 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
     })
   }
 
-  const availableBuyers = buyers.filter((b) => !form.assignedBuyers.find((ab) => ab.buyerId === b._id))
+  const setBuyerPriority = (buyerId: string, priority: number) => {
+    update({
+      assignedBuyers: form.assignedBuyers.map((b) => b.buyerId === buyerId ? { ...b, priority } : b),
+    })
+  }
+
+  const availableBuyers = buyers.filter((b) => b.status === 'active' && !form.assignedBuyers.find((ab) => ab.buyerId === b._id))
   const selectedMode = ROUTING_MODES.find((m) => m.value === form.routingMode)
 
   const canProceed = () => {
     if (step === 0) return form.name.trim().length > 0
-    if (step === 1) return form.sources.length > 0
-    if (step === 2) return form.assignedBuyers.length > 0
+    if (step === 1) return true
+    if (step === 2) return true
+    if (step === 3) return form.assignedBuyers.length > 0
     return true
   }
 
@@ -85,55 +86,64 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">{isEdit ? 'Edit Campaign' : 'Create Campaign'}</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Routing is configured here — buyers are destinations only</p>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{isEdit ? 'Edit Campaign' : 'New Campaign'}</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Configure how leads flow through this campaign</p>
         </div>
-        <Button variant="ghost" size="sm" onClick={onClose}>✕</Button>
+        <button onClick={onClose} className="rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
 
+      {/* Progress */}
       <div className="flex gap-1">
         {STEPS.map((s, i) => (
           <div key={s} className="flex-1">
-            <div className={`h-1 rounded-full ${i <= step ? 'bg-primary' : 'bg-muted'}`} />
-            <p className={`text-[10px] mt-1 ${i === step ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>{s}</p>
+            <div className={`h-1 rounded-full transition-colors ${i <= step ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'}`} />
+            <p className={`text-[10px] mt-1 ${i === step ? 'text-slate-900 dark:text-slate-100 font-medium' : 'text-slate-400 dark:text-slate-500'}`}>{s}</p>
           </div>
         ))}
       </div>
 
+      {/* Step 1: Campaign Name */}
       {step === 0 && (
         <div className="space-y-4">
-          <div className="space-y-1">
-            <Label className="text-xs">Campaign Name *</Label>
-            <Input value={form.name} onChange={(e) => update({ name: e.target.value })} placeholder="e.g. Texas Insurance Leads" />
+          <div className="space-y-1.5">
+            <Label className="text-xs text-slate-600 dark:text-slate-400">Campaign Name *</Label>
+            <Input
+              value={form.name}
+              onChange={(e) => update({ name: e.target.value })}
+              placeholder="e.g. Texas Insurance Leads"
+              className="bg-white dark:bg-slate-900"
+            />
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Description</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-slate-600 dark:text-slate-400">Description</Label>
             <textarea
               value={form.description}
               onChange={(e) => update({ description: e.target.value })}
               rows={2}
-              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="flex w-full rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 placeholder:text-slate-400"
               placeholder="What leads does this campaign handle?"
             />
           </div>
         </div>
       )}
 
+      {/* Step 2: Source & Webhook */}
       {step === 1 && (
         <div className="space-y-4">
-          <div>
-            <Label className="text-xs">Lead Sources *</Label>
-            <p className="text-[11px] text-muted-foreground mb-2">Incoming leads matching these sources route through this campaign</p>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-slate-600 dark:text-slate-400">Lead Source</Label>
             <div className="flex flex-wrap gap-2">
               {SOURCE_OPTIONS.map((src) => (
                 <button
                   key={src}
                   type="button"
-                  onClick={() => toggleSource(src)}
+                  onClick={() => update({ source: src })}
                   className={`text-sm px-3 py-1.5 rounded-lg border transition-colors capitalize ${
-                    form.sources.includes(src)
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background text-muted-foreground border-input hover:border-foreground'
+                    form.source === src
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                   }`}
                 >
                   {src}
@@ -141,88 +151,125 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
               ))}
             </div>
           </div>
-
-          <div className="space-y-1">
-            <Label className="text-xs">Routing Mode</Label>
-            <Select
-              value={form.routingMode}
-              onChange={(e) => update({ routingMode: e.target.value as CampaignFormData['routingMode'] })}
-              options={ROUTING_MODES.map((m) => ({ label: m.label, value: m.value }))}
+          <div className="space-y-1.5">
+            <Label className="text-xs text-slate-600 dark:text-slate-400">Webhook URL</Label>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1">POST endpoint for incoming leads (optional)</p>
+            <Input
+              value={form.webhookUrl}
+              onChange={(e) => update({ webhookUrl: e.target.value })}
+              placeholder="https://your-domain.com/api/leads"
+              className="bg-white dark:bg-slate-900 font-mono text-xs"
             />
-            {selectedMode && (
-              <p className="text-[11px] text-muted-foreground mt-1">{selectedMode.description}</p>
-            )}
           </div>
+        </div>
+      )}
 
+      {/* Step 3: Routing Method */}
+      {step === 2 && (
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-slate-600 dark:text-slate-400">Routing Method</Label>
+            <div className="space-y-2">
+              {ROUTING_MODES.map((mode) => (
+                <button
+                  key={mode.value}
+                  type="button"
+                  onClick={() => update({ routingMode: mode.value })}
+                  className={`w-full text-left rounded-lg border p-3 transition-colors ${
+                    form.routingMode === mode.value
+                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-950'
+                      : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                  }`}
+                >
+                  <p className={`text-sm font-medium ${form.routingMode === mode.value ? 'text-blue-700 dark:text-blue-300' : 'text-slate-900 dark:text-slate-100'}`}>
+                    {mode.label}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{mode.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs">Cost Per Lead ($)</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-slate-600 dark:text-slate-400">Cost Per Lead ($)</Label>
               <Input
                 type="number"
                 min={0}
                 step={0.01}
                 value={form.costPerLead}
                 onChange={(e) => update({ costPerLead: Number(e.target.value) })}
+                className="bg-white dark:bg-slate-900"
               />
-              <p className="text-[10px] text-muted-foreground">Acquisition cost for P&L tracking</p>
             </div>
-            {form.routingMode === 'ping_post' && (
-              <div className="space-y-1">
-                <Label className="text-xs">Ping Timeout (ms)</Label>
-                <Input
-                  type="number"
-                  min={500}
-                  max={30000}
-                  step={500}
-                  value={form.pingTimeoutMs}
-                  onChange={(e) => update({ pingTimeoutMs: Number(e.target.value) })}
-                />
-                <p className="text-[10px] text-muted-foreground">Auction window for buyer bids</p>
-              </div>
-            )}
+            <div className="space-y-1.5">
+              <Label className="text-xs text-slate-600 dark:text-slate-400">Dedup Window (hours)</Label>
+              <Input
+                type="number"
+                min={1}
+                value={form.dedupWindowHours}
+                onChange={(e) => update({ dedupWindowHours: Number(e.target.value) })}
+                className="bg-white dark:bg-slate-900"
+              />
+            </div>
           </div>
         </div>
       )}
 
-      {step === 2 && (
+      {/* Step 4: Assign Buyers */}
+      {step === 3 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label className="text-xs">Buyers *</Label>
+            <Label className="text-xs text-slate-600 dark:text-slate-400">Assign Buyers *</Label>
             {availableBuyers.length > 0 && (
               <select
-                className="text-xs border rounded px-2 py-1 bg-background"
+                className="text-xs border border-slate-200 dark:border-slate-800 rounded px-2 py-1 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                 onChange={(e) => { if (e.target.value) { addBuyer(e.target.value); e.target.value = '' } }}
               >
                 <option value="">Add buyer...</option>
                 {availableBuyers.map((b) => (
-                  <option key={b._id} value={b._id}>{b.name} ({b.state})</option>
+                  <option key={b._id} value={b._id}>{b.name}</option>
                 ))}
               </select>
             )}
           </div>
 
           {form.assignedBuyers.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center border rounded-lg">Add at least one buyer to this campaign</p>
+            <div className="text-center py-10 rounded-lg border border-dashed border-slate-300 dark:border-slate-700">
+              <p className="text-sm text-slate-500 dark:text-slate-400">Add at least one buyer to this campaign</p>
+            </div>
           ) : (
             <div className="space-y-2">
               {form.assignedBuyers.map((ab, idx) => {
                 const buyer = buyers.find((b) => b._id === ab.buyerId)
                 return (
-                  <div key={ab.buyerId} className="flex items-center gap-2 rounded-lg border px-3 py-2">
-                    <span className="text-xs text-muted-foreground w-5">{idx + 1}</span>
-                    <span className="flex-1 text-sm font-medium">{buyer?.name || 'Unknown'}</span>
-                    <span className="text-xs text-muted-foreground">{buyer?.state}</span>
+                  <div key={ab.buyerId} className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2">
+                    <span className="text-xs text-slate-400 dark:text-slate-500 w-5">{idx + 1}</span>
+                    <span className="flex-1 text-sm font-medium text-slate-900 dark:text-slate-100">{buyer?.name || 'Unknown'}</span>
                     {form.routingMode === 'weighted' && (
-                      <Input
-                        type="number"
-                        min={1}
-                        value={ab.weight}
-                        onChange={(e) => setBuyerWeight(ab.buyerId, Number(e.target.value))}
-                        className="w-14 h-7 text-xs"
-                        title="Weight"
-                      />
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-slate-400">W:</span>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={ab.weight}
+                          onChange={(e) => setBuyerWeight(ab.buyerId, Number(e.target.value))}
+                          className="w-14 h-7 text-xs bg-white dark:bg-slate-900"
+                        />
+                      </div>
                     )}
-                    <button onClick={() => removeBuyer(ab.buyerId)} className="text-muted-foreground hover:text-destructive text-sm">✕</button>
+                    {form.routingMode === 'priority' && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-slate-400">P:</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={ab.priority}
+                          onChange={(e) => setBuyerPriority(ab.buyerId, Number(e.target.value))}
+                          className="w-14 h-7 text-xs bg-white dark:bg-slate-900"
+                        />
+                      </div>
+                    )}
+                    <button onClick={() => removeBuyer(ab.buyerId)} className="text-slate-400 hover:text-red-500 text-sm">✕</button>
                   </div>
                 )
               })}
@@ -235,28 +282,33 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
         </div>
       )}
 
-      {step === 3 && (
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <ReviewField label="Campaign" value={form.name} />
-          <ReviewField label="Sources" value={form.sources.join(', ')} />
-          <ReviewField label="Routing" value={selectedMode?.label || form.routingMode} />
-          <ReviewField label="Buyers" value={`${form.assignedBuyers.length} assigned`} />
-          <ReviewField label="Cost/Lead" value={`$${form.costPerLead}`} />
-          {form.routingMode === 'ping_post' && (
-            <ReviewField label="Ping Timeout" value={`${form.pingTimeoutMs}ms`} />
-          )}
+      {/* Step 5: Review & Finish */}
+      {step === 4 && (
+        <div className="space-y-4">
+          <div className="rounded-lg border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
+            <ReviewRow label="Campaign Name" value={form.name} />
+            <ReviewRow label="Source" value={form.source} />
+            <ReviewRow label="Webhook URL" value={form.webhookUrl || 'Not set'} />
+            <ReviewRow label="Routing" value={selectedMode?.label || form.routingMode} />
+            <ReviewRow label="Buyers" value={`${form.assignedBuyers.length} assigned`} />
+            <ReviewRow label="Cost/Lead" value={`$${form.costPerLead}`} />
+            <ReviewRow label="Dedup Window" value={`${form.dedupWindowHours}h`} />
+          </div>
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-2 border-t">
-        <Button variant="ghost" size="sm" onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0}>Previous</Button>
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800">
+        <Button variant="ghost" size="sm" onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0}>
+          Previous
+        </Button>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
           {step < STEPS.length - 1 ? (
             <Button size="sm" onClick={() => setStep(step + 1)} disabled={!canProceed()}>Next</Button>
           ) : (
             <Button size="sm" onClick={() => onSave(form)} disabled={isPending || !canProceed()}>
-              {isPending ? 'Saving...' : isEdit ? 'Update' : 'Create Campaign'}
+              {isPending ? 'Saving...' : isEdit ? 'Update Campaign' : 'Create Campaign'}
             </Button>
           )}
         </div>
@@ -265,11 +317,11 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
   )
 }
 
-function ReviewField({ label, value }: { label: string; value: string }) {
+function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="font-medium capitalize">{value}</p>
+    <div className="flex items-center justify-between px-4 py-2.5">
+      <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
+      <p className="text-sm font-medium text-slate-900 dark:text-slate-100 capitalize">{value}</p>
     </div>
   )
 }

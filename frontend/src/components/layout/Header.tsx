@@ -1,5 +1,4 @@
 import { useAuth } from '@/hooks/useAuth'
-import { useTheme } from '@/hooks/useTheme'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -9,76 +8,82 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useIsSidebarCollapsed } from '@/hooks/useMediaQuery'
+import { useIsMobile } from '@/hooks/useMediaQuery'
+import { useLocation } from 'react-router-dom'
+import { Menu, LogOut, Settings, User } from 'lucide-react'
+
+const ROUTE_NAMES: Record<string, string> = {
+  '/dashboard': 'Dashboard',
+  '/campaigns': 'Campaigns',
+  '/leads': 'Leads',
+  '/buyers': 'Buyers',
+  '/delivery': 'Delivery',
+  '/settings': 'Settings',
+}
 
 export function Header({ onMenuToggle }: { onMenuToggle: () => void }) {
   const { user, logout } = useAuth()
-  const { toggleTheme, isDark } = useTheme()
-  const isCollapsed = useIsSidebarCollapsed()
+  const isMobile = useIsMobile()
+  const location = useLocation()
+
+  const currentRoute = ROUTE_NAMES[location.pathname] || 'Dashboard'
 
   const initials = user
-    ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.trim() || user.username[0].toUpperCase()
+    ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.trim() || user.email?.[0]?.toUpperCase() || 'U'
     : 'U'
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-slate-200/70 bg-background/90 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/70 lg:px-6">
-      {isCollapsed && (
-        <Button variant="ghost" size="icon" onClick={onMenuToggle} className="-ml-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="18" y2="18" />
-          </svg>
+    <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-3 border-b border-white/[0.05] px-4 lg:px-6 bg-[#070b16]/80 backdrop-blur-xl">
+      {isMobile && (
+        <Button variant="ghost" size="icon-sm" onClick={onMenuToggle} className="-ml-1 h-7 w-7">
+          <Menu size={15} />
         </Button>
       )}
 
-      <div className="flex flex-1 items-center gap-3">
-        <div className="hidden rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 sm:block">
-          Operations workspace
-        </div>
-        <div className="text-sm text-muted-foreground">
-          Live lead distribution intelligence
-        </div>
+      <div className="flex flex-1 items-center">
+        <h1 className="text-[13px] font-semibold text-white/90">{currentRoute}</h1>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={toggleTheme}>
-          {isDark ? (
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-            </svg>
-          )}
-        </Button>
-
+      <div className="flex items-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+            <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-white/[0.04]">
+              <Avatar className="h-6 w-6">
+                <AvatarFallback className="bg-white/[0.06] text-[10px] font-medium text-slate-300">
                   {initials}
                 </AvatarFallback>
               </Avatar>
-            </Button>
+              <span className="hidden text-[12px] font-medium text-slate-300 sm:block">
+                {user?.firstName || user?.email}
+              </span>
+            </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" forceMount>
-            <div className="flex flex-col space-y-1 p-2">
-              <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
-              <div className="flex items-center gap-2 pt-1">
-                <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary uppercase">
-                  {user?.role?.replace('_', ' ')}
-                </span>
-                <span className="text-[10px] text-muted-foreground">{user?.tenantName}</span>
-              </div>
+          <DropdownMenuContent className="w-48" align="end">
+            <div className="px-2.5 py-2">
+              <p className="text-[12px] font-medium text-white">{user?.firstName} {user?.lastName}</p>
+              <p className="text-[11px] text-muted-foreground">{user?.email}</p>
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => window.location.href = '/settings'}>
+            <DropdownMenuItem
+              onClick={() => (window.location.href = '/settings')}
+              className="gap-2 text-[12px]"
+            >
+              <User size={13} />
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => (window.location.href = '/settings')}
+              className="gap-2 text-[12px]"
+            >
+              <Settings size={13} />
               Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
+            <DropdownMenuItem
+              onClick={logout}
+              className="gap-2 text-[12px] text-red-400 focus:text-red-400"
+            >
+              <LogOut size={13} />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

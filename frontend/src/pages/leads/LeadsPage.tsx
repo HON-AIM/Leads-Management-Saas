@@ -1,201 +1,252 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select } from '@/components/ui/select'
-import { LeadFilters } from '@/components/leads/LeadFilters'
-import { LeadTable } from '@/components/leads/LeadTable'
-import { LeadDetailDrawer } from '@/components/leads/LeadDetailDrawer'
-import { BulkActions } from '@/components/leads/BulkActions'
-import { STATUS_OPTIONS, DELIVERY_STATUS_OPTIONS } from '@/types/lead'
-import type { Lead, LeadFilters as Filters, SortConfig, LeadsResponse } from '@/types/lead'
-
-const DEFAULT_FILTERS: Filters = {}
-const DEFAULT_SORT: SortConfig = { key: 'createdAt', direction: 'desc' }
+import { LeadDrawer } from '@/components/leads/LeadDrawer'
+import { STATUS_STYLES } from '@/types/lead'
+import { formatDate } from '@/lib/utils'
+import type { Lead, LeadFilters } from '@/types/lead'
+import { Search, SlidersHorizontal, X, Users, ChevronLeft, ChevronRight } from 'lucide-react'
 
 export function LeadsPage() {
-  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS)
-  const [sort, setSort] = useState<SortConfig>(DEFAULT_SORT)
+  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
-  const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [detailLeadId, setDetailLeadId] = useState<string | null>(null)
-  const searchTimeout = useRef<ReturnType<typeof setTimeout>>()
+  const [filters, setFilters] = useState<LeadFilters>({})
+  const [showFilters, setShowFilters] = useState(false)
+  const [drawerLeadId, setDrawerLeadId] = useState<string | null>(null)
 
-  const queryParams = new URLSearchParams()
-  queryParams.set('page', page.toString())
-  queryParams.set('limit', '25')
-  queryParams.set('sort', sort.key)
-  queryParams.set('order', sort.direction)
-  if (filters.search) queryParams.set('search', filters.search)
-  if (filters.status) queryParams.set('status', filters.status)
-  if (filters.source) queryParams.set('source', filters.source)
-  if (filters.state) queryParams.set('state', filters.state)
-  if (filters.buyer) queryParams.set('buyer', filters.buyer)
-  if (filters.campaign) queryParams.set('campaign', filters.campaign)
-  if (filters.deliveryStatus) queryParams.set('deliveryStatus', filters.deliveryStatus)
-  if (filters.dateFrom) queryParams.set('dateFrom', filters.dateFrom)
-  if (filters.dateTo) queryParams.set('dateTo', filters.dateTo)
+  const hasFilters = Object.values(filters).some(Boolean)
 
-  const { data, isLoading, error } = useQuery<LeadsResponse>({
-    queryKey: [...QUERY_KEYS.LEADS, 'list', { ...filters, ...sort, page }],
+  const queryParams: Record<string, string> = { page: String(page), limit: '25' }
+  if (search) queryParams.search = search
+  if (filters.status) queryParams.status = filters.status
+  if (filters.state) queryParams.state = filters.state
+  if (filters.campaign) queryParams.campaignId = filters.campaign
+  if (filters.buyer) queryParams.buyerId = filters.buyer
+  if (filters.dateFrom) queryParams.startDate = filters.dateFrom
+  if (filters.dateTo) queryParams.endDate = filters.dateTo
+
+  const { data, isLoading } = useQuery<{ success: boolean; data: Lead[]; pagination: { total: number; page: number; pages: number } }>({
+    queryKey: [...QUERY_KEYS.LEADS, page, search, filters],
     queryFn: async () => {
-      const { data } = await api.get(`/leads?${queryParams.toString()}`)
+      const { data } = await api.get('/leads', { params: queryParams })
       return data
     },
   })
 
-  const handleFilterChange = useCallback((newFilters: Filters) => {
-    if (searchTimeout.current) clearTimeout(searchTimeout.current)
-    searchTimeout.current = setTimeout(() => {
-      setFilters(newFilters)
-      setPage(1)
-      setSelected(new Set())
-    }, 300)
-  }, [])
+  const leads = data?.data || []
+  const pagination = data?.pagination
 
-  const handleSortChange = useCallback((newSort: SortConfig) => {
-    setSort(newSort)
-    setSelected(new Set())
-  }, [])
-
-  const handlePageChange = useCallback((newPage: number) => {
-    setPage(newPage)
-    setSelected(new Set())
-  }, [])
-
-  const handleResetFilters = useCallback(() => {
-    setFilters(DEFAULT_FILTERS)
-    setSort(DEFAULT_SORT)
+  const updateFilter = (key: keyof LeadFilters, value: string) => {
+    setFilters((prev) => ({ ...prev, [key]: value }))
     setPage(1)
-    setSelected(new Set())
-  }, [])
+  }
 
-  const handleClearSelection = useCallback(() => {
-    setSelected(new Set())
-  }, [])
-
-  const handleLeadClick = useCallback((lead: Lead) => {
-    setDetailLeadId(lead._id)
-  }, [])
-
-  const handleCloseDetail = useCallback(() => {
-    setDetailLeadId(null)
-  }, [])
-
-  const leads = data?.leads || []
-  const errorMessage = error instanceof Error ? error.message : 'Unable to load leads right now.'
+  const clearFilters = () => {
+    setFilters({})
+    setSearch('')
+    setPage(1)
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-900 p-5 text-white shadow-[0_16px_50px_rgba(15,23,42,0.12)]">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-slate-300">Queue overview</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight">My Leads</h2>
-            <p className="mt-2 max-w-2xl text-sm text-slate-300">
-              Review every lead in your pipeline and keep routing decisions visible at a glance.
-            </p>
-          </div>
-          <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm text-slate-100 backdrop-blur">
-            <p className="font-medium">Focus</p>
-            <p className="text-xs text-slate-300">{data?.pagination?.total ?? 0} leads currently visible</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">My Leads</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Review, filter, and manage every lead assigned to your pipeline
+          <h1 className="text-[18px] font-semibold text-white tracking-tight">Leads</h1>
+          <p className="text-[13px] text-muted-foreground mt-0.5">
+            {pagination ? `${pagination.total.toLocaleString()} total` : ''}
           </p>
         </div>
-        <Button asChild>
-          <a href="/leads/add">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-              <line x1="12" x2="12" y1="5" y2="19" /><line x1="5" x2="19" y1="12" y2="12" />
-            </svg>
-            Add Lead
-          </a>
-        </Button>
       </div>
 
-      {errorMessage && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
-          <p className="font-medium">Unable to load leads</p>
-          <p className="mt-1">{errorMessage}</p>
+      {/* Search + Filters */}
+      <div className="space-y-3">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+              placeholder="Search name, email, or phone..."
+              className="w-full rounded-lg border border-white/[0.08] bg-[#0c1021] pl-9 pr-3 py-2 text-[13px] text-white/90 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-colors"
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className={showFilters || hasFilters ? 'border-blue-500/30 bg-blue-500/10 text-blue-400' : ''}
+          >
+            <SlidersHorizontal size={13} className="mr-1.5" />
+            Filters
+            {hasFilters && <span className="ml-1.5 h-4 min-w-[16px] rounded-full bg-blue-600 text-white text-[10px] flex items-center justify-center px-1">{Object.values(filters).filter(Boolean).length}</span>}
+          </Button>
         </div>
-      )}
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Lead Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <LeadFilters
-            filters={filters}
-            onChange={handleFilterChange}
-            onReset={handleResetFilters}
-          />
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-3 md:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-br from-blue-500/10 to-indigo-600/10 p-4">
-          <p className="text-xs text-muted-foreground">Total</p>
-          <p className="text-lg font-semibold">{data?.pagination?.total ?? 0}</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200/80 bg-card p-4">
-          <p className="text-xs text-muted-foreground">Assigned</p>
-          <p className="text-lg font-semibold">{leads.filter((lead) => lead.status === 'assigned').length}</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200/80 bg-card p-4">
-          <p className="text-xs text-muted-foreground">Pending</p>
-          <p className="text-lg font-semibold">{leads.filter((lead) => lead.status === 'pending').length}</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200/80 bg-card p-4">
-          <p className="text-xs text-muted-foreground">Delivered</p>
-          <p className="text-lg font-semibold">{leads.filter((lead) => lead.deliveryStatus === 'delivered').length}</p>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">
-            Lead Queue
-            {data?.pagination && (
-              <span className="text-sm font-normal text-muted-foreground ml-2">
-                ({data.pagination.total})
-              </span>
+        {showFilters && (
+          <div className="rounded-lg border border-white/[0.06] bg-[#0c1021] p-4 animate-fade-in">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              <FilterSelect label="Status" value={filters.status || ''} onChange={(v) => updateFilter('status', v)} options={[
+                { label: 'All', value: '' }, { label: 'New', value: 'new' }, { label: 'Assigned', value: 'assigned' },
+                { label: 'Delivered', value: 'delivered' }, { label: 'Failed', value: 'failed' },
+                { label: 'Duplicate', value: 'duplicate' }, { label: 'Unassigned', value: 'unassigned' },
+              ]} />
+              <FilterInput label="State" value={filters.state || ''} onChange={(v) => updateFilter('state', v)} placeholder="TX" />
+              <FilterInput label="Campaign" value={filters.campaign || ''} onChange={(v) => updateFilter('campaign', v)} placeholder="Campaign ID" />
+              <FilterInput label="Buyer" value={filters.buyer || ''} onChange={(v) => updateFilter('buyer', v)} placeholder="Buyer ID" />
+              <FilterInput label="From" value={filters.dateFrom || ''} onChange={(v) => updateFilter('dateFrom', v)} type="date" />
+            </div>
+            {hasFilters && (
+              <button onClick={clearFilters} className="mt-3 flex items-center gap-1 text-[12px] text-blue-400 hover:text-blue-300 transition-colors">
+                <X size={12} />
+                Clear all filters
+              </button>
             )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <LeadTable
-            data={data}
-            isLoading={isLoading}
-            sort={sort}
-            onSort={handleSortChange}
-            selected={selected}
-            onSelectionChange={setSelected}
-            onPageChange={handlePageChange}
-            onLeadClick={handleLeadClick}
-          />
-        </CardContent>
-      </Card>
+          </div>
+        )}
+      </div>
 
-      <LeadDetailDrawer
-        leadId={detailLeadId}
-        onClose={handleCloseDetail}
+      {/* Table */}
+      <div className="rounded-xl border border-white/[0.06] bg-[#0c1021] overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="border-b border-white/[0.04] text-[10px] text-muted-foreground uppercase tracking-wider">
+                <th className="text-left font-medium px-6 py-2.5">Lead</th>
+                <th className="text-left font-medium px-6 py-2.5">Campaign</th>
+                <th className="text-left font-medium px-6 py-2.5">Buyer</th>
+                <th className="text-left font-medium px-6 py-2.5">Source</th>
+                <th className="text-left font-medium px-6 py-2.5">State</th>
+                <th className="text-left font-medium px-6 py-2.5">Status</th>
+                <th className="text-left font-medium px-6 py-2.5">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <>
+                  {[...Array(5)].map((_, i) => (
+                    <tr key={i} className="border-b border-white/[0.03]">
+                      <td className="px-6 py-3"><div className="h-4 w-32 skeleton bg-white/[0.03] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-20 skeleton bg-white/[0.03] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-20 skeleton bg-white/[0.03] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-16 skeleton bg-white/[0.03] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-8 skeleton bg-white/[0.03] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-16 skeleton bg-white/[0.03] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-24 skeleton bg-white/[0.03] rounded" /></td>
+                    </tr>
+                  ))}
+                </>
+              ) : leads.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-16 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <Users size={24} className="text-white/10" />
+                      <p className="text-[13px] text-muted-foreground">
+                        {search || hasFilters ? 'No leads match your filters' : 'No leads yet'}
+                      </p>
+                      {(search || hasFilters) && (
+                        <button onClick={clearFilters} className="text-[12px] text-blue-400 hover:text-blue-300 transition-colors">
+                          Clear filters
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ) : leads.map((l) => (
+                <tr
+                  key={l._id}
+                  className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] cursor-pointer transition-colors"
+                  onClick={() => setDrawerLeadId(l._id)}
+                >
+                  <td className="px-6 py-3">
+                    <p className="font-medium text-white/90">{l.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{l.email}</p>
+                  </td>
+                  <td className="px-6 py-3 text-[12px] text-white/50">
+                    {l.campaignId?.name || '—'}
+                  </td>
+                  <td className="px-6 py-3 text-[12px] text-white/50">
+                    {l.buyer?.name || '—'}
+                  </td>
+                  <td className="px-6 py-3 text-[12px] text-white/50 capitalize">{l.source}</td>
+                  <td className="px-6 py-3 text-[12px] text-white/50">{l.state || '—'}</td>
+                  <td className="px-6 py-3">
+                    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${STATUS_STYLES[l.status] || ''}`}>
+                      {l.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3 text-[12px] text-white/30">
+                    {formatDate(l.createdAt)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {pagination && pagination.pages > 1 && (
+          <div className="flex items-center justify-between border-t border-white/[0.04] px-6 py-3">
+            <p className="text-[12px] text-muted-foreground">
+              Page {pagination.page} of {pagination.pages}
+            </p>
+            <div className="flex gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                <ChevronLeft size={13} />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.min(pagination.pages, p + 1))}
+                disabled={page >= pagination.pages}
+              >
+                <ChevronRight size={13} />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <LeadDrawer
+        leadId={drawerLeadId}
+        onClose={() => setDrawerLeadId(null)}
       />
+    </div>
+  )
+}
 
-      <BulkActions
-        selected={selected}
-        leads={leads}
-        onClear={handleClearSelection}
+function FilterSelect({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: { label: string; value: string }[] }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-lg border border-white/[0.08] bg-[#0c1021] px-2.5 py-1.5 text-[12px] text-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+      >
+        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    </div>
+  )
+}
+
+function FilterInput({ label, value, onChange, placeholder, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-lg border border-white/[0.08] bg-[#0c1021] px-2.5 py-1.5 text-[12px] text-white/90 placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
       />
     </div>
   )

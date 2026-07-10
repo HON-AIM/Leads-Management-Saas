@@ -1,77 +1,69 @@
-import type { Lead } from './lead'
-
-export interface BuyerProfile {
+export interface Buyer {
   _id: string
   name: string
   email: string
-  state: string
+  phone?: string
+  status: 'active' | 'paused' | 'inactive' | 'full'
   leadCap: number
+  dailyCap: number
+  monthlyCap: number
   leadsReceived: number
-  dailyCap: number
-  monthlyCap: number
   dailyLeadsReceived: number
   monthlyLeadsReceived: number
-  status: 'active' | 'full' | 'inactive'
-  isPaused: boolean
-  routingMode: string
-  delivery?: { provider: string }
+  lastAssignedAt?: string
+  pricePerLead: number
+  weight: number
+  priority: number
+  allowedStates: string[]
+  delivery: {
+    provider: 'none' | 'webhook' | 'ghl'
+    url?: string
+    apiKey?: string
+    locationId?: string
+    secret?: string
+  }
+  schedule: {
+    enabled: boolean
+    timezone: string
+    days: number[]
+    startTime: string
+    endTime: string
+  }
+  tenantId: string
+  createdBy?: string
+  createdAt: string
+  updatedAt: string
 }
 
-export interface BuyerStats {
-  totalLeads: number
-  leadsToday: number
-  deliveredCount: number
-  failedCount: number
-  deliveryRate: number
+export interface BuyerFormData {
+  name: string
+  email: string
+  phone: string
+  weight: number
+  priority: number
+  allowedStates: string[]
   leadCap: number
   dailyCap: number
   monthlyCap: number
-  dailyLeadsReceived: number
-  monthlyLeadsReceived: number
-  status: string
-  isPaused: boolean
+  delivery: {
+    provider: 'none' | 'webhook' | 'ghl'
+    url: string
+    apiKey: string
+    locationId: string
+  }
 }
 
-export interface CapUsage {
-  total: { used: number; cap: number; percent: number }
-  daily: { used: number; cap: number; percent: number }
-  monthly: { used: number; cap: number; percent: number }
-}
+export const US_STATES = [
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
+  'HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
+  'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
+  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
+  'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY',
+] as const
 
-export interface BuyerLeadStats {
-  total: number
-  pending: number
-  inProgress: number
-  delivered: number
-  converted: number
+export const STATUS_STYLES: Record<string, string> = {
+  active: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-950 dark:text-emerald-400 dark:ring-emerald-400/30',
+  paused: 'bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-950 dark:text-amber-400 dark:ring-amber-400/30',
+  inactive: 'bg-gray-50 text-gray-600 ring-gray-500/20 dark:bg-gray-900 dark:text-gray-400 dark:ring-gray-400/30',
+  full: 'bg-blue-50 text-blue-700 ring-blue-600/20 dark:bg-blue-950 dark:text-blue-400 dark:ring-blue-400/30',
 }
-
-export interface BuyerLeadsResponse {
-  success: boolean
-  leads: Lead[]
-  stats?: BuyerLeadStats
-  pagination: { page: number; limit: number; total: number; pages: number }
-}
-
-export interface BuyerStatsResponse {
-  success: boolean
-  stats: BuyerStats
-  recent: Lead[]
-}
-
-export interface BuyerActivity {
-  _id: string
-  type: string
-  message: string
-  leadId?: { _id: string; name: string; email: string }
-  createdAt: string
-}
-
-export const BUYER_STATUS_STYLES: Record<string, string> = {
-  active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400',
-  full: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
-  inactive: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
-}
-
-export const CAP_COLOR = (pct: number) =>
-  pct >= 90 ? 'bg-red-500' : pct >= 75 ? 'bg-amber-500' : 'bg-emerald-500'

@@ -11,7 +11,8 @@ import { PayloadInspector } from '@/components/delivery/PayloadInspector'
 import { DeliveryCharts } from '@/components/delivery/DeliveryCharts'
 import { formatNumber, formatPercentage } from '@/lib/utils'
 import type { DeliveryLog, DeliveryStats, DeliveryTrendsResponse, DeliveryFilters as Filters } from '@/types/delivery'
-import type { Client } from '@/types'
+import type { Buyer } from '@/types/buyer'
+import { BarChart3, ChevronDown, ChevronUp } from 'lucide-react'
 
 const DEFAULT_FILTERS: Filters = { status: '', provider: '', buyerId: '', dateFrom: '', dateTo: '' }
 
@@ -57,7 +58,7 @@ export function DeliveryPage() {
     },
   })
 
-  const { data: buyersData } = useQuery<Client[]>({
+  const { data: buyersData } = useQuery<Buyer[]>({
     queryKey: QUERY_KEYS.CLIENTS,
     queryFn: async () => {
       const { data } = await api.get('/clients')
@@ -90,63 +91,43 @@ export function DeliveryPage() {
 
   const logs = logsData?.logs || []
   const total = logsData?.total || 0
-  const buyers = (buyersData || []).map((b: Client) => ({ _id: b._id, name: b.name }))
+  const buyers = (buyersData || []).map((b: Buyer) => ({ _id: b._id, name: b.name }))
 
   const successRate = statsData && statsData.total > 0
     ? (statsData.success / statsData.total) * 100
     : 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Delivery Monitor</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="text-[18px] font-semibold text-white tracking-tight">Delivery</h1>
+          <p className="text-[13px] text-muted-foreground mt-0.5">
             Monitor delivery logs, retry failures, and inspect payloads
           </p>
         </div>
-        <Button variant="outline" onClick={() => setShowCharts(!showCharts)}>
-          {showCharts ? 'Hide Charts' : 'Show Charts'}
+        <Button variant="outline" size="sm" onClick={() => setShowCharts(!showCharts)}>
+          <BarChart3 size={13} className="mr-1.5" />
+          {showCharts ? (
+            <span className="flex items-center gap-1">Hide <ChevronUp size={12} /></span>
+          ) : (
+            <span className="flex items-center gap-1">Show <ChevronDown size={12} /></span>
+          )}
         </Button>
       </div>
 
-      <div className="grid grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Total</p>
-            <p className="text-2xl font-semibold mt-1">{formatNumber(statsData?.total || 0)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Success</p>
-            <p className="text-2xl font-semibold mt-1 text-emerald-600 dark:text-emerald-400">{formatNumber(statsData?.success || 0)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Failed</p>
-            <p className="text-2xl font-semibold mt-1 text-red-600 dark:text-red-400">{formatNumber(statsData?.failed || 0)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Retrying</p>
-            <p className="text-2xl font-semibold mt-1 text-amber-600 dark:text-amber-400">{formatNumber(statsData?.retrying || 0)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Success Rate</p>
-            <p className="text-2xl font-semibold mt-1">{formatPercentage(successRate)}</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-5 gap-3">
+        <StatCard label="Total" value={formatNumber(statsData?.total || 0)} />
+        <StatCard label="Success" value={formatNumber(statsData?.success || 0)} color="text-emerald-400" />
+        <StatCard label="Failed" value={formatNumber(statsData?.failed || 0)} color="text-red-400" />
+        <StatCard label="Retrying" value={formatNumber(statsData?.retrying || 0)} color="text-amber-400" />
+        <StatCard label="Success Rate" value={formatPercentage(successRate)} />
       </div>
 
       {showCharts && (
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Delivery Performance (14 days)</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle>Delivery Performance (14 days)</CardTitle>
           </CardHeader>
           <CardContent>
             <DeliveryCharts
@@ -159,8 +140,8 @@ export function DeliveryPage() {
       )}
 
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Delivery Logs</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle>Delivery Logs</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -187,6 +168,15 @@ export function DeliveryPage() {
       {inspectLog && (
         <PayloadInspector log={inspectLog} onClose={() => setInspectLog(null)} />
       )}
+    </div>
+  )
+}
+
+function StatCard({ label, value, color }: { label: string; value: string; color?: string }) {
+  return (
+    <div className="rounded-xl border border-white/[0.06] bg-[#0c1021] p-4">
+      <p className="text-[11px] text-muted-foreground font-medium">{label}</p>
+      <p className={`text-[18px] font-semibold mt-1 ${color || 'text-white'}`}>{value}</p>
     </div>
   )
 }

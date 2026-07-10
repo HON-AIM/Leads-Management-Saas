@@ -8,6 +8,7 @@ import { LoadingScreen } from '@/components/feedback/LoadingScreen'
 import { QUERY_KEYS } from '@/lib/constants'
 import { formatDate } from '@/lib/utils'
 import type { Session } from '@/types/auth'
+import { LogOut, Monitor, Smartphone, Tablet } from 'lucide-react'
 
 export function SettingsPage() {
   const { user, logout } = useAuth()
@@ -15,7 +16,7 @@ export function SettingsPage() {
   const queryClient = useQueryClient()
 
   const initials = user
-    ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.trim() || user.username[0].toUpperCase()
+    ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.trim() || user.email?.[0]?.toUpperCase() || 'U'
     : 'U'
 
   const { data: sessions, isLoading } = useQuery<Session[]>({
@@ -44,92 +45,87 @@ export function SettingsPage() {
   const list = sessions || []
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-[640px] space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h1 className="text-[18px] font-semibold text-white tracking-tight">Settings</h1>
+        <p className="text-[13px] text-muted-foreground mt-0.5">
           Manage your account and sessions
         </p>
       </div>
 
+      {/* Profile */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-4">
             <Avatar className="h-12 w-12">
-              <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+              <AvatarFallback className="bg-blue-500/10 text-blue-400 text-[13px] font-medium">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-base">{user?.firstName} {user?.lastName}</CardTitle>
+              <CardTitle className="text-[14px]">{user?.firstName} {user?.lastName}</CardTitle>
               <CardDescription>{user?.email}</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 text-[13px]">
             <div>
-              <p className="text-muted-foreground">Username</p>
-              <p className="font-medium">{user?.username}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Role</p>
+              <p className="text-muted-foreground text-[12px]">Role</p>
               <p className="font-medium capitalize">{user?.role?.replace(/_/g, ' ')}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Tenant</p>
+              <p className="text-muted-foreground text-[12px]">Tenant</p>
               <p className="font-medium">{user?.tenantName}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Tenant ID</p>
-              <p className="font-medium text-xs font-mono">{user?.tenantId}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Sessions */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Active Sessions</CardTitle>
+          <CardTitle>Active Sessions</CardTitle>
           <CardDescription>Devices and browsers where you're currently signed in</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <div className="relative h-6 w-6">
+                <div className="absolute inset-0 rounded-full border-2 border-white/[0.06]" />
+                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 animate-spin" />
+              </div>
             </div>
           ) : list.length === 0 ? (
-            <p className="px-6 pb-6 text-sm text-muted-foreground">No active sessions</p>
+            <p className="px-6 pb-6 text-[12px] text-muted-foreground">No active sessions</p>
           ) : (
-            <div className="divide-y">
+            <div className="divide-y divide-white/[0.04]">
               {list.map((session: Session) => {
                 const isCurrent = session.isCurrent || false
                 return (
                   <div key={session._id} className="flex items-center justify-between px-6 py-4">
                     <div className="flex items-start gap-3 min-w-0">
-                      <div className={`mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                        isCurrent ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                      <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                        isCurrent ? 'bg-blue-500/10 text-blue-400' : 'bg-white/[0.03] text-muted-foreground'
                       }`}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" />
-                        </svg>
+                        <Monitor size={14} />
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium truncate">
+                          <p className="text-[13px] font-medium text-white/90 truncate">
                             {session.browser || 'Unknown browser'}
                           </p>
                           {isCurrent && (
-                            <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                            <span className="shrink-0 rounded-md bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-medium text-blue-400">
                               Current
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {session.os || 'Unknown OS'} &middot; {session.device || 'Unknown device'}
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          {session.os || 'Unknown OS'} · {session.device || 'Unknown device'}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          IP: {session.ipAddress || 'Unknown'} &middot; Last active {session.lastActive ? formatDate(session.lastActive) : 'N/A'}
+                        <p className="text-[11px] text-muted-foreground/60">
+                          IP: {session.ipAddress || 'Unknown'} · Last active {session.lastActive ? formatDate(session.lastActive) : 'N/A'}
                         </p>
                       </div>
                     </div>
@@ -137,7 +133,7 @@ export function SettingsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="shrink-0 ml-4 text-muted-foreground hover:text-destructive"
+                        className="shrink-0 ml-4 text-muted-foreground hover:text-red-400"
                         onClick={() => deleteMutation.mutate(session._id)}
                         disabled={deleteMutation.isPending}
                       >
@@ -152,16 +148,15 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-destructive/20">
+      {/* Sign out */}
+      <Card className="border-red-500/10">
         <CardHeader>
-          <CardTitle className="text-base text-destructive">Sign out</CardTitle>
+          <CardTitle className="text-[14px] text-red-400">Sign out</CardTitle>
           <CardDescription>End your current session across this device</CardDescription>
         </CardHeader>
         <CardContent>
           <Button variant="destructive" onClick={logout}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" />
-            </svg>
+            <LogOut size={14} className="mr-2" />
             Sign out
           </Button>
         </CardContent>

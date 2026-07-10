@@ -1,0 +1,54 @@
+require('dotenv').config();
+
+const config = {
+  port: parseInt(process.env.PORT, 10) || 5000,
+  nodeEnv: process.env.NODE_ENV || 'development',
+  isProduction: process.env.NODE_ENV === 'production',
+
+  mongo: {
+    uri: process.env.MONGO_URI || 'mongodb://localhost:27017/lead-distribution',
+  },
+
+  jwt: {
+    accessSecret: process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET,
+    refreshSecret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
+    accessExpiry: '15m',
+    refreshExpiry: '7d',
+  },
+
+  redis: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+    password: process.env.REDIS_PASSWORD || undefined,
+  },
+
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+  allowedOrigins: (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean),
+
+  delivery: {
+    maxRetries: parseInt(process.env.DELIVERY_MAX_RETRIES, 10) || 3,
+    initialDelayMs: parseInt(process.env.DELIVERY_INITIAL_DELAY_MS, 10) || 2000,
+    timeoutMs: parseInt(process.env.DELIVERY_TIMEOUT_MS, 10) || 30000,
+  },
+
+  dedup: {
+    windowHours: parseInt(process.env.DEDUP_WINDOW_HOURS, 10) || 720,
+  },
+
+  security: {
+    bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS, 10) || 12,
+    maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS, 10) || 5,
+    lockTimeMinutes: parseInt(process.env.ACCOUNT_LOCK_TIME_MINUTES, 10) || 120,
+  },
+};
+
+if (config.isProduction) {
+  const required = ['MONGO_URI', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'];
+  const missing = required.filter((k) => !process.env[k]);
+  if (missing.length) {
+    console.error(`Missing required env vars: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+}
+
+module.exports = config;
