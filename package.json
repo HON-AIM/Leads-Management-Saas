@@ -9,6 +9,7 @@
     "worker": "node src/queue/worker.js",
     "dev:all": "concurrently \"node server.js\" \"node src/queue/worker.js\"",
     "redis": ".redis\\redis-server.exe --port 6379",
+    "seed": "node seed.js",
     "test": "node --experimental-vm-modules node_modules/.bin/jest --passWithNoTests",
     "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch",
     "typecheck": "echo 'TypeScript not configured yet'",

@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/guards/ProtectedRoute'
 import { PublicRoute } from '@/components/guards/PublicRoute'
 import { AppShell } from '@/components/layout/AppShell'
+import { LandingPage } from '@/pages/marketing/LandingPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
 import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage'
@@ -16,6 +17,7 @@ import { ROUTES } from '@/lib/constants'
 export function AppRouter() {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path={ROUTES.LOGIN} element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path={ROUTES.FORGOT_PASSWORD} element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
       <Route path={ROUTES.RESET_PASSWORD} element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
@@ -29,8 +31,7 @@ export function AppRouter() {
         <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
       </Route>
 
-      <Route path="/" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
-      <Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

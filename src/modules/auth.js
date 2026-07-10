@@ -59,13 +59,17 @@ router.post('/logout', authenticate, async (req, res) => {
 });
 
 router.get('/me', authenticate, async (req, res) => {
+  const t = req.tenant;
   return success(res, {
     user: {
       id: req.user._id,
-      name: req.user.name,
+      firstName: (req.user.name || '').split(' ')[0] || '',
+      lastName: (req.user.name || '').split(' ').slice(1).join(' ') || '',
       email: req.user.email,
       role: req.user.role,
-      tenant: req.tenant,
+      tenantId: t?._id,
+      tenantName: t?.name || '',
+      tenantSlug: t?.slug || '',
     },
   });
 });

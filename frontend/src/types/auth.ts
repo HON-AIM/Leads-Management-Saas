@@ -12,6 +12,7 @@ export interface User {
 }
 
 export interface AuthResponse {
+  success: boolean
   data: {
     user: User
     accessToken: string

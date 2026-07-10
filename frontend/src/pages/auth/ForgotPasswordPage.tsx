@@ -81,7 +81,7 @@ export function ForgotPasswordPage() {
               <p className="text-[12px] text-muted-foreground">Enter your email and we'll send you a reset link.</p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="email">Email address</Label>
                 <Input

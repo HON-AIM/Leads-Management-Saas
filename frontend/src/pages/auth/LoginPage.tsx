@@ -14,7 +14,7 @@ import {
   Star,
   Route,
   BrainCircuit,
-  ChartColumn,
+  BarChart3,
   Repeat,
   Check,
 } from 'lucide-react'
@@ -30,7 +30,7 @@ type LoginForm = z.infer<typeof loginSchema>
 const FEATURES = [
   { icon: Route, label: 'Smart Lead Routing' },
   { icon: BrainCircuit, label: 'AI Lead Scoring' },
-  { icon: ChartColumn, label: 'Real-Time Analytics' },
+  { icon: BarChart3, label: 'Real-Time Analytics' },
   { icon: Repeat, label: 'Ping Post' },
 ]
 
@@ -121,7 +121,7 @@ export function LoginPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="tenantSlug" className="text-[12px] font-medium text-slate-300">
                 Workspace

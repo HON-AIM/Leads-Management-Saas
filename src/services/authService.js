@@ -22,8 +22,18 @@ class AuthService {
     user.refreshTokens.push({ token: refreshToken, createdAt: new Date() });
     await user.save();
 
+    const tenant = user.tenantId
     return {
-      user: { id: user._id, name: user.name, email: user.email, role: user.role, tenant: user.tenantId },
+      user: {
+        id: user._id,
+        firstName: (user.name || '').split(' ')[0] || '',
+        lastName: (user.name || '').split(' ').slice(1).join(' ') || '',
+        email: user.email,
+        role: user.role,
+        tenantId: tenant?._id?.toString?.() || tenant,
+        tenantName: tenant?.name || '',
+        tenantSlug: tenant?.slug || '',
+      },
       accessToken,
       refreshToken,
     };
