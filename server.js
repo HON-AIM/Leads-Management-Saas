@@ -26,6 +26,7 @@ const aiRoutes = require('./routes/aiRoutes');
 const { routeLead } = require('./services/routingService');
 const { getCapStatus, resetAllCounters: resetBuyerCaps } = require('./services/capService');
 const { resetState: resetRoundRobinState, listStates: listRoutingStates, getStateInfo: getRoutingState } = require('./services/roundRobinStateManager');
+const { buildBuyerLeadFilter, summarizeBuyerLeadStats } = require('./services/buyerLeadService');
 const { deliverLeadToBuyer } = require('./services/deliveryService');
 const { getCampaignArchivePlan } = require('./services/campaignService');
 const { getDeliveryLogsForLead, getDeliveryLogsForTenant, getDeliveryStats } = require('./services/deliveryLogger');
@@ -781,18 +782,35 @@ app.get('/api/buyer/leads', authenticate, tenantIsolation, async (req, res) => {
   try {
     const buyer = await Client.findOne({ email: req.user.email, tenantId: req.tenantId });
     if (!buyer) return res.status(404).json({ success: false, message: 'Buyer profile not found' });
+
     const page = parseInt(req.query.page) || 1;
     const limit = Math.min(parseInt(req.query.limit) || 25, 100);
     const skip = (page - 1) * limit;
-    const { status, state } = req.query;
-    const filter = { tenantId: req.tenantId, assignedTo: buyer._id };
-    if (status) filter.status = status;
-    if (state) filter.state = state.toUpperCase();
+    const filter = buildBuyerLeadFilter({
+      tenantId: req.tenantId,
+      buyerId: buyer._id,
+      query: req.query,
+    });
+
     const [leads, total] = await Promise.all([
-      Lead.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate('assignedTo', 'name email state').lean(),
+      Lead.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('assignedTo', 'name email state')
+        .populate('duplicateOf', 'name email')
+        .lean(),
       Lead.countDocuments(filter),
     ]);
-    res.json({ success: true, leads, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
+
+    const stats = summarizeBuyerLeadStats(leads);
+
+    res.json({
+      success: true,
+      leads,
+      stats,
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    });
   } catch (err) {
     console.error('❌ BUYER_LEADS ERROR:', err);
     res.status(500).json({ success: false, error: err.message });

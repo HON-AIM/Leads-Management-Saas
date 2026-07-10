@@ -38,9 +38,18 @@ export interface CapUsage {
   monthly: { used: number; cap: number; percent: number }
 }
 
+export interface BuyerLeadStats {
+  total: number
+  pending: number
+  inProgress: number
+  delivered: number
+  converted: number
+}
+
 export interface BuyerLeadsResponse {
   success: boolean
   leads: Lead[]
+  stats?: BuyerLeadStats
   pagination: { page: number; limit: number; total: number; pages: number }
 }
 
