@@ -81,15 +81,15 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
           {!isCollapsed ? (
             <div className="flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-[10px] font-bold text-white tracking-wider">
-                LD
+                LF
               </div>
               <span className="text-[13px] font-semibold text-white tracking-tight">
-                Lead Distro
+                LeadFlowX
               </span>
             </div>
           ) : (
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-[10px] font-bold text-white">
-              LD
+              LF
             </div>
           )}
         </div>

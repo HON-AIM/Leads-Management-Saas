@@ -137,7 +137,7 @@
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
-/* Border beam animation — LeadDistro.ai style */
+/* Border beam animation */
 @keyframes border-beam {
   0% { offset-distance: 0%; }
   100% { offset-distance: 100%; }

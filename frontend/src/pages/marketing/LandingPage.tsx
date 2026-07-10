@@ -160,8 +160,8 @@ export function LandingPage() {
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'border-b border-white/[0.05] bg-[#070b16]/80 backdrop-blur-xl' : 'bg-transparent'}`}>
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5">
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-[9px] font-bold tracking-wider text-white">LD</div>
-            <span className="text-[14px] font-semibold tracking-tight">Lead Distro</span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-[9px] font-bold tracking-wider text-white">LF</div>
+            <span className="text-[14px] font-semibold tracking-tight">LeadFlowX</span>
           </Link>
 
           <div className="hidden items-center gap-7 md:flex">
@@ -242,7 +242,7 @@ export function LandingPage() {
                     <div className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
                     <div className="h-2.5 w-2.5 rounded-full bg-amber-500/60" />
                     <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/60" />
-                    <span className="ml-2 text-[10px] text-muted-foreground/30">Lead Distro — Dashboard</span>
+                    <span className="ml-2 text-[10px] text-muted-foreground/30">LeadFlowX — Dashboard</span>
                   </div>
                   <div className="grid grid-cols-3 gap-3 mb-4">
                     {[{ l: 'Total Leads', v: '12,847', c: 'text-white' }, { l: 'Active Buyers', v: '24', c: 'text-emerald-400' }, { l: 'Delivery Rate', v: '98.6%', c: 'text-blue-400' }].map((s) => (
@@ -521,8 +521,8 @@ export function LandingPage() {
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-600 text-[8px] font-bold text-white">LD</div>
-                <span className="text-[13px] font-semibold">Lead Distro</span>
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-600 text-[8px] font-bold text-white">LF</div>
+                <span className="text-[13px] font-semibold">LeadFlowX</span>
               </div>
               <p className="text-[12px] text-muted-foreground/40 leading-relaxed">AI-powered lead distribution for agencies that demand reliability.</p>
             </div>
@@ -552,7 +552,7 @@ export function LandingPage() {
             </div>
           </div>
           <div className="mt-8 border-t border-white/[0.04] pt-6 flex flex-col items-center justify-between gap-3 sm:flex-row">
-            <p className="text-[11px] text-muted-foreground/25">&copy; {new Date().getFullYear()} Lead Distro. All rights reserved.</p>
+            <p className="text-[11px] text-muted-foreground/25">&copy; {new Date().getFullYear()} LeadFlowX. All rights reserved.</p>
             <div className="flex items-center gap-4">
               {['Twitter', 'LinkedIn', 'GitHub'].map((s) => (
                 <a key={s} href="#" className="text-[11px] text-muted-foreground/25 transition hover:text-white/40">{s}</a>

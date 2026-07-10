@@ -1,6 +1,5 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 const config = require('./src/config');
 
 const Tenant = require('./src/models/Tenant');
@@ -22,10 +21,9 @@ async function seed() {
     const adminEmail = 'admin@leaddistro.com';
     let admin = await User.findOne({ email: adminEmail, tenantId: tenant._id });
     if (!admin) {
-      const hashedPassword = await bcrypt.hash('Admin123!', config.security.bcryptRounds);
       admin = await User.create({
         email: adminEmail,
-        password: hashedPassword,
+        password: 'Admin123!',
         name: 'Admin User',
         role: 'super_admin',
         tenantId: tenant._id,

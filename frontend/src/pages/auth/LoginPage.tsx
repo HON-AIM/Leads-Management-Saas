@@ -82,10 +82,10 @@ export function LoginPage() {
         <div className="flex flex-col items-center gap-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-[11px] font-bold tracking-wider text-white shadow-lg shadow-blue-600/20">
-              LD
+              LF
             </div>
             <span className="text-lg font-semibold tracking-tight text-white">
-              Lead Distro
+              LeadFlowX
             </span>
           </div>
 
@@ -201,7 +201,7 @@ export function LoginPage() {
           </form>
         </div>
 
-        {/* Social Proof — matching LeadDistro.ai sign-in */}
+        {/* Social Proof */}
         <div className="flex flex-col items-center gap-4">
           {/* Star Rating */}
           <div className="flex items-center gap-2">
@@ -251,7 +251,7 @@ export function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-[11px] text-slate-700">
-          © {new Date().getFullYear()} Lead Distro · AI-Powered Lead Distribution
+          © {new Date().getFullYear()} LeadFlowX · AI-Powered Lead Distribution
         </p>
       </div>
     </div>

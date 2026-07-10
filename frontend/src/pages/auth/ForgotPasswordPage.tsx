@@ -50,9 +50,9 @@ export function ForgotPasswordPage() {
       <div className="relative w-full max-w-[360px] space-y-8">
         <div className="flex items-center justify-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-[11px] font-bold text-white tracking-wider">
-            LD
+            LF
           </div>
-          <span className="text-[15px] font-semibold text-white tracking-tight">Lead Distro</span>
+          <span className="text-[15px] font-semibold text-white tracking-tight">LeadFlowX</span>
         </div>
 
         {sent ? (
