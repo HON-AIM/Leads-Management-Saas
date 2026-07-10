@@ -182,10 +182,10 @@ export function BuyerForm({ client, onClose }: BuyerFormProps) {
                   key={st}
                   type="button"
                   onClick={() => toggleState(st)}
-                  className={`text-xs px-2 py-0.5 rounded-full border ${
+                  className={`text-xs px-2 py-0.5 rounded-full border font-medium transition-colors ${
                     form.allowedStates.includes(st)
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'border-input text-muted-foreground'
+                      ? 'bg-sky-100 text-sky-800 border-sky-300 shadow-sm dark:bg-sky-950 dark:text-sky-200 dark:border-sky-700'
+                      : 'border-slate-200 bg-white/80 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200 dark:hover:bg-slate-800'
                   }`}
                 >
                   {st}
