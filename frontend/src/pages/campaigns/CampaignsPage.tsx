@@ -75,11 +75,12 @@ export function CampaignsPage() {
     mutationFn: async (id: string) => {
       await api.delete(`/campaigns/${id}`)
     },
-    onSuccess: () => {
-      addNotification({ type: 'success', title: 'Deleted', description: 'Campaign deleted' })
+    onSuccess: (result: any) => {
+      const description = result?.archived ? 'Campaign archived successfully' : 'Campaign deleted successfully'
+      addNotification({ type: 'success', title: result?.archived ? 'Archived' : 'Deleted', description })
       qc.invalidateQueries({ queryKey: QUERY_KEYS.CAMPAIGNS })
     },
-    onError: () => addNotification({ type: 'error', title: 'Error', description: 'Failed to delete campaign' }),
+    onError: () => addNotification({ type: 'error', title: 'Error', description: 'Failed to update campaign state' }),
   })
 
   const activeCampaigns = campaigns.filter((c) => c.status === 'active')
@@ -140,7 +141,8 @@ export function CampaignsPage() {
             onEdit={setSelectedCampaign}
             onToggle={(c) => toggleMutation.mutate(c)}
             onDelete={(c) => {
-              if (confirm(`Delete campaign "${c.name}"?`)) deleteMutation.mutate(c._id)
+              const action = c.status === 'active' ? 'archive' : 'delete'
+              if (confirm(`This will ${action} campaign "${c.name}". Continue?`)) deleteMutation.mutate(c._id)
             }}
           />
         </CardContent>

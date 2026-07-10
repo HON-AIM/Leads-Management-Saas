@@ -27,6 +27,7 @@ const { routeLead } = require('./services/routingService');
 const { getCapStatus, resetAllCounters: resetBuyerCaps } = require('./services/capService');
 const { resetState: resetRoundRobinState, listStates: listRoutingStates, getStateInfo: getRoutingState } = require('./services/roundRobinStateManager');
 const { deliverLeadToBuyer } = require('./services/deliveryService');
+const { getCampaignArchivePlan } = require('./services/campaignService');
 const { getDeliveryLogsForLead, getDeliveryLogsForTenant, getDeliveryStats } = require('./services/deliveryLogger');
 const DeliveryLog = require('./models/DeliveryLog');
 
@@ -438,10 +439,23 @@ app.put('/api/campaigns/:id', authenticate, tenantIsolation, requirePermission('
 
 app.delete('/api/campaigns/:id', authenticate, tenantIsolation, requirePermission('leads', 'delete'), async (req, res) => {
   try {
-    const campaign = await Campaign.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
+    const campaign = await Campaign.findOne({ _id: req.params.id, tenantId: req.tenantId });
     if (!campaign) return res.status(404).json({ success: false, message: 'Campaign not found' });
+
+    const plan = getCampaignArchivePlan(campaign);
+
+    if (plan.action === 'archive') {
+      campaign.status = plan.updates.status;
+      campaign.isArchived = plan.updates.isArchived;
+      campaign.archivedAt = plan.updates.archivedAt;
+      await campaign.save();
+      await Activity.create({ type: 'campaign_archived', message: `Campaign archived: ${campaign.name}`, tenantId: req.tenantId });
+      return res.json({ success: true, archived: true, campaign });
+    }
+
+    await Campaign.deleteOne({ _id: req.params.id, tenantId: req.tenantId });
     await Activity.create({ type: 'campaign_deleted', message: `Campaign deleted: ${campaign.name}`, tenantId: req.tenantId });
-    res.json({ success: true });
+    res.json({ success: true, archived: false });
   } catch (err) {
     console.error('❌ DELETE_CAMPAIGN ERROR:', err);
     res.status(500).json({ success: false, error: err.message });

@@ -5,9 +5,11 @@ const campaignSchema = new mongoose.Schema({
   description: String,
   status: {
     type: String,
-    enum: ['active', 'inactive', 'completed'],
+    enum: ['active', 'inactive', 'completed', 'archived'],
     default: 'active'
   },
+  isArchived: { type: Boolean, default: false },
+  archivedAt: { type: Date },
   startDate: Date,
   endDate: Date,
 

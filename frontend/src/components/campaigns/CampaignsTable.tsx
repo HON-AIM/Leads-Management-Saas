@@ -15,6 +15,7 @@ const statusStyles: Record<string, string> = {
   active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400',
   inactive: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
   completed: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400',
+  archived: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
 }
 
 export function CampaignsTable({ campaigns, isLoading, onEdit, onToggle, onDelete }: CampaignsTableProps) {
@@ -93,7 +94,7 @@ export function CampaignsTable({ campaigns, isLoading, onEdit, onToggle, onDelet
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                         )}
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => onDelete(c)}>
+                      <Button variant="ghost" size="sm" onClick={() => onDelete(c)} title={c.status === 'active' ? 'Archive campaign' : 'Delete campaign'}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                       </Button>
                     </div>
