@@ -46,10 +46,10 @@ userSchema.methods.isLocked = function () {
 };
 
 userSchema.methods.incrementFailedAttempts = async function () {
-  if (this.failedLoginAttempts === 0) {
+  this.failedLoginAttempts += 1;
+  if (this.failedLoginAttempts >= config.security.maxLoginAttempts) {
     this.lockedUntil = new Date(Date.now() + config.security.lockTimeMinutes * 60 * 1000);
   }
-  this.failedLoginAttempts += 1;
   await this.save();
 };
 
