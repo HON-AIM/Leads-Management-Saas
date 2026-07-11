@@ -1,49 +1,48 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const config = require('./src/config');
+const logger = require('./src/utils/logger');
 
 const Tenant = require('./src/models/Tenant');
 const User = require('./src/models/User');
 
+const SEED_EMAIL = process.env.SEED_ADMIN_EMAIL || 'admin@leaddistro.com';
+const SEED_PASSWORD = process.env.SEED_ADMIN_PASSWORD || 'Admin123!';
+
 async function seed() {
   try {
     await mongoose.connect(config.mongo.uri);
-    console.log('Connected to MongoDB');
+    logger.info('Connected to MongoDB');
 
     let tenant = await Tenant.findOne({ slug: 'default' });
     if (!tenant) {
       tenant = await Tenant.create({ name: 'Default Workspace', slug: 'default', status: 'active' });
-      console.log('Created default tenant:', tenant.slug);
+      logger.info('Created default tenant: default');
     } else {
-      console.log('Default tenant exists:', tenant.slug);
+      logger.info('Default tenant exists: default');
     }
 
-    const adminEmail = 'admin@leaddistro.com';
-    let admin = await User.findOne({ email: adminEmail, tenantId: tenant._id });
+    let admin = await User.findOne({ email: SEED_EMAIL, tenantId: tenant._id });
     if (!admin) {
       admin = await User.create({
-        email: adminEmail,
-        password: 'Admin123!',
+        email: SEED_EMAIL,
+        password: SEED_PASSWORD,
         name: 'Admin User',
         role: 'super_admin',
         tenantId: tenant._id,
         status: 'active',
       });
-      console.log('Created admin user:', adminEmail);
+      logger.info('Created admin user');
     } else {
-      console.log('Admin user exists:', adminEmail);
+      logger.info('Admin user exists');
     }
 
-    console.log('\n--- Seed Complete ---');
-    console.log('Tenant Slug: default');
-    console.log('Admin Email: admin@leaddistro.com');
-    console.log('Admin Password: Admin123!');
-    console.log('Admin Role: super_admin');
+    logger.info('Seed complete');
   } catch (err) {
-    console.error('Seed failed:', err.message);
+    logger.error('Seed failed', { error: err.message });
   } finally {
     await mongoose.disconnect();
-    console.log('Disconnected from MongoDB');
+    logger.info('Disconnected from MongoDB');
   }
 }
 

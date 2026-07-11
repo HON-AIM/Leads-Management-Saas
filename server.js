@@ -18,10 +18,9 @@ app.use(cors({
     const allowedOrigins = config.allowedOrigins.length > 0
       ? config.allowedOrigins
       : [config.frontendUrl];
-    if (config.isProduction && !allowedOrigins.includes(origin)) {
-      return callback(new Error('Not allowed by CORS'));
-    }
-    callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (!config.isProduction) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
 }));
@@ -91,6 +90,10 @@ async function start() {
     process.exit(1);
   }
 }
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection', { reason: reason?.message || reason });
+});
 
 start();
 

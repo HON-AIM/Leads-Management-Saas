@@ -1,5 +1,8 @@
 const router = require('express').Router()
 const controller = require('./registry.controller')
+const { authenticate } = require('../../middleware/auth')
+
+router.use(authenticate)
 
 router.get('/', (req, res) => controller.getAll(req, res))
 router.get('/categories', (req, res) => controller.getCategories(req, res))

@@ -2,6 +2,8 @@ const router = require('express').Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const buyerService = require('../services/buyerService');
 const { success, created, error, notFound, paginated } = require('../utils/response');
+const { validate } = require('../middleware/validate');
+const { createBuyer, updateBuyer } = require('../middleware/validation/schemas');
 
 router.use(authenticate);
 
@@ -29,7 +31,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', authorize('admin', 'manager'), async (req, res) => {
+router.post('/', authorize('admin', 'manager'), validate(createBuyer), async (req, res) => {
   try {
     const buyer = await buyerService.create({ ...req.body, createdBy: req.userId }, req.tenantId);
     return created(res, buyer);
@@ -38,7 +40,7 @@ router.post('/', authorize('admin', 'manager'), async (req, res) => {
   }
 });
 
-router.put('/:id', authorize('admin', 'manager'), async (req, res) => {
+router.put('/:id', authorize('admin', 'manager'), validate(updateBuyer), async (req, res) => {
   try {
     const buyer = await buyerService.update(req.params.id, req.tenantId, req.body);
     if (!buyer) return notFound(res, 'Buyer not found');

@@ -3,17 +3,16 @@ const authService = require('../services/authService');
 const { authenticate } = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimit');
 const { success, error, created } = require('../utils/response');
+const { validate } = require('../middleware/validate');
+const { login: loginSchema } = require('../middleware/validation/schemas');
 
-router.post('/login', loginLimiter, async (req, res) => {
+router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
   try {
     const { email, password, tenantSlug } = req.body;
-    if (!email || !password || !tenantSlug) {
-      return error(res, 'Email, password, and tenantSlug are required', 400);
-    }
 
     const Tenant = require('../models/Tenant');
     const tenant = await Tenant.findOne({ slug: tenantSlug, status: 'active' });
-    if (!tenant) return error(res, 'Invalid tenant', 401);
+    if (!tenant) return error(res, 'Invalid workspace', 401);
 
     const result = await authService.login(email, password, tenant._id);
 

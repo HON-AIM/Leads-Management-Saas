@@ -1,3 +1,4 @@
+const config = require('../config');
 const https = require('https');
 const http = require('http');
 const leadAssignmentRepo = require('../repositories/leadAssignmentRepository');
@@ -14,8 +15,8 @@ class DeliveryService {
 
     const payload = this.buildPayload(lead, buyer);
     let attempt = 0;
-    const maxRetries = 3;
-    const timeout = 10000;
+    const maxRetries = config.delivery.maxRetries;
+    const timeout = config.delivery.timeoutMs;
 
     while (attempt < maxRetries) {
       try {

@@ -6,7 +6,7 @@ const buyerSchema = new mongoose.Schema(
     email: { type: String, required: true, lowercase: true, trim: true },
     phone: { type: String },
 
-    status: { type: String, enum: ['active', 'paused', 'inactive'], default: 'active' },
+    status: { type: String, enum: ['active', 'paused', 'inactive', 'full'], default: 'active' },
 
     leadCap: { type: Number, default: 0 },
     dailyCap: { type: Number, default: 0 },

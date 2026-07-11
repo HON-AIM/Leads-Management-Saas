@@ -2,6 +2,8 @@ const router = require('express').Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const campaignService = require('../services/campaignService');
 const { success, created, error, notFound, paginated } = require('../utils/response');
+const { validate } = require('../middleware/validate');
+const { createCampaign, updateCampaign } = require('../middleware/validation/schemas');
 
 router.use(authenticate);
 
@@ -28,7 +30,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', authorize('admin', 'manager'), async (req, res) => {
+router.post('/', authorize('admin', 'manager'), validate(createCampaign), async (req, res) => {
   try {
     const campaign = await campaignService.create({ ...req.body, createdBy: req.userId }, req.tenantId);
     return created(res, campaign);
@@ -37,7 +39,7 @@ router.post('/', authorize('admin', 'manager'), async (req, res) => {
   }
 });
 
-router.put('/:id', authorize('admin', 'manager'), async (req, res) => {
+router.put('/:id', authorize('admin', 'manager'), validate(updateCampaign), async (req, res) => {
   try {
     const campaign = await campaignService.update(req.params.id, req.tenantId, req.body);
     if (!campaign) return notFound(res, 'Campaign not found');

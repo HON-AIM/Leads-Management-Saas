@@ -1,7 +1,7 @@
 {
-  "name": "lead-distribution-system",
+  "name": "leadflowx",
   "version": "2.0.0",
-  "description": "Lead Distribution SaaS — Lightweight lead routing platform",
+  "description": "LeadFlowX — AI-Powered Lead Distribution SaaS",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

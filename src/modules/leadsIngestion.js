@@ -6,7 +6,11 @@ const { ingestLimiter } = require('../middleware/rateLimit');
 const { success, error, badRequest } = require('../utils/response');
 const logger = require('../utils/logger');
 
-router.post('/', ingestLimiter, async (req, res) => {
+const User = require('../models/User');
+const Campaign = require('../models/Campaign');
+const { authenticate } = require('../middleware/auth');
+
+router.post('/', ingestLimiter, authenticate, async (req, res) => {
   try {
     const { tenantSlug, campaignId } = req.query;
     const apiKey = req.headers['x-api-key'];
@@ -17,15 +21,12 @@ router.post('/', ingestLimiter, async (req, res) => {
     const tenant = await Tenant.findOne({ slug: tenantSlug, status: 'active' });
     if (!tenant) return badRequest(res, 'Invalid tenant');
 
+    if (!apiKey) return badRequest(res, 'x-api-key header required');
+
     const tenantId = tenant._id;
+    const user = await User.findOne({ apiKey, tenantId, status: 'active' });
+    if (!user) return badRequest(res, 'Invalid API key');
 
-    if (apiKey) {
-      const User = require('../models/User');
-      const user = await User.findOne({ apiKey, tenantId, status: 'active' });
-      if (!user) return badRequest(res, 'Invalid API key');
-    }
-
-    const Campaign = require('../models/Campaign');
     const campaign = campaignId
       ? await Campaign.findOne({ _id: campaignId, tenantId, status: 'active' })
       : await Campaign.findOne({ tenantId, status: 'active' });
