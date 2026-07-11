@@ -11,7 +11,12 @@ const { apiLimiter } = require('./src/middleware/rateLimit');
 
 const app = express();
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: config.isProduction ? undefined : false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: config.isProduction ? undefined : false,
+  crossOriginResourcePolicy: config.isProduction ? undefined : false,
+}));
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
