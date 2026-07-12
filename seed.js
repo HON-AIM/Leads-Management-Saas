@@ -22,7 +22,7 @@ async function seed() {
       logger.info('Default tenant exists: default');
     }
 
-    let admin = await User.findOne({ email: SEED_EMAIL, tenantId: tenant._id }).select('+password');
+    let admin = await User.findOne({ email: SEED_EMAIL, tenantId: tenant._id });
     if (!admin) {
       admin = await User.create({
         email: SEED_EMAIL,
@@ -34,9 +34,7 @@ async function seed() {
       });
       logger.info('Created admin user');
     } else {
-      admin.password = SEED_PASSWORD;
-      await admin.save();
-      logger.info('Admin user exists — password reset');
+      logger.info('Admin user exists');
     }
 
     logger.info('Seed complete');

@@ -86,6 +86,18 @@ async function start() {
     await connectDB();
     logger.info('MongoDB connected');
 
+    if (config.isProduction) {
+      try {
+        const Tenant = require('./src/models/Tenant');
+        const tenantCount = await Tenant.countDocuments();
+        if (tenantCount === 0) {
+          logger.warn('WARNING: No tenants found in database. If this is a fresh production deployment, you must run the seed script before anyone can log in.');
+        }
+      } catch (e) {
+        logger.warn('Could not verify tenant count on startup', { error: e.message });
+      }
+    }
+
     const server = app.listen(config.port, () => {
       logger.info(`Server running on port ${config.port} [${config.nodeEnv}]`);
     });
