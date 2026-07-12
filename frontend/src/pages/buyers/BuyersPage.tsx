@@ -94,7 +94,7 @@ export function BuyersPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, email, or state..."
-          className="w-full rounded-lg border border-white/[0.08] bg-[#0e1428] pl-9 pr-3 py-2 text-[13px] text-white/90 placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-colors"
+          className="w-full rounded-lg border border-white/[0.08] bg-[#0e1428] pl-9 pr-3 py-2 text-[13px] text-white placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-colors"
         />
       </div>
 
@@ -138,7 +138,7 @@ export function BuyersPage() {
                         {search ? 'No buyers match your search' : 'No buyers yet'}
                       </p>
                       {!search && (
-                        <Button variant="outline" size="sm" className="mt-1" onClick={() => setDrawerBuyer('new')}>
+                        <Button variant="cta" size="sm" className="mt-1" onClick={() => setDrawerBuyer('new')}>
                           Add your first buyer
                         </Button>
                       )}

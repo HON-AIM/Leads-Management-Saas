@@ -15,7 +15,7 @@ const buttonVariants = cva(
         destructive:
           'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm',
         outline:
-          'border border-[hsl(var(--border))] bg-transparent hover:bg-white/[0.04] dark:hover:bg-white/[0.05] text-[hsl(var(--foreground))]',
+          'border border-white/[0.15] bg-transparent hover:bg-white/[0.06] dark:hover:bg-white/[0.08] text-white/80 hover:text-white',
         secondary:
           'bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))] hover:bg-[hsl(var(--secondary))]/80',
         ghost:

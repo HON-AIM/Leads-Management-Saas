@@ -70,7 +70,7 @@ export function LeadsPage() {
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1) }}
               placeholder="Search name, email, or phone..."
-              className="w-full rounded-lg border border-white/[0.08] bg-[#0e1428] pl-9 pr-3 py-2 text-[13px] text-white/90 placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-colors"
+              className="w-full rounded-lg border border-white/[0.08] bg-[#0e1428] pl-9 pr-3 py-2 text-[13px] text-white placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-colors"
             />
           </div>
           <Button
@@ -229,9 +229,9 @@ function FilterSelect({ label, value, onChange, options }: { label: string; valu
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-white/[0.08] bg-[#0e1428] px-2.5 py-1.5 text-[12px] text-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+        className="w-full rounded-lg border border-white/[0.08] bg-[#0e1428] px-2.5 py-1.5 text-[12px] text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
       >
-        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        {options.map((o) => <option key={o.value} value={o.value} className="bg-[#0e1428] text-white">{o.label}</option>)}
       </select>
     </div>
   )
@@ -246,7 +246,7 @@ function FilterInput({ label, value, onChange, placeholder, type = 'text' }: { l
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-white/[0.08] bg-[#0e1428] px-2.5 py-1.5 text-[12px] text-white/90 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+        className="w-full rounded-lg border border-white/[0.08] bg-[#0e1428] px-2.5 py-1.5 text-[12px] text-white placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
       />
     </div>
   )

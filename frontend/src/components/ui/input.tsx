@@ -17,7 +17,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500/40',
           'disabled:cursor-not-allowed disabled:opacity-40',
           'border-[hsl(var(--input))] text-[hsl(var(--foreground))]',
-          'dark:border-white/[0.10] dark:text-white',
+          'dark:border-white/[0.10] dark:text-white/90',
+          'dark:placeholder:text-white/40',
           'dark:focus-visible:ring-blue-500/20 dark:focus-visible:border-blue-500/30',
           className
         )}

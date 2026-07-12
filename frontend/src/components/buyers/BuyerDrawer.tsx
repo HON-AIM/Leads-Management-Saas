@@ -99,13 +99,13 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, isPending
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
             <Section title="Basic Info">
               <Field label="Name">
-                <Input value={form.name} onChange={(e) => update({ name: e.target.value })} placeholder="Buyer name" />
+                <Input value={form.name} onChange={(e) => update({ name: e.target.value })} placeholder="Buyer name" className="text-white" />
               </Field>
               <Field label="Email">
-                <Input type="email" value={form.email} onChange={(e) => update({ email: e.target.value })} placeholder="buyer@example.com" />
+                <Input type="email" value={form.email} onChange={(e) => update({ email: e.target.value })} placeholder="buyer@example.com" className="text-white" />
               </Field>
               <Field label="Phone">
-                <Input value={form.phone} onChange={(e) => update({ phone: e.target.value })} placeholder="Optional" />
+                <Input value={form.phone} onChange={(e) => update({ phone: e.target.value })} placeholder="Optional" className="text-white" />
               </Field>
             </Section>
 
@@ -130,16 +130,16 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, isPending
               </Field>
               {form.delivery.provider === 'webhook' && (
                 <Field label="Webhook URL">
-                  <Input value={form.delivery.url} onChange={(e) => updateDelivery({ url: e.target.value })} placeholder="https://..." className="font-mono text-[12px]" />
+                  <Input value={form.delivery.url} onChange={(e) => updateDelivery({ url: e.target.value })} placeholder="https://..." className="font-mono text-[12px] text-white" />
                 </Field>
               )}
               {form.delivery.provider === 'ghl' && (
                 <>
                   <Field label="Location ID">
-                    <Input value={form.delivery.locationId} onChange={(e) => updateDelivery({ locationId: e.target.value })} placeholder="GHL location ID" />
+                    <Input value={form.delivery.locationId} onChange={(e) => updateDelivery({ locationId: e.target.value })} placeholder="GHL location ID" className="text-white" />
                   </Field>
                   <Field label="API Key">
-                    <Input value={form.delivery.apiKey} onChange={(e) => updateDelivery({ apiKey: e.target.value })} placeholder="GHL API key" type="password" />
+                    <Input value={form.delivery.apiKey} onChange={(e) => updateDelivery({ apiKey: e.target.value })} placeholder="GHL API key" type="password" className="text-white" />
                   </Field>
                 </>
               )}
@@ -167,7 +167,7 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, isPending
                   onChange={(e) => { setStateSearch(e.target.value); setShowStates(true) }}
                   onFocus={() => setShowStates(true)}
                   placeholder="Type to add states..."
-                  className="w-full rounded-lg border border-white/[0.08] bg-transparent px-3 py-1.5 text-[13px] text-white/90 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-lg border border-white/[0.08] bg-transparent px-3 py-1.5 text-[13px] text-white placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
                 {showStates && stateSearch && filteredStates.length > 0 && (
                   <div className="absolute z-10 mt-1 w-full max-h-40 overflow-y-auto rounded-lg border border-white/[0.08] bg-[#0e1428] shadow-elevated">
@@ -196,13 +196,13 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, isPending
             <Section title="Caps">
               <div className="grid grid-cols-3 gap-3">
                 <Field label="Total Cap">
-                  <Input type="number" min={0} value={form.leadCap} onChange={(e) => update({ leadCap: Number(e.target.value) })} />
+                  <Input type="number" min={0} value={form.leadCap} onChange={(e) => update({ leadCap: Number(e.target.value) })} className="text-white" />
                 </Field>
                 <Field label="Daily Cap">
-                  <Input type="number" min={0} value={form.dailyCap} onChange={(e) => update({ dailyCap: Number(e.target.value) })} />
+                  <Input type="number" min={0} value={form.dailyCap} onChange={(e) => update({ dailyCap: Number(e.target.value) })} className="text-white" />
                 </Field>
                 <Field label="Monthly Cap">
-                  <Input type="number" min={0} value={form.monthlyCap} onChange={(e) => update({ monthlyCap: Number(e.target.value) })} />
+                  <Input type="number" min={0} value={form.monthlyCap} onChange={(e) => update({ monthlyCap: Number(e.target.value) })} className="text-white" />
                 </Field>
               </div>
               <p className="text-[10px] text-muted-foreground/70">0 = unlimited</p>
@@ -211,17 +211,17 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, isPending
             <Section title="Routing">
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Weight">
-                  <Input type="number" min={1} value={form.weight} onChange={(e) => update({ weight: Number(e.target.value) })} />
+                  <Input type="number" min={1} value={form.weight} onChange={(e) => update({ weight: Number(e.target.value) })} className="text-white" />
                 </Field>
                 <Field label="Priority">
-                  <Input type="number" min={0} value={form.priority} onChange={(e) => update({ priority: Number(e.target.value) })} />
+                  <Input type="number" min={0} value={form.priority} onChange={(e) => update({ priority: Number(e.target.value) })} className="text-white" />
                 </Field>
               </div>
             </Section>
           </div>
 
           <div className="border-t border-white/[0.08] px-6 py-4 flex items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
+            <Button variant="secondary" size="sm" onClick={onClose}>Cancel</Button>
             <Button
               size="sm"
               onClick={() => onSave(form)}

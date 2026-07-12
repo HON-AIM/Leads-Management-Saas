@@ -116,7 +116,7 @@ export function CampaignsPage() {
             {search ? 'No campaigns match your search' : 'No campaigns yet'}
           </p>
           {!search && (
-            <Button variant="outline" size="sm" className="mt-3" onClick={() => setShowCreate(true)}>
+            <Button variant="cta" size="sm" className="mt-3" onClick={() => setShowCreate(true)}>
               Create your first campaign
             </Button>
           )}
