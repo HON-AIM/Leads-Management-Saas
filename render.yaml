@@ -16,16 +16,14 @@ services:
         sync: false
       - key: JWT_ACCESS_SECRET
         generateValue: true
-      - key: JWT_SECRET
-        generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
       - key: FRONTEND_URL
         sync: false
-      - key: PORT
-        value: 10000
       - key: ALLOWED_ORIGINS
         sync: false
+      - key: PORT
+        value: 10000
       - key: EMAIL_USER
         sync: false
       - key: EMAIL_PASS
