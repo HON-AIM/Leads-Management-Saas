@@ -5,6 +5,7 @@ const { loginLimiter } = require('../middleware/rateLimit');
 const { success, error, created } = require('../utils/response');
 const { validate } = require('../middleware/validate');
 const { login: loginSchema } = require('../middleware/validation/schemas');
+const logger = require('../utils/logger');
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -18,8 +19,28 @@ router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
     const { email, password, tenantSlug } = req.body;
 
     const Tenant = require('../models/Tenant');
+    const User = require('../models/User');
     const tenant = await Tenant.findOne({ slug: tenantSlug, status: 'active' });
-    if (!tenant) return error(res, 'Invalid workspace', 401);
+    if (!tenant) {
+      logger.warn('[LOGIN-DIAG] Tenant not found', { tenantSlug, email });
+      return error(res, 'Invalid workspace', 401);
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail, tenantId: tenant._id }).select('+password');
+    if (!user) {
+      logger.warn('[LOGIN-DIAG] User not found for tenant', { tenantSlug, tenantId: tenant._id.toString(), email: normalizedEmail });
+      return error(res, 'Invalid credentials', 401);
+    }
+
+    const bcrypt = require('bcryptjs');
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      logger.warn('[LOGIN-DIAG] Password mismatch', { tenantSlug, email: normalizedEmail, userId: user._id.toString() });
+      return error(res, 'Invalid credentials', 401);
+    }
+
+    logger.info('[LOGIN-DIAG] Login successful', { tenantSlug, email: normalizedEmail, userId: user._id.toString() });
 
     const result = await authService.login(email, password, tenant._id);
 
@@ -28,6 +49,7 @@ router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
 
     return success(res, { user: result.user, accessToken: result.accessToken, refreshToken: result.refreshToken });
   } catch (err) {
+    logger.error('[LOGIN-DIAG] Unexpected error', { error: err.message, stack: err.stack });
     return error(res, err.message, 401);
   }
 });
