@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { SEMANTIC_COLORS, type SemanticKey } from '@/lib/statusColors'
 
 interface BadgeProps {
   children: React.ReactNode
@@ -6,13 +7,13 @@ interface BadgeProps {
   variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'muted'
 }
 
-const variantStyles = {
-  default: 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400',
-  success: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400',
-  warning: 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400',
-  danger: 'bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-400',
-  info: 'bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-  muted: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+const variantStyles: Record<string, string> = {
+  default: `${SEMANTIC_COLORS.info.bg} ${SEMANTIC_COLORS.info.text} ${SEMANTIC_COLORS.info.ring}`,
+  success: `${SEMANTIC_COLORS.positive.bg} ${SEMANTIC_COLORS.positive.text} ${SEMANTIC_COLORS.positive.ring}`,
+  warning: `${SEMANTIC_COLORS.caution.bg} ${SEMANTIC_COLORS.caution.text} ${SEMANTIC_COLORS.caution.ring}`,
+  danger: `${SEMANTIC_COLORS.negative.bg} ${SEMANTIC_COLORS.negative.text} ${SEMANTIC_COLORS.negative.ring}`,
+  info: `${SEMANTIC_COLORS.neutral.bg} ${SEMANTIC_COLORS.neutral.text} ${SEMANTIC_COLORS.neutral.ring}`,
+  muted: 'bg-white/[0.06] text-muted-foreground',
 }
 
 export function Badge({ children, className = '', variant = 'default' }: BadgeProps) {

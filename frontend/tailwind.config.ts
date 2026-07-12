@@ -49,11 +49,17 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        cta: {
+          DEFAULT: '#7c3aed',
+          hover: '#6d28d9',
+          active: '#5b21b6',
+          foreground: '#ffffff',
+        },
         surface: {
-          dark: '#070b16',
-          card: '#0c1021',
-          hover: 'rgba(255, 255, 255, 0.02)',
-          border: 'rgba(255, 255, 255, 0.06)',
+          dark: '#0a0f1e',
+          card: '#0e1428',
+          hover: 'rgba(255, 255, 255, 0.04)',
+          border: 'rgba(255, 255, 255, 0.08)',
         },
       },
       borderRadius: {

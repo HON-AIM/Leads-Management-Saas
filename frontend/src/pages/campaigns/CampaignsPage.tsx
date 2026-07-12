@@ -83,7 +83,7 @@ export function CampaignsPage() {
           <h1 className="text-[18px] font-semibold text-white tracking-tight">Campaigns</h1>
           <p className="text-[13px] text-muted-foreground mt-0.5">Manage routing, buyer assignments, and lead flow</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} size="sm">
+        <Button onClick={() => setShowCreate(true)} size="sm" variant="cta">
           <Plus size={14} className="mr-1.5" />
           New Campaign
         </Button>
@@ -95,20 +95,20 @@ export function CampaignsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search campaigns..."
-          className="w-full rounded-lg border border-white/[0.08] bg-[#0c1021] pl-9 pr-3 py-2 text-[13px] text-white/90 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-colors"
+          className="w-full rounded-lg border border-white/[0.08] bg-[#0e1428] pl-9 pr-3 py-2 text-[13px] text-white/90 placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-colors"
         />
       </div>
 
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-[180px] rounded-xl border border-white/[0.06] bg-[#0c1021] skeleton" />
+            <div key={i} className="h-[180px] rounded-xl border border-white/[0.08] bg-[#0e1428] skeleton" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.03] mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/10">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.05] mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/20">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
           </div>
@@ -148,7 +148,7 @@ export function CampaignsPage() {
           <div className="fixed inset-0 z-50" onClick={() => { setShowCreate(false); setEditCampaign(null) }}>
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           </div>
-          <div className="fixed top-0 right-0 z-50 h-full w-full max-w-xl border-l border-white/[0.06] bg-[#0c1021] shadow-drawer overflow-y-auto animate-slide-in-right">
+          <div className="fixed top-0 right-0 z-50 h-full w-full max-w-xl border-l border-white/[0.08] bg-[#0e1428] shadow-drawer overflow-y-auto animate-slide-in-right">
             <div className="p-6">
               <CampaignForm
                 campaign={editCampaign || undefined}

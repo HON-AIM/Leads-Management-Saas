@@ -94,9 +94,9 @@ export function VariablePicker({
   }
 
   return (
-    <div className="flex flex-col rounded-lg border border-white/[0.06] bg-[#0c1021] shadow-elevated" style={{ maxHeight }}>
+    <div className="flex flex-col rounded-lg border border-white/[0.08] bg-[#0e1428] shadow-elevated" style={{ maxHeight }}>
       {showSearch && (
-        <div className="flex items-center gap-2 border-b border-white/[0.04] px-3 py-2">
+        <div className="flex items-center gap-2 border-b border-white/[0.06] px-3 py-2">
           <Search size={14} className="text-muted-foreground/50 shrink-0" />
           <input
             ref={searchRef}

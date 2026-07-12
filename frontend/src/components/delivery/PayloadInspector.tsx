@@ -21,9 +21,9 @@ export function PayloadInspector({ log, onClose }: PayloadInspectorProps) {
       <div className="fixed inset-0 z-50" onClick={onClose}>
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       </div>
-      <div className="fixed top-0 right-0 z-50 h-full w-full max-w-2xl border-l border-white/[0.06] bg-[#0c1021] shadow-drawer animate-slide-in-right">
+      <div className="fixed top-0 right-0 z-50 h-full w-full max-w-2xl border-l border-white/[0.08] bg-[#0e1428] shadow-drawer animate-slide-in-right">
         <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
+          <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-4">
             <div>
               <h2 className="text-[14px] font-semibold text-white">Payload Inspector</h2>
               <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -35,7 +35,7 @@ export function PayloadInspector({ log, onClose }: PayloadInspectorProps) {
             </button>
           </div>
 
-          <div className="flex gap-4 border-b border-white/[0.04] px-6 py-2.5 text-[12px] text-muted-foreground">
+          <div className="flex gap-4 border-b border-white/[0.06] px-6 py-2.5 text-[12px] text-muted-foreground">
             <div>
               <span className="font-medium text-white/70">Status: </span>
               <span className={log.status === 'success' ? 'text-emerald-400' : log.status === 'failed' ? 'text-red-400' : 'text-amber-400'}>{log.status}</span>
@@ -46,12 +46,12 @@ export function PayloadInspector({ log, onClose }: PayloadInspectorProps) {
           </div>
 
           {log.error && (
-            <div className="px-6 py-2 bg-red-500/10 border-b border-white/[0.04]">
+            <div className="px-6 py-2 bg-red-500/10 border-b border-white/[0.06]">
               <p className="text-[12px] font-medium text-red-400">Error: {log.error}</p>
             </div>
           )}
 
-          <div className="flex border-b border-white/[0.04]">
+          <div className="flex border-b border-white/[0.06]">
             <button
               onClick={() => setTab('request')}
               className={`px-4 py-2.5 text-[12px] font-medium border-b-2 transition-colors ${
@@ -73,13 +73,13 @@ export function PayloadInspector({ log, onClose }: PayloadInspectorProps) {
           <div className="flex-1 overflow-auto p-4">
             {tab === 'request' ? (
               requestJson ? (
-                <pre className="text-[11px] font-mono bg-white/[0.02] border border-white/[0.06] rounded-lg p-4 overflow-x-auto min-h-[200px] whitespace-pre-wrap text-white/60">{requestJson}</pre>
+                <pre className="text-[11px] font-mono bg-white/[0.03] border border-white/[0.08] rounded-lg p-4 overflow-x-auto min-h-[200px] whitespace-pre-wrap text-white/70">{requestJson}</pre>
               ) : (
                 <div className="flex items-center justify-center h-full text-[12px] text-muted-foreground">No request payload recorded</div>
               )
             ) : (
               responseJson ? (
-                <pre className="text-[11px] font-mono bg-white/[0.02] border border-white/[0.06] rounded-lg p-4 overflow-x-auto min-h-[200px] whitespace-pre-wrap text-white/60">{responseJson}</pre>
+                <pre className="text-[11px] font-mono bg-white/[0.03] border border-white/[0.08] rounded-lg p-4 overflow-x-auto min-h-[200px] whitespace-pre-wrap text-white/70">{responseJson}</pre>
               ) : (
                 <div className="flex items-center justify-center h-full text-[12px] text-muted-foreground">No response payload recorded</div>
               )

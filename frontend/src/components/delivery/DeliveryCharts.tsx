@@ -13,7 +13,7 @@ function Bar({ value, max, color, label }: { value: number; max: number; color: 
   return (
     <div className="flex flex-col items-center gap-1 flex-1">
       <span className="text-[10px] text-muted-foreground">{formatNumber(value)}</span>
-      <div className="w-full h-16 rounded-md bg-white/[0.03] overflow-hidden flex flex-col-reverse">
+      <div className="w-full h-16 rounded-md bg-white/[0.05] overflow-hidden flex flex-col-reverse">
         <div className={`${color} rounded-t-sm transition-all`} style={{ height: `${Math.max(pct, 2)}%` }} />
       </div>
       <span className="text-[10px] text-muted-foreground truncate w-full text-center">{label}</span>
@@ -36,7 +36,7 @@ export function DeliveryCharts({ trends, hourly, isLoading }: DeliveryChartsProp
   }, [trends])
 
   if (isLoading) {
-    return <div className="h-[200px] skeleton bg-white/[0.03] rounded-lg" />
+    return <div className="h-[200px] skeleton bg-white/[0.05] rounded-lg" />
   }
 
   if (trends.length === 0) {
@@ -46,19 +46,19 @@ export function DeliveryCharts({ trends, hourly, isLoading }: DeliveryChartsProp
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-4 gap-3">
-        <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+        <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] p-3">
           <p className="text-[11px] text-muted-foreground">Avg Duration</p>
           <p className="text-[16px] font-semibold text-white mt-1">{formatNumber(Math.round(avgDuration))}ms</p>
         </div>
-        <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+        <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] p-3">
           <p className="text-[11px] text-muted-foreground">Success Rate</p>
           <p className="text-[16px] font-semibold text-emerald-400 mt-1">{successRate.toFixed(1)}%</p>
         </div>
-        <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+        <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] p-3">
           <p className="text-[11px] text-muted-foreground">Total</p>
           <p className="text-[16px] font-semibold text-white mt-1">{formatNumber(trends.reduce((s, t) => s + t.total, 0))}</p>
         </div>
-        <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+        <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] p-3">
           <p className="text-[11px] text-muted-foreground">Failed</p>
           <p className="text-[16px] font-semibold text-red-400 mt-1">{formatNumber(trends.reduce((s, t) => s + t.failed, 0))}</p>
         </div>

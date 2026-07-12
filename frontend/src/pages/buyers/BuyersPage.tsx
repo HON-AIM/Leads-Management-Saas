@@ -5,7 +5,7 @@ import { QUERY_KEYS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { useNotifications } from '@/hooks/useNotifications'
 import { BuyerDrawer } from '@/components/buyers/BuyerDrawer'
-import { STATUS_STYLES } from '@/types/buyer'
+import { getStatusStyle, BUYER_STATUS_COLOR } from '@/lib/statusColors'
 import type { Buyer, BuyerFormData } from '@/types/buyer'
 import { Search, Plus, Pencil, Trash2, Building2 } from 'lucide-react'
 
@@ -82,7 +82,7 @@ export function BuyersPage() {
           <h1 className="text-[18px] font-semibold text-white tracking-tight">Buyers</h1>
           <p className="text-[13px] text-muted-foreground mt-0.5">{buyers.length} total</p>
         </div>
-        <Button onClick={() => setDrawerBuyer('new')} size="sm">
+        <Button onClick={() => setDrawerBuyer('new')} size="sm" variant="cta">
           <Plus size={14} className="mr-1.5" />
           Add Buyer
         </Button>
@@ -94,15 +94,15 @@ export function BuyersPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, email, or state..."
-          className="w-full rounded-lg border border-white/[0.08] bg-[#0c1021] pl-9 pr-3 py-2 text-[13px] text-white/90 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-colors"
+          className="w-full rounded-lg border border-white/[0.08] bg-[#0e1428] pl-9 pr-3 py-2 text-[13px] text-white/90 placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-colors"
         />
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-[#0c1021] overflow-hidden">
+      <div className="rounded-xl border border-white/[0.08] bg-[#0e1428] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead>
-              <tr className="border-b border-white/[0.04] text-[10px] text-muted-foreground uppercase tracking-wider">
+              <tr className="border-b border-white/[0.06] text-[10px] text-muted-foreground uppercase tracking-wider">
                 <th className="text-left font-medium px-6 py-2.5">Buyer</th>
                 <th className="text-left font-medium px-6 py-2.5">Status</th>
                 <th className="text-left font-medium px-6 py-2.5">Weight</th>
@@ -117,15 +117,15 @@ export function BuyersPage() {
               {isLoading ? (
                 <>
                   {[...Array(5)].map((_, i) => (
-                    <tr key={i} className="border-b border-white/[0.03]">
-                      <td className="px-6 py-3"><div className="h-4 w-28 skeleton bg-white/[0.03] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-14 skeleton bg-white/[0.03] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-8 skeleton bg-white/[0.03] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-8 skeleton bg-white/[0.03] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-8 skeleton bg-white/[0.03] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-20 skeleton bg-white/[0.03] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-8 skeleton bg-white/[0.03] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-14 skeleton bg-white/[0.03] rounded" /></td>
+                    <tr key={i} className="border-b border-white/[0.06]">
+                      <td className="px-6 py-3"><div className="h-4 w-28 skeleton bg-white/[0.05] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-14 skeleton bg-white/[0.05] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-8 skeleton bg-white/[0.05] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-8 skeleton bg-white/[0.05] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-8 skeleton bg-white/[0.05] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-20 skeleton bg-white/[0.05] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-8 skeleton bg-white/[0.05] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-14 skeleton bg-white/[0.05] rounded" /></td>
                     </tr>
                   ))}
                 </>
@@ -133,7 +133,7 @@ export function BuyersPage() {
                 <tr>
                   <td colSpan={8} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <Building2 size={24} className="text-white/10" />
+                      <Building2 size={24} className="text-white/20" />
                       <p className="text-[13px] text-muted-foreground">
                         {search ? 'No buyers match your search' : 'No buyers yet'}
                       </p>
@@ -148,7 +148,7 @@ export function BuyersPage() {
               ) : filtered.map((b) => (
                 <tr
                   key={b._id}
-                  className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] cursor-pointer transition-colors"
+                  className="border-b border-white/[0.06] last:border-0 hover:bg-white/[0.03] cursor-pointer transition-colors"
                   onClick={() => setDrawerBuyer(b)}
                 >
                   <td className="px-6 py-3">
@@ -156,19 +156,19 @@ export function BuyersPage() {
                     <p className="text-[11px] text-muted-foreground">{b.email}</p>
                   </td>
                   <td className="px-6 py-3">
-                    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${STATUS_STYLES[b.status] || STATUS_STYLES.inactive}`}>
+                    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(b.status, BUYER_STATUS_COLOR)}`}>
                       {b.status}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-white/60">{b.weight}</td>
-                  <td className="px-6 py-3 text-white/60">{b.dailyCap || '—'}</td>
-                  <td className="px-6 py-3 text-white/60">{b.dailyLeadsReceived}</td>
+                  <td className="px-6 py-3 text-white/75">{b.weight}</td>
+                  <td className="px-6 py-3 text-white/75">{b.dailyCap || '—'}</td>
+                  <td className="px-6 py-3 text-white/75">{b.dailyLeadsReceived}</td>
                   <td className="px-6 py-3">
-                    <p className="text-[12px] text-white/40 max-w-[140px] truncate" title={b.allowedStates.join(', ')}>
+                    <p className="text-[12px] text-white/60 max-w-[140px] truncate" title={b.allowedStates.join(', ')}>
                       {b.allowedStates.length > 0 ? b.allowedStates.join(', ') : '—'}
                     </p>
                   </td>
-                  <td className="px-6 py-3 text-white/60">{b.priority}</td>
+                  <td className="px-6 py-3 text-white/75">{b.priority}</td>
                   <td className="px-6 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-0.5">
                       <button

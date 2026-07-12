@@ -15,7 +15,7 @@ export function AppShell() {
   const effectiveCollapsed = isMobile ? !sidebarOpen : sidebarCollapsed
 
   return (
-    <div className="flex min-h-screen bg-[#070b16]">
+    <div className="flex min-h-screen bg-[#0a0f1e]">
       <Sidebar
         collapsed={effectiveCollapsed}
         onToggle={() => {

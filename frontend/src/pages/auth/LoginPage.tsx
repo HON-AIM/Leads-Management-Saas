@@ -130,7 +130,7 @@ export function LoginPage() {
                 id="tenantSlug"
                 placeholder="e.g. acme-corp"
                 autoComplete="organization"
-                className="h-10 border-white/[0.08] bg-white/[0.03] text-white placeholder:text-slate-600 focus:border-blue-500/50 focus:ring-blue-500/20"
+                className="h-10 border-white/[0.10] bg-white/[0.05] text-white placeholder:text-slate-500 focus:border-blue-500/50 focus:ring-blue-500/20"
                 {...register('tenantSlug')}
               />
               {errors.tenantSlug && (
@@ -148,7 +148,7 @@ export function LoginPage() {
                 placeholder="you@company.com"
                 autoComplete="email"
                 autoFocus
-                className="h-10 border-white/[0.08] bg-white/[0.03] text-white placeholder:text-slate-600 focus:border-blue-500/50 focus:ring-blue-500/20"
+                className="h-10 border-white/[0.10] bg-white/[0.05] text-white placeholder:text-slate-500 focus:border-blue-500/50 focus:ring-blue-500/20"
                 {...register('email')}
               />
               {errors.email && (
@@ -173,7 +173,7 @@ export function LoginPage() {
                 type="password"
                 placeholder="Enter your password"
                 autoComplete="current-password"
-                className="h-10 border-white/[0.08] bg-white/[0.03] text-white placeholder:text-slate-600 focus:border-blue-500/50 focus:ring-blue-500/20"
+                className="h-10 border-white/[0.10] bg-white/[0.05] text-white placeholder:text-slate-500 focus:border-blue-500/50 focus:ring-blue-500/20"
                 {...register('password')}
               />
               {errors.password && (
@@ -250,7 +250,7 @@ export function LoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-[11px] text-slate-700">
+        <p className="text-center text-[11px] text-slate-600">
           © {new Date().getFullYear()} LeadFlowX · AI-Powered Lead Distribution
         </p>
       </div>

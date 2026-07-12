@@ -41,8 +41,8 @@ export function PayloadRenderer({ template, context, className }: PayloadRendere
   }
 
   return (
-    <div className={`rounded-lg border border-white/[0.06] bg-[#070b16] ${className || ''}`}>
-      <div className="flex items-center justify-between border-b border-white/[0.04] px-3 py-1.5">
+    <div className={`rounded-lg border border-white/[0.08] bg-[#0a0f1e] ${className || ''}`}>
+      <div className="flex items-center justify-between border-b border-white/[0.06] px-3 py-1.5">
         <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/40">
           <Play size={12} />
           <span>Rendered Output</span>
@@ -51,13 +51,13 @@ export function PayloadRenderer({ template, context, className }: PayloadRendere
           <button
             onClick={render}
             disabled={loading}
-            className="rounded p-1 text-muted-foreground/30 hover:bg-white/[0.04] hover:text-white/50 transition-colors"
+            className="rounded p-1 text-muted-foreground/30 hover:bg-white/[0.04] hover:text-white/70 transition-colors"
           >
             {loading ? <Loader2 size={11} className="animate-spin" /> : <Play size={11} />}
           </button>
           <button
             onClick={handleCopy}
-            className="rounded p-1 text-muted-foreground/30 hover:bg-white/[0.04] hover:text-white/50 transition-colors"
+            className="rounded p-1 text-muted-foreground/30 hover:bg-white/[0.04] hover:text-white/70 transition-colors"
           >
             {copied ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
           </button>

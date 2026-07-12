@@ -47,7 +47,7 @@ export function VariableDocumentation({ className, filterCategory }: VariableDoc
 
   if (loading && !loaded) {
     return (
-      <div className={`rounded-lg border border-white/[0.06] bg-[#0c1021] p-6 ${className || ''}`}>
+      <div className={`rounded-lg border border-white/[0.08] bg-[#0e1428] p-6 ${className || ''}`}>
         <div className="flex items-center justify-center">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/10 border-t-blue-500" />
         </div>
@@ -56,8 +56,8 @@ export function VariableDocumentation({ className, filterCategory }: VariableDoc
   }
 
   return (
-    <div className={`rounded-lg border border-white/[0.06] bg-[#0c1021] ${className || ''}`}>
-      <div className="flex items-center justify-between border-b border-white/[0.04] px-4 py-2.5">
+    <div className={`rounded-lg border border-white/[0.08] bg-[#0e1428] ${className || ''}`}>
+      <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
         <div className="flex items-center gap-2 text-[12px] font-medium text-white/80">
           <BookOpen size={14} className="text-blue-400" />
           Variable Reference
@@ -67,7 +67,7 @@ export function VariableDocumentation({ className, filterCategory }: VariableDoc
         </span>
       </div>
 
-      <div className="border-b border-white/[0.04] px-4 py-2">
+      <div className="border-b border-white/[0.06] px-4 py-2">
         <div className="flex items-center gap-2 rounded-md bg-white/[0.02] px-2.5 py-1.5">
           <Search size={12} className="text-muted-foreground/30" />
           <input
@@ -99,7 +99,7 @@ export function VariableDocumentation({ className, filterCategory }: VariableDoc
                   <div className="px-4 pb-2">
                     <table className="w-full">
                       <thead>
-                        <tr className="text-[10px] text-muted-foreground/30 border-b border-white/[0.04]">
+                        <tr className="text-[10px] text-muted-foreground/30 border-b border-white/[0.06]">
                           <th className="pb-1.5 text-left font-medium">Variable</th>
                           <th className="pb-1.5 text-left font-medium">Description</th>
                           <th className="pb-1.5 text-left font-medium">Example</th>
@@ -119,13 +119,13 @@ export function VariableDocumentation({ className, filterCategory }: VariableDoc
                                   {copiedKey === v.variable ? (
                                     <Check size={9} className="text-emerald-400" />
                                   ) : (
-                                    <Copy size={9} className="text-muted-foreground/30 hover:text-white/50" />
+                                    <Copy size={9} className="text-muted-foreground/30 hover:text-white/70" />
                                   )}
                                 </button>
                               </div>
                             </td>
                             <td className="py-1.5 pr-3 text-[10px] text-muted-foreground/50">{v.description}</td>
-                            <td className="py-1.5 pr-3 text-[10px] text-white/40 font-mono">{String(v.example)}</td>
+                            <td className="py-1.5 pr-3 text-[10px] text-white/60 font-mono">{String(v.example)}</td>
                             <td className="py-1.5 text-[9px] text-muted-foreground/30">
                               <span className="rounded bg-white/[0.04] px-1 py-0.5">{v.type}</span>
                             </td>

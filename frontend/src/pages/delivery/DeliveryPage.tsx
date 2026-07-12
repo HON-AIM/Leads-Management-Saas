@@ -10,6 +10,7 @@ import { DeliveryLogsTable } from '@/components/delivery/DeliveryLogsTable'
 import { PayloadInspector } from '@/components/delivery/PayloadInspector'
 import { DeliveryCharts } from '@/components/delivery/DeliveryCharts'
 import { formatNumber, formatPercentage } from '@/lib/utils'
+import { getTextColor, DELIVERY_STATUS_COLOR } from '@/lib/statusColors'
 import type { DeliveryLog, DeliveryStats, DeliveryTrendsResponse, DeliveryFilters as Filters } from '@/types/delivery'
 import type { Buyer } from '@/types/buyer'
 import { BarChart3, ChevronDown, ChevronUp } from 'lucide-react'
@@ -118,9 +119,9 @@ export function DeliveryPage() {
 
       <div className="grid grid-cols-5 gap-3">
         <StatCard label="Total" value={formatNumber(statsData?.total || 0)} />
-        <StatCard label="Success" value={formatNumber(statsData?.success || 0)} color="text-emerald-400" />
-        <StatCard label="Failed" value={formatNumber(statsData?.failed || 0)} color="text-red-400" />
-        <StatCard label="Retrying" value={formatNumber(statsData?.retrying || 0)} color="text-amber-400" />
+        <StatCard label="Success" value={formatNumber(statsData?.success || 0)} color={getTextColor('success', DELIVERY_STATUS_COLOR)} />
+        <StatCard label="Failed" value={formatNumber(statsData?.failed || 0)} color={getTextColor('failed', DELIVERY_STATUS_COLOR)} />
+        <StatCard label="Retrying" value={formatNumber(statsData?.retrying || 0)} color={getTextColor('retrying', DELIVERY_STATUS_COLOR)} />
         <StatCard label="Success Rate" value={formatPercentage(successRate)} />
       </div>
 
@@ -174,7 +175,7 @@ export function DeliveryPage() {
 
 function StatCard({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-[#0c1021] p-4">
+    <div className="rounded-xl border border-white/[0.08] bg-[#0e1428] p-4">
       <p className="text-[11px] text-muted-foreground font-medium">{label}</p>
       <p className={`text-[18px] font-semibold mt-1 ${color || 'text-white'}`}>{value}</p>
     </div>

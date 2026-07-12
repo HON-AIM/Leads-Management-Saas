@@ -27,8 +27,8 @@ export function NotificationCenter() {
         <div
           key={notif.id}
           className={cn(
-            'flex items-start gap-2.5 rounded-lg border bg-[#0c1021] p-3 shadow-elevated animate-fade-up border-l-[3px]',
-            'dark:border-white/[0.06]',
+            'flex items-start gap-2.5 rounded-lg border bg-[#0e1428] p-3 shadow-elevated animate-fade-up border-l-[3px]',
+            'dark:border-white/[0.08]',
             borderMap[notif.type]
           )}
         >

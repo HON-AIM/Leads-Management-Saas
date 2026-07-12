@@ -29,24 +29,24 @@
   }
 
   .dark {
-    --background: 225 45% 6%;
-    --foreground: 210 20% 94%;
-    --card: 225 40% 9%;
-    --card-foreground: 210 20% 94%;
-    --popover: 225 40% 9%;
-    --popover-foreground: 210 20% 94%;
+    --background: 225 40% 8%;
+    --foreground: 210 25% 95%;
+    --card: 225 35% 12%;
+    --card-foreground: 210 25% 95%;
+    --popover: 225 35% 12%;
+    --popover-foreground: 210 25% 95%;
     --primary: 217 91% 60%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 225 30% 13%;
-    --secondary-foreground: 210 20% 94%;
-    --muted: 225 30% 13%;
-    --muted-foreground: 215 16% 57%;
-    --accent: 225 30% 13%;
-    --accent-foreground: 210 20% 94%;
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 210 20% 94%;
-    --border: 225 20% 16%;
-    --input: 225 20% 16%;
+    --secondary: 225 28% 16%;
+    --secondary-foreground: 210 25% 95%;
+    --muted: 225 28% 16%;
+    --muted-foreground: 215 25% 68%;
+    --accent: 225 28% 16%;
+    --accent-foreground: 210 25% 95%;
+    --destructive: 0 62% 35%;
+    --destructive-foreground: 210 25% 95%;
+    --border: 225 22% 20%;
+    --input: 225 22% 20%;
     --ring: 217 91% 60%;
   }
 
@@ -76,10 +76,10 @@
 
 @layer components {
   .glass-card {
-    background: rgba(13, 18, 37, 0.6);
+    background: rgba(18, 24, 48, 0.6);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--radius);
   }
 
@@ -133,7 +133,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
   animation: shimmer 1.5s ease-in-out infinite;
 }
 

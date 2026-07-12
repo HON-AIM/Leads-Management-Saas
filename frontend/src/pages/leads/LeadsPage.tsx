@@ -4,7 +4,7 @@ import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { LeadDrawer } from '@/components/leads/LeadDrawer'
-import { STATUS_STYLES } from '@/types/lead'
+import { getStatusStyle, LEAD_STATUS_COLOR } from '@/lib/statusColors'
 import { formatDate } from '@/lib/utils'
 import type { Lead, LeadFilters } from '@/types/lead'
 import { Search, SlidersHorizontal, X, Users, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -70,7 +70,7 @@ export function LeadsPage() {
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1) }}
               placeholder="Search name, email, or phone..."
-              className="w-full rounded-lg border border-white/[0.08] bg-[#0c1021] pl-9 pr-3 py-2 text-[13px] text-white/90 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-colors"
+              className="w-full rounded-lg border border-white/[0.08] bg-[#0e1428] pl-9 pr-3 py-2 text-[13px] text-white/90 placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-colors"
             />
           </div>
           <Button
@@ -86,7 +86,7 @@ export function LeadsPage() {
         </div>
 
         {showFilters && (
-          <div className="rounded-lg border border-white/[0.06] bg-[#0c1021] p-4 animate-fade-in">
+          <div className="rounded-lg border border-white/[0.08] bg-[#0e1428] p-4 animate-fade-in">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               <FilterSelect label="Status" value={filters.status || ''} onChange={(v) => updateFilter('status', v)} options={[
                 { label: 'All', value: '' }, { label: 'New', value: 'new' }, { label: 'Assigned', value: 'assigned' },
@@ -109,11 +109,11 @@ export function LeadsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-white/[0.06] bg-[#0c1021] overflow-hidden">
+      <div className="rounded-xl border border-white/[0.08] bg-[#0e1428] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead>
-              <tr className="border-b border-white/[0.04] text-[10px] text-muted-foreground uppercase tracking-wider">
+              <tr className="border-b border-white/[0.06] text-[10px] text-muted-foreground uppercase tracking-wider">
                 <th className="text-left font-medium px-6 py-2.5">Lead</th>
                 <th className="text-left font-medium px-6 py-2.5">Campaign</th>
                 <th className="text-left font-medium px-6 py-2.5">Buyer</th>
@@ -127,14 +127,14 @@ export function LeadsPage() {
               {isLoading ? (
                 <>
                   {[...Array(5)].map((_, i) => (
-                    <tr key={i} className="border-b border-white/[0.03]">
-                      <td className="px-6 py-3"><div className="h-4 w-32 skeleton bg-white/[0.03] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-20 skeleton bg-white/[0.03] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-20 skeleton bg-white/[0.03] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-16 skeleton bg-white/[0.03] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-8 skeleton bg-white/[0.03] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-16 skeleton bg-white/[0.03] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-24 skeleton bg-white/[0.03] rounded" /></td>
+                    <tr key={i} className="border-b border-white/[0.06]">
+                      <td className="px-6 py-3"><div className="h-4 w-32 skeleton bg-white/[0.05] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-20 skeleton bg-white/[0.05] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-20 skeleton bg-white/[0.05] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-16 skeleton bg-white/[0.05] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-8 skeleton bg-white/[0.05] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-16 skeleton bg-white/[0.05] rounded" /></td>
+                      <td className="px-6 py-3"><div className="h-4 w-24 skeleton bg-white/[0.05] rounded" /></td>
                     </tr>
                   ))}
                 </>
@@ -142,7 +142,7 @@ export function LeadsPage() {
                 <tr>
                   <td colSpan={7} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <Users size={24} className="text-white/10" />
+                      <Users size={24} className="text-white/20" />
                       <p className="text-[13px] text-muted-foreground">
                         {search || hasFilters ? 'No leads match your filters' : 'No leads yet'}
                       </p>
@@ -157,27 +157,27 @@ export function LeadsPage() {
               ) : leads.map((l) => (
                 <tr
                   key={l._id}
-                  className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] cursor-pointer transition-colors"
+                  className="border-b border-white/[0.06] last:border-0 hover:bg-white/[0.03] cursor-pointer transition-colors"
                   onClick={() => setDrawerLeadId(l._id)}
                 >
                   <td className="px-6 py-3">
                     <p className="font-medium text-white/90">{l.name}</p>
                     <p className="text-[11px] text-muted-foreground">{l.email}</p>
                   </td>
-                  <td className="px-6 py-3 text-[12px] text-white/50">
+                  <td className="px-6 py-3 text-[12px] text-white/70">
                     {l.campaignId?.name || '—'}
                   </td>
-                  <td className="px-6 py-3 text-[12px] text-white/50">
+                  <td className="px-6 py-3 text-[12px] text-white/70">
                     {l.buyer?.name || '—'}
                   </td>
-                  <td className="px-6 py-3 text-[12px] text-white/50 capitalize">{l.source}</td>
-                  <td className="px-6 py-3 text-[12px] text-white/50">{l.state || '—'}</td>
+                  <td className="px-6 py-3 text-[12px] text-white/70 capitalize">{l.source}</td>
+                  <td className="px-6 py-3 text-[12px] text-white/70">{l.state || '—'}</td>
                   <td className="px-6 py-3">
-                    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${STATUS_STYLES[l.status] || ''}`}>
+                    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(l.status, LEAD_STATUS_COLOR)}`}>
                       {l.status}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-[12px] text-white/30">
+                  <td className="px-6 py-3 text-[12px] text-white/55">
                     {formatDate(l.createdAt)}
                   </td>
                 </tr>
@@ -188,7 +188,7 @@ export function LeadsPage() {
 
         {/* Pagination */}
         {pagination && pagination.pages > 1 && (
-          <div className="flex items-center justify-between border-t border-white/[0.04] px-6 py-3">
+          <div className="flex items-center justify-between border-t border-white/[0.06] px-6 py-3">
             <p className="text-[12px] text-muted-foreground">
               Page {pagination.page} of {pagination.pages}
             </p>
@@ -229,7 +229,7 @@ function FilterSelect({ label, value, onChange, options }: { label: string; valu
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-white/[0.08] bg-[#0c1021] px-2.5 py-1.5 text-[12px] text-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+        className="w-full rounded-lg border border-white/[0.08] bg-[#0e1428] px-2.5 py-1.5 text-[12px] text-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
       >
         {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
@@ -246,7 +246,7 @@ function FilterInput({ label, value, onChange, placeholder, type = 'text' }: { l
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-white/[0.08] bg-[#0c1021] px-2.5 py-1.5 text-[12px] text-white/90 placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+        className="w-full rounded-lg border border-white/[0.08] bg-[#0e1428] px-2.5 py-1.5 text-[12px] text-white/90 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
       />
     </div>
   )

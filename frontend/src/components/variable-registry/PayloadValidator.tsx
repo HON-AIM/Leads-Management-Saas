@@ -42,7 +42,7 @@ export function PayloadValidator({ template, className, onValidation }: PayloadV
 
   if (!template.trim()) {
     return (
-      <div className={`flex items-center gap-2 rounded-lg border border-white/[0.04] bg-[#070b16] px-3 py-2 ${className || ''}`}>
+      <div className={`flex items-center gap-2 rounded-lg border border-white/[0.06] bg-[#0a0f1e] px-3 py-2 ${className || ''}`}>
         <ShieldCheck size={14} className="text-muted-foreground/30" />
         <span className="text-[11px] text-muted-foreground/30">Enter a template to validate</span>
       </div>
@@ -51,7 +51,7 @@ export function PayloadValidator({ template, className, onValidation }: PayloadV
 
   if (loading) {
     return (
-      <div className={`flex items-center gap-2 rounded-lg border border-white/[0.04] bg-[#070b16] px-3 py-2 ${className || ''}`}>
+      <div className={`flex items-center gap-2 rounded-lg border border-white/[0.06] bg-[#0a0f1e] px-3 py-2 ${className || ''}`}>
         <Loader2 size={12} className="animate-spin text-blue-400" />
         <span className="text-[11px] text-muted-foreground/40">Validating...</span>
       </div>

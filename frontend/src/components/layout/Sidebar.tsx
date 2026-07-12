@@ -35,8 +35,8 @@ function SidebarLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
         'group relative flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13px] font-medium transition-all duration-150',
         collapsed && 'justify-center px-0',
         isActive
-          ? 'bg-white/[0.06] text-white'
-          : 'text-[hsl(215,16%,57%)] hover:bg-white/[0.03] hover:text-slate-300'
+          ? 'bg-white/[0.08] text-white'
+          : 'text-[hsl(215,20%,68%)] hover:bg-white/[0.04] hover:text-slate-200'
       )}
       title={collapsed ? item.label : undefined}
     >
@@ -66,8 +66,8 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
 
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 flex h-full flex-col bg-[#070b16] transition-[width] duration-200 ease-in-out',
-          'border-r border-white/[0.05]',
+          'fixed left-0 top-0 z-50 flex h-full flex-col bg-[#0a0f1e] transition-[width] duration-200 ease-in-out',
+          'border-r border-white/[0.08]',
           isCollapsed ? `${SIDEBAR_COLLAPSED_W}px` : `${SIDEBAR_EXPANDED_W}px`,
           isMobile && collapsed && '-translate-x-full',
           isMobile && !collapsed && 'translate-x-0 w-[220px]'
@@ -75,7 +75,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       >
         {/* Logo */}
         <div className={cn(
-          'flex h-14 shrink-0 items-center border-b border-white/[0.05] px-4',
+          'flex h-14 shrink-0 items-center border-b border-white/[0.08] px-4',
           isCollapsed && 'justify-center px-0'
         )}>
           {!isCollapsed ? (
@@ -104,12 +104,12 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         </nav>
 
         {/* Bottom */}
-        <div className="shrink-0 border-t border-white/[0.05] p-2">
+        <div className="shrink-0 border-t border-white/[0.08] p-2">
           <button
             onClick={onToggle}
             className={cn(
               'flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-[12px] font-medium',
-              'text-[hsl(215,16%,57%)] hover:bg-white/[0.03] hover:text-slate-300 transition-colors duration-150',
+              'text-[hsl(215,20%,68%)] hover:bg-white/[0.04] hover:text-slate-200 transition-colors duration-150',
               isCollapsed && 'justify-center px-0'
             )}
           >

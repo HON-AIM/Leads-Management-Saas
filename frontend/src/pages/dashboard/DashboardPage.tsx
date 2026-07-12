@@ -4,6 +4,7 @@ import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { useAuth } from '@/hooks/useAuth'
 import { formatNumber } from '@/lib/utils'
+import { getStatusStyle, DELIVERY_STATUS_COLOR, SEMANTIC_COLORS } from '@/lib/statusColors'
 import { Users, CheckCircle2, XCircle, Building2 } from 'lucide-react'
 
 const LeadActivityChart = lazy(() =>
@@ -33,12 +34,12 @@ interface TrendPoint {
 }
 
 function SkeletonBlock({ className }: { className?: string }) {
-  return <div className={`skeleton bg-white/[0.03] ${className || ''}`} />
+  return <div className={`skeleton bg-white/[0.05] ${className || ''}`} />
 }
 
 function KpiCard({ label, value, icon, color }: { label: string; value: number; icon: React.ReactNode; color: string }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-[#0c1021] p-5 transition-all duration-200 hover:border-white/[0.1]">
+    <div className="rounded-xl border border-white/[0.08] bg-[#0e1428] p-5 transition-all duration-200 hover:border-white/[0.12]">
       <div className="flex items-center justify-between mb-4">
         <span className="text-[12px] text-muted-foreground font-medium">{label}</span>
         <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${color}`}>
@@ -51,17 +52,16 @@ function KpiCard({ label, value, icon, color }: { label: string; value: number; 
 }
 
 function BuyerRow({ buyer }: { buyer: BuyerStat }) {
-  const statusColor = buyer.failed > 0
-    ? 'text-amber-400 bg-amber-500/10'
-    : 'text-emerald-400 bg-emerald-500/10'
+  const sc = buyer.failed > 0 ? SEMANTIC_COLORS.caution : SEMANTIC_COLORS.positive
+  const statusColor = `${sc.bg} ${sc.text} ${sc.ring}`
   const statusLabel = buyer.failed > 0 ? 'Issues' : 'Healthy'
 
   return (
-    <tr className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.015] transition-colors">
+    <tr className="border-b border-white/[0.06] last:border-0 hover:bg-white/[0.03] transition-colors">
       <td className="py-3 px-6 text-[13px] text-white/90 font-medium">{buyer.name}</td>
-      <td className="py-3 px-6 text-[13px] text-white/60 text-center">{formatNumber(buyer.delivered)}</td>
-      <td className="py-3 px-6 text-[13px] text-white/60 text-center">{formatNumber(buyer.total)}</td>
-      <td className="py-3 px-6 text-[13px] text-white/60 text-center">—</td>
+      <td className="py-3 px-6 text-[13px] text-white/75 text-center">{formatNumber(buyer.delivered)}</td>
+      <td className="py-3 px-6 text-[13px] text-white/75 text-center">{formatNumber(buyer.total)}</td>
+      <td className="py-3 px-6 text-[13px] text-white/75 text-center">—</td>
       <td className="py-3 px-6 text-center">
         <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium ${statusColor}`}>
           {statusLabel}
@@ -75,22 +75,19 @@ function RecentLeadRow({ assignment }: { assignment: any }) {
   const lead = assignment.leadId || {}
   const buyer = assignment.buyerId || {}
 
-  const statusColor =
-    assignment.status === 'delivered' ? 'text-emerald-400 bg-emerald-500/10' :
-    assignment.status === 'failed' ? 'text-red-400 bg-red-500/10' :
-    'text-amber-400 bg-amber-500/10'
+  const statusColor = getStatusStyle(assignment.status, DELIVERY_STATUS_COLOR)
 
   return (
-    <tr className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.015] transition-colors">
+    <tr className="border-b border-white/[0.06] last:border-0 hover:bg-white/[0.03] transition-colors">
       <td className="py-2.5 px-6 text-[12px]">
         <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium ${statusColor}`}>
           {assignment.status}
         </span>
       </td>
-      <td className="py-2.5 px-6 text-[12px] text-white/70">{buyer.name || '—'}</td>
-      <td className="py-2.5 px-6 text-[12px] text-white/40">—</td>
-      <td className="py-2.5 px-6 text-[12px] text-white/40">{lead.state || '—'}</td>
-      <td className="py-2.5 px-6 text-[12px] text-white/30">
+      <td className="py-2.5 px-6 text-[12px] text-white/80">{buyer.name || '—'}</td>
+      <td className="py-2.5 px-6 text-[12px] text-white/60">—</td>
+      <td className="py-2.5 px-6 text-[12px] text-white/60">{lead.state || '—'}</td>
+      <td className="py-2.5 px-6 text-[12px] text-white/55">
         {assignment.createdAt ? new Date(assignment.createdAt).toLocaleString('en-US', {
           month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
         }) : '—'}
@@ -181,7 +178,7 @@ export function DashboardPage() {
       )}
 
       {/* Chart */}
-      <div className="rounded-xl border border-white/[0.06] bg-[#0c1021] p-6">
+      <div className="rounded-xl border border-white/[0.08] bg-[#0e1428] p-6">
         <h3 className="text-[13px] font-semibold text-white mb-4">Lead Activity</h3>
         <Suspense fallback={<SkeletonBlock className="h-[220px] w-full" />}>
           {trend ? <LeadActivityChart data={trend} /> : <SkeletonBlock className="h-[220px] w-full" />}
@@ -189,15 +186,15 @@ export function DashboardPage() {
       </div>
 
       {/* Buyer Distribution */}
-      <div className="rounded-xl border border-white/[0.06] bg-[#0c1021] overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.04]">
+      <div className="rounded-xl border border-white/[0.08] bg-[#0e1428] overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
           <h3 className="text-[13px] font-semibold text-white">Buyer Distribution</h3>
           <span className="text-[11px] text-muted-foreground">{buyerStats?.length ?? 0} buyers</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-white/[0.04] text-[10px] text-muted-foreground uppercase tracking-wider">
+              <tr className="border-b border-white/[0.06] text-[10px] text-muted-foreground uppercase tracking-wider">
                 <th className="px-6 py-2.5 text-left font-medium">Buyer</th>
                 <th className="px-6 py-2.5 text-center font-medium">Delivered</th>
                 <th className="px-6 py-2.5 text-center font-medium">Total</th>
@@ -212,7 +209,7 @@ export function DashboardPage() {
                 <tr>
                   <td colSpan={5} className="py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <Building2 size={20} className="text-white/10" />
+                      <Building2 size={20} className="text-white/20" />
                       <p className="text-[12px] text-muted-foreground">No buyer data yet</p>
                     </div>
                   </td>
@@ -224,15 +221,15 @@ export function DashboardPage() {
       </div>
 
       {/* Recent Leads */}
-      <div className="rounded-xl border border-white/[0.06] bg-[#0c1021] overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.04]">
+      <div className="rounded-xl border border-white/[0.08] bg-[#0e1428] overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
           <h3 className="text-[13px] font-semibold text-white">Recent Leads</h3>
           <span className="text-[11px] text-muted-foreground">Latest 10</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-white/[0.04] text-[10px] text-muted-foreground uppercase tracking-wider">
+              <tr className="border-b border-white/[0.06] text-[10px] text-muted-foreground uppercase tracking-wider">
                 <th className="px-6 py-2.5 text-left font-medium">Status</th>
                 <th className="px-6 py-2.5 text-left font-medium">Buyer</th>
                 <th className="px-6 py-2.5 text-left font-medium">Campaign</th>
@@ -249,7 +246,7 @@ export function DashboardPage() {
                 <tr>
                   <td colSpan={5} className="py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <Users size={20} className="text-white/10" />
+                      <Users size={20} className="text-white/20" />
                       <p className="text-[12px] text-muted-foreground">No leads yet</p>
                     </div>
                   </td>

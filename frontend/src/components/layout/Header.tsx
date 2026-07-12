@@ -33,7 +33,7 @@ export function Header({ onMenuToggle }: { onMenuToggle: () => void }) {
     : 'U'
 
   return (
-    <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-3 border-b border-white/[0.05] px-4 lg:px-6 bg-[#070b16]/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-3 border-b border-white/[0.08] px-4 lg:px-6 bg-[#0a0f1e]/80 backdrop-blur-xl">
       {isMobile && (
         <Button variant="ghost" size="icon-sm" onClick={onMenuToggle} className="-ml-1 h-7 w-7">
           <Menu size={15} />
@@ -49,7 +49,7 @@ export function Header({ onMenuToggle }: { onMenuToggle: () => void }) {
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-white/[0.04]">
               <Avatar className="h-6 w-6">
-                <AvatarFallback className="bg-white/[0.06] text-[10px] font-medium text-slate-300">
+                <AvatarFallback className="bg-white/[0.08] text-[10px] font-medium text-slate-200">
                   {initials}
                 </AvatarFallback>
               </Avatar>

@@ -86,10 +86,10 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{isEdit ? 'Edit Campaign' : 'New Campaign'}</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Configure how leads flow through this campaign</p>
+          <h2 className="text-lg font-semibold text-white">{isEdit ? 'Edit Campaign' : 'New Campaign'}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Configure how leads flow through this campaign</p>
         </div>
-        <button onClick={onClose} className="rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+        <button onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:text-white/80 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
@@ -98,8 +98,8 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
       <div className="flex gap-1">
         {STEPS.map((s, i) => (
           <div key={s} className="flex-1">
-            <div className={`h-1 rounded-full transition-colors ${i <= step ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'}`} />
-            <p className={`text-[10px] mt-1 ${i === step ? 'text-slate-900 dark:text-slate-100 font-medium' : 'text-slate-400 dark:text-slate-500'}`}>{s}</p>
+            <div className={`h-1 rounded-full transition-colors ${i <= step ? 'bg-blue-600' : 'bg-white/[0.08]'}`} />
+            <p className={`text-[10px] mt-1 ${i === step ? 'text-white font-medium' : 'text-muted-foreground'}`}>{s}</p>
           </div>
         ))}
       </div>
@@ -108,21 +108,20 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
       {step === 0 && (
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-xs text-slate-600 dark:text-slate-400">Campaign Name *</Label>
+            <Label className="text-xs text-muted-foreground">Campaign Name *</Label>
             <Input
               value={form.name}
               onChange={(e) => update({ name: e.target.value })}
               placeholder="e.g. Texas Insurance Leads"
-              className="bg-white dark:bg-slate-900"
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-slate-600 dark:text-slate-400">Description</Label>
+            <Label className="text-xs text-muted-foreground">Description</Label>
             <textarea
               value={form.description}
               onChange={(e) => update({ description: e.target.value })}
               rows={2}
-              className="flex w-full rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 placeholder:text-slate-400"
+              className="flex w-full rounded-lg border border-white/[0.08] bg-transparent px-3 py-2 text-[13px] text-white shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 placeholder:text-muted-foreground/50 transition-colors"
               placeholder="What leads does this campaign handle?"
             />
           </div>
@@ -133,7 +132,7 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
       {step === 1 && (
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-xs text-slate-600 dark:text-slate-400">Lead Source</Label>
+            <Label className="text-xs text-muted-foreground">Lead Source</Label>
             <div className="flex flex-wrap gap-2">
               {SOURCE_OPTIONS.map((src) => (
                 <button
@@ -143,7 +142,7 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
                   className={`text-sm px-3 py-1.5 rounded-lg border transition-colors capitalize ${
                     form.source === src
                       ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      : 'bg-transparent text-muted-foreground border-white/[0.08] hover:border-white/[0.14] hover:text-white/80'
                   }`}
                 >
                   {src}
@@ -152,13 +151,13 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-slate-600 dark:text-slate-400">Webhook URL</Label>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1">POST endpoint for incoming leads (optional)</p>
+            <Label className="text-xs text-muted-foreground">Webhook URL</Label>
+            <p className="text-[11px] text-muted-foreground/80 mb-1">POST endpoint for incoming leads (optional)</p>
             <Input
               value={form.webhookUrl}
               onChange={(e) => update({ webhookUrl: e.target.value })}
               placeholder="https://your-domain.com/api/leads"
-              className="bg-white dark:bg-slate-900 font-mono text-xs"
+              className="font-mono text-xs"
             />
           </div>
         </div>
@@ -168,7 +167,7 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
       {step === 2 && (
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-xs text-slate-600 dark:text-slate-400">Routing Method</Label>
+            <Label className="text-xs text-muted-foreground">Routing Method</Label>
             <div className="space-y-2">
               {ROUTING_MODES.map((mode) => (
                 <button
@@ -177,38 +176,36 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
                   onClick={() => update({ routingMode: mode.value })}
                   className={`w-full text-left rounded-lg border p-3 transition-colors ${
                     form.routingMode === mode.value
-                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-950'
-                      : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      ? 'border-blue-500/40 bg-blue-500/10'
+                      : 'border-white/[0.08] hover:border-white/[0.14]'
                   }`}
                 >
-                  <p className={`text-sm font-medium ${form.routingMode === mode.value ? 'text-blue-700 dark:text-blue-300' : 'text-slate-900 dark:text-slate-100'}`}>
+                  <p className={`text-sm font-medium ${form.routingMode === mode.value ? 'text-blue-400' : 'text-white'}`}>
                     {mode.label}
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{mode.description}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{mode.description}</p>
                 </button>
               ))}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs text-slate-600 dark:text-slate-400">Cost Per Lead ($)</Label>
+              <Label className="text-xs text-muted-foreground">Cost Per Lead ($)</Label>
               <Input
                 type="number"
                 min={0}
                 step={0.01}
                 value={form.costPerLead}
                 onChange={(e) => update({ costPerLead: Number(e.target.value) })}
-                className="bg-white dark:bg-slate-900"
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs text-slate-600 dark:text-slate-400">Dedup Window (hours)</Label>
+              <Label className="text-xs text-muted-foreground">Dedup Window (hours)</Label>
               <Input
                 type="number"
                 min={1}
                 value={form.dedupWindowHours}
                 onChange={(e) => update({ dedupWindowHours: Number(e.target.value) })}
-                className="bg-white dark:bg-slate-900"
               />
             </div>
           </div>
@@ -219,10 +216,10 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
       {step === 3 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label className="text-xs text-slate-600 dark:text-slate-400">Assign Buyers *</Label>
+            <Label className="text-xs text-muted-foreground">Assign Buyers *</Label>
             {availableBuyers.length > 0 && (
               <select
-                className="text-xs border border-slate-200 dark:border-slate-800 rounded px-2 py-1 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                className="text-xs border border-white/[0.08] rounded-lg px-2 py-1 bg-transparent text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 onChange={(e) => { if (e.target.value) { addBuyer(e.target.value); e.target.value = '' } }}
               >
                 <option value="">Add buyer...</option>
@@ -234,42 +231,42 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
           </div>
 
           {form.assignedBuyers.length === 0 ? (
-            <div className="text-center py-10 rounded-lg border border-dashed border-slate-300 dark:border-slate-700">
-              <p className="text-sm text-slate-500 dark:text-slate-400">Add at least one buyer to this campaign</p>
+            <div className="text-center py-10 rounded-lg border border-dashed border-white/[0.12]">
+              <p className="text-sm text-muted-foreground">Add at least one buyer to this campaign</p>
             </div>
           ) : (
             <div className="space-y-2">
               {form.assignedBuyers.map((ab, idx) => {
                 const buyer = buyers.find((b) => b._id === ab.buyerId)
                 return (
-                  <div key={ab.buyerId} className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2">
-                    <span className="text-xs text-slate-400 dark:text-slate-500 w-5">{idx + 1}</span>
-                    <span className="flex-1 text-sm font-medium text-slate-900 dark:text-slate-100">{buyer?.name || 'Unknown'}</span>
+                  <div key={ab.buyerId} className="flex items-center gap-2 rounded-lg border border-white/[0.08] px-3 py-2">
+                    <span className="text-xs text-muted-foreground w-5">{idx + 1}</span>
+                    <span className="flex-1 text-sm font-medium text-white">{buyer?.name || 'Unknown'}</span>
                     {form.routingMode === 'weighted' && (
                       <div className="flex items-center gap-1">
-                        <span className="text-[10px] text-slate-400">W:</span>
+                        <span className="text-[10px] text-muted-foreground">W:</span>
                         <Input
                           type="number"
                           min={1}
                           value={ab.weight}
                           onChange={(e) => setBuyerWeight(ab.buyerId, Number(e.target.value))}
-                          className="w-14 h-7 text-xs bg-white dark:bg-slate-900"
+                          className="w-14 h-7 text-xs"
                         />
                       </div>
                     )}
                     {form.routingMode === 'priority' && (
                       <div className="flex items-center gap-1">
-                        <span className="text-[10px] text-slate-400">P:</span>
+                        <span className="text-[10px] text-muted-foreground">P:</span>
                         <Input
                           type="number"
                           min={0}
                           value={ab.priority}
                           onChange={(e) => setBuyerPriority(ab.buyerId, Number(e.target.value))}
-                          className="w-14 h-7 text-xs bg-white dark:bg-slate-900"
+                          className="w-14 h-7 text-xs"
                         />
                       </div>
                     )}
-                    <button onClick={() => removeBuyer(ab.buyerId)} className="text-slate-400 hover:text-red-500 text-sm">✕</button>
+                    <button onClick={() => removeBuyer(ab.buyerId)} className="text-muted-foreground hover:text-red-400 text-sm transition-colors">✕</button>
                   </div>
                 )
               })}
@@ -277,7 +274,7 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
           )}
 
           {form.routingMode === 'exclusive' && form.assignedBuyers.length > 1 && (
-            <p className="text-xs text-amber-600 dark:text-amber-400">Exclusive mode sends all leads to the first buyer in the list.</p>
+            <p className="text-xs text-amber-400">Exclusive mode sends all leads to the first buyer in the list.</p>
           )}
         </div>
       )}
@@ -285,7 +282,7 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
       {/* Step 5: Review & Finish */}
       {step === 4 && (
         <div className="space-y-4">
-          <div className="rounded-lg border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
+          <div className="rounded-lg border border-white/[0.08] divide-y divide-white/[0.06]">
             <ReviewRow label="Campaign Name" value={form.name} />
             <ReviewRow label="Source" value={form.source} />
             <ReviewRow label="Webhook URL" value={form.webhookUrl || 'Not set'} />
@@ -298,7 +295,7 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800">
+      <div className="flex items-center justify-between pt-2 border-t border-white/[0.08]">
         <Button variant="ghost" size="sm" onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0}>
           Previous
         </Button>
@@ -320,8 +317,8 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
 function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between px-4 py-2.5">
-      <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
-      <p className="text-sm font-medium text-slate-900 dark:text-slate-100 capitalize">{value}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-sm font-medium text-white capitalize">{value}</p>
     </div>
   )
 }

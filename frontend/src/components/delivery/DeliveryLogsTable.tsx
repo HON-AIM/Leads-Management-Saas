@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { formatDate, formatNumber } from '@/lib/utils'
-import { STATUS_STYLES } from '@/types/delivery'
+import { getStatusStyle, getTextColor, DELIVERY_STATUS_COLOR } from '@/lib/statusColors'
 import type { DeliveryLog } from '@/types/delivery'
 import { Eye, RefreshCw } from 'lucide-react'
 
@@ -24,7 +24,7 @@ export function DeliveryLogsTable({ logs, isLoading, total, limit, skip, onPageC
       <div className="overflow-x-auto">
         <table className="w-full text-[13px]">
           <thead>
-            <tr className="border-b border-white/[0.04] text-[10px] text-muted-foreground uppercase tracking-wider">
+            <tr className="border-b border-white/[0.06] text-[10px] text-muted-foreground uppercase tracking-wider">
               <th className="text-left font-medium px-6 py-2.5">Lead</th>
               <th className="text-left font-medium px-6 py-2.5">Buyer</th>
               <th className="text-left font-medium px-6 py-2.5">Status</th>
@@ -40,9 +40,9 @@ export function DeliveryLogsTable({ logs, isLoading, total, limit, skip, onPageC
             {isLoading ? (
               <>
                 {[...Array(5)].map((_, i) => (
-                  <tr key={i} className="border-b border-white/[0.03]">
+                  <tr key={i} className="border-b border-white/[0.06]">
                     {[...Array(9)].map((_, j) => (
-                      <td key={j} className="px-6 py-3"><div className="h-4 w-16 skeleton bg-white/[0.03] rounded" /></td>
+                      <td key={j} className="px-6 py-3"><div className="h-4 w-16 skeleton bg-white/[0.05] rounded" /></td>
                     ))}
                   </tr>
                 ))}
@@ -59,39 +59,39 @@ export function DeliveryLogsTable({ logs, isLoading, total, limit, skip, onPageC
                 const dur = log.duration != null ? `${formatNumber(log.duration)}ms` : '-'
 
                 return (
-                  <tr key={log._id} className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] transition-colors">
+                  <tr key={log._id} className="border-b border-white/[0.06] last:border-0 hover:bg-white/[0.03] transition-colors">
                     <td className="px-6 py-3">
                       <p className="font-medium text-white/80">{leadName}</p>
                       {leadEmail && <p className="text-[11px] text-muted-foreground">{leadEmail}</p>}
                     </td>
-                    <td className="px-6 py-3 text-[12px] text-white/50">{buyerName}</td>
+                    <td className="px-6 py-3 text-[12px] text-white/70">{buyerName}</td>
                     <td className="px-6 py-3">
-                      <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${STATUS_STYLES[log.status] || ''}`}>
+                      <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(log.status, DELIVERY_STATUS_COLOR)}`}>
                         {log.status}
                       </span>
                     </td>
-                    <td className="px-6 py-3 text-[12px] text-white/50 capitalize">{log.provider}</td>
-                    <td className="px-6 py-3 text-[12px] text-white/40">{log.attempt}</td>
+                    <td className="px-6 py-3 text-[12px] text-white/70 capitalize">{log.provider}</td>
+                    <td className="px-6 py-3 text-[12px] text-white/60">{log.attempt}</td>
                     <td className="px-6 py-3">
                       {log.responseCode ? (
                         <span className={`text-[12px] font-medium ${
                           log.responseCode >= 200 && log.responseCode < 300
-                            ? 'text-emerald-400'
-                            : 'text-red-400'
+                            ? getTextColor('delivered', DELIVERY_STATUS_COLOR)
+                            : getTextColor('failed', DELIVERY_STATUS_COLOR)
                         }`}>
                           {log.responseCode}
                         </span>
                       ) : log.error ? (
                         <span className="text-[12px] text-red-400 truncate max-w-[120px] inline-block">{log.error}</span>
-                      ) : <span className="text-[12px] text-white/30">-</span>}
+                      ) : <span className="text-[12px] text-white/55">-</span>}
                     </td>
-                    <td className="px-6 py-3 text-[12px] text-white/30">{dur}</td>
-                    <td className="px-6 py-3 text-[12px] text-white/30 whitespace-nowrap">{formatDate(log.createdAt)}</td>
+                    <td className="px-6 py-3 text-[12px] text-white/55">{dur}</td>
+                    <td className="px-6 py-3 text-[12px] text-white/55 whitespace-nowrap">{formatDate(log.createdAt)}</td>
                     <td className="px-6 py-3 text-right">
                       <div className="flex items-center justify-end gap-0.5">
                         <button
                           onClick={() => onInspect(log)}
-                          className="rounded-md p-1.5 text-muted-foreground hover:text-white hover:bg-white/[0.04] transition-colors"
+                          className="rounded-md p-1.5 text-muted-foreground hover:text-white hover:bg-white/[0.06] transition-colors"
                           title="Inspect"
                         >
                           <Eye size={13} />
@@ -99,7 +99,7 @@ export function DeliveryLogsTable({ logs, isLoading, total, limit, skip, onPageC
                         {log.status === 'failed' && (
                           <button
                             onClick={() => onRetry(log)}
-                            className="rounded-md p-1.5 text-muted-foreground hover:text-white hover:bg-white/[0.04] transition-colors"
+                            className="rounded-md p-1.5 text-muted-foreground hover:text-white hover:bg-white/[0.06] transition-colors"
                             title="Retry"
                           >
                             <RefreshCw size={13} />
@@ -116,7 +116,7 @@ export function DeliveryLogsTable({ logs, isLoading, total, limit, skip, onPageC
       </div>
 
       {pages > 1 && (
-        <div className="flex items-center justify-between border-t border-white/[0.04] px-6 py-3">
+        <div className="flex items-center justify-between border-t border-white/[0.06] px-6 py-3">
           <p className="text-[12px] text-muted-foreground">
             Showing {skip + 1}–{Math.min(skip + limit, total)} of {formatNumber(total)}
           </p>

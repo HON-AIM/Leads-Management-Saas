@@ -92,7 +92,7 @@ export function SettingsPage() {
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="relative h-6 w-6">
-                <div className="absolute inset-0 rounded-full border-2 border-white/[0.06]" />
+                <div className="absolute inset-0 rounded-full border-2 border-white/[0.08]" />
                 <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 animate-spin" />
               </div>
             </div>
@@ -106,7 +106,7 @@ export function SettingsPage() {
                   <div key={session._id} className="flex items-center justify-between px-6 py-4">
                     <div className="flex items-start gap-3 min-w-0">
                       <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                        isCurrent ? 'bg-blue-500/10 text-blue-400' : 'bg-white/[0.03] text-muted-foreground'
+                        isCurrent ? 'bg-blue-500/10 text-blue-400' : 'bg-white/[0.05] text-muted-foreground'
                       }`}>
                         <Monitor size={14} />
                       </div>

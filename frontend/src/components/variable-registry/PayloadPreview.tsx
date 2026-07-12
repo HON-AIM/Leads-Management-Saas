@@ -35,8 +35,8 @@ export function PayloadPreview({ template, className }: PayloadPreviewProps) {
   const json = preview ? JSON.stringify(preview, null, 2) : '{}'
 
   return (
-    <div className={`rounded-lg border border-white/[0.06] bg-[#070b16] ${className || ''}`}>
-      <div className="flex items-center justify-between border-b border-white/[0.04] px-3 py-1.5">
+    <div className={`rounded-lg border border-white/[0.08] bg-[#0a0f1e] ${className || ''}`}>
+      <div className="flex items-center justify-between border-b border-white/[0.06] px-3 py-1.5">
         <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/40">
           <Eye size={12} />
           <span>Payload Preview</span>
@@ -44,7 +44,7 @@ export function PayloadPreview({ template, className }: PayloadPreviewProps) {
         <button
           onClick={loadPreview}
           disabled={loading}
-          className="rounded p-1 text-muted-foreground/30 hover:bg-white/[0.04] hover:text-white/50 transition-colors"
+          className="rounded p-1 text-muted-foreground/30 hover:bg-white/[0.04] hover:text-white/70 transition-colors"
         >
           {loading ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
         </button>

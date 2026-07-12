@@ -13,7 +13,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
 
   if (!initialized || loading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-[#070b16]">
+      <div className="flex h-screen w-screen items-center justify-center bg-[#0a0f1e]">
         <div className="flex flex-col items-center gap-3">
           <div className="relative h-8 w-8">
             <div className="absolute inset-0 rounded-full border-2 border-white/[0.06]" />

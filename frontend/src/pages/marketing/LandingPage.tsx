@@ -129,7 +129,7 @@ function Copy(props: React.SVGProps<SVGSVGElement>) {
 function FAQ({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="border-b border-white/[0.04] last:border-0">
+    <div className="border-b border-white/[0.08] last:border-0">
       <button onClick={() => setOpen(!open)} className="flex w-full items-center justify-between py-5 text-left">
         <span className="text-[14px] font-medium text-white/90">{q}</span>
         <ChevronDown size={16} className={`shrink-0 text-muted-foreground/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
@@ -155,9 +155,9 @@ export function LandingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#070b16] text-white antialiased">
+    <div className="min-h-screen bg-[#0a0f1e] text-white antialiased">
       {/* ── Nav ─────────────────────────────────────── */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'border-b border-white/[0.05] bg-[#070b16]/80 backdrop-blur-xl' : 'bg-transparent'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'border-b border-white/[0.08] bg-[#0a0f1e]/80 backdrop-blur-xl' : 'bg-transparent'}`}>
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5">
           <Link to="/" className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-[9px] font-bold tracking-wider text-white">LF</div>
@@ -183,7 +183,7 @@ export function LandingPage() {
         </div>
 
         {mobileOpen && (
-          <div className="border-t border-white/[0.05] bg-[#070b16]/95 backdrop-blur-xl md:hidden">
+          <div className="border-t border-white/[0.08] bg-[#0a0f1e]/95 backdrop-blur-xl md:hidden">
             <div className="flex flex-col gap-1 px-5 py-4">
               {NAV_LINKS.map((l) => (
                 <a key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2 text-[13px] text-muted-foreground/50 transition hover:bg-white/[0.03] hover:text-white">{l.label}</a>
@@ -204,7 +204,7 @@ export function LandingPage() {
         <div className="relative mx-auto max-w-6xl px-5">
           <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
             <div className="max-w-xl">
-              <div className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1">
+              <div className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1">
                 <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-400" />
                 <span className="text-[11px] text-blue-400">AI-Powered Lead Distribution</span>
               </div>
@@ -236,8 +236,8 @@ export function LandingPage() {
 
             {/* Dashboard mockup */}
             <div className="relative hidden lg:block">
-              <div className="rounded-2xl border border-white/[0.06] bg-[#0c1021] p-1 shadow-2xl shadow-blue-500/5">
-                <div className="rounded-xl bg-[#070b16] p-5">
+              <div className="rounded-2xl border border-white/[0.08] bg-[#0e1428] p-1 shadow-2xl shadow-blue-500/5">
+                <div className="rounded-xl bg-[#0a0f1e] p-5">
                   <div className="mb-4 flex items-center gap-2">
                     <div className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
                     <div className="h-2.5 w-2.5 rounded-full bg-amber-500/60" />
@@ -246,13 +246,13 @@ export function LandingPage() {
                   </div>
                   <div className="grid grid-cols-3 gap-3 mb-4">
                     {[{ l: 'Total Leads', v: '12,847', c: 'text-white' }, { l: 'Active Buyers', v: '24', c: 'text-emerald-400' }, { l: 'Delivery Rate', v: '98.6%', c: 'text-blue-400' }].map((s) => (
-                      <div key={s.l} className="rounded-lg border border-white/[0.04] bg-white/[0.02] p-3">
+                      <div key={s.l} className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-3">
                         <div className="text-[10px] text-muted-foreground/40">{s.l}</div>
                         <div className={`mt-1 text-[18px] font-semibold ${s.c}`}>{s.v}</div>
                       </div>
                     ))}
                   </div>
-                  <div className="h-28 rounded-lg border border-white/[0.04] bg-white/[0.01] p-3">
+                  <div className="h-28 rounded-lg border border-white/[0.08] bg-white/[0.01] p-3">
                     <div className="text-[10px] text-muted-foreground/30 mb-2">Lead Activity</div>
                     <div className="flex items-end gap-1.5 h-16">
                       {[40, 65, 55, 80, 70, 90, 85, 95, 75, 88, 92, 78].map((h, i) => (
@@ -262,7 +262,7 @@ export function LandingPage() {
                   </div>
                 </div>
               </div>
-              <div className="absolute -bottom-4 -right-4 rounded-xl border border-white/[0.06] bg-[#0c1021] px-3 py-2 shadow-lg">
+              <div className="absolute -bottom-4 -right-4 rounded-xl border border-white/[0.08] bg-[#0e1428] px-3 py-2 shadow-lg">
                 <div className="flex items-center gap-2">
                   <Zap size={14} className="text-emerald-400" />
                   <span className="text-[11px] text-white/70">Lead routed in 0.3s</span>
@@ -274,7 +274,7 @@ export function LandingPage() {
       </section>
 
       {/* ── Trusted By ─────────────────────────────── */}
-      <section className="border-y border-white/[0.04] py-8">
+      <section className="border-y border-white/[0.08] py-8">
         <div className="mx-auto max-w-6xl px-5">
           <p className="text-center text-[11px] uppercase tracking-wider text-muted-foreground/30 mb-5">Trusted by agencies across industries</p>
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
@@ -295,7 +295,7 @@ export function LandingPage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {PAIN_POINTS.map((p) => (
-              <div key={p.title} className="rounded-xl border border-white/[0.05] bg-[#0c1021]/60 p-5 transition hover:border-white/[0.08]">
+              <div key={p.title} className="rounded-xl border border-white/[0.08] bg-[#0e1428]/60 p-5 transition hover:border-white/[0.08]">
                 <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-red-500/10">
                   <p.icon size={18} className="text-red-400/70" />
                 </div>
@@ -317,7 +317,7 @@ export function LandingPage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {SOLUTIONS.map((s) => (
-              <div key={s.title} className="rounded-xl border border-white/[0.05] bg-[#0c1021]/60 p-5 transition hover:border-white/[0.08] hover:bg-[#0c1021]">
+              <div key={s.title} className="rounded-xl border border-white/[0.08] bg-[#0e1428]/60 p-5 transition hover:border-white/[0.08] hover:bg-[#0e1428]">
                 <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10">
                   <s.icon size={18} className="text-blue-400/70" />
                 </div>
@@ -342,10 +342,10 @@ export function LandingPage() {
             <div className="space-y-6">
               {STEPS.map((s) => (
                 <div key={s.num} className="relative flex items-start gap-6 lg:gap-10">
-                  <div className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/[0.06] bg-[#0c1021]">
+                  <div className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-[#0e1428]">
                     <s.icon size={20} className="text-blue-400" />
                   </div>
-                  <div className="rounded-xl border border-white/[0.05] bg-[#0c1021]/60 p-5 flex-1">
+                  <div className="rounded-xl border border-white/[0.08] bg-[#0e1428]/60 p-5 flex-1">
                     <div className="text-[10px] font-mono text-blue-400/50 mb-1">Step {s.num}</div>
                     <h3 className="text-[14px] font-semibold text-white/90">{s.title}</h3>
                     <p className="mt-1 text-[12px] text-muted-foreground/50">{s.desc}</p>
@@ -367,7 +367,7 @@ export function LandingPage() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES_GRID.map((f) => (
-              <div key={f.title} className="group rounded-xl border border-white/[0.05] bg-[#0c1021]/40 p-4 transition hover:border-white/[0.08] hover:bg-[#0c1021]/80">
+              <div key={f.title} className="group rounded-xl border border-white/[0.08] bg-[#0e1428]/40 p-4 transition hover:border-white/[0.08] hover:bg-[#0e1428]/80">
                 <f.icon size={18} className="mb-2.5 text-blue-400/60 transition group-hover:text-blue-400" />
                 <h3 className="text-[13px] font-semibold text-white/85">{f.title}</h3>
                 <p className="mt-1 text-[11px] text-muted-foreground/45">{f.desc}</p>
@@ -385,8 +385,8 @@ export function LandingPage() {
             <h2 className="text-[28px] font-bold tracking-tight">See everything at a glance</h2>
             <p className="mt-3 text-[14px] text-muted-foreground/50">Real-time metrics, delivery logs, and buyer performance — all in one view.</p>
           </div>
-          <div className="rounded-2xl border border-white/[0.06] bg-[#0c1021] p-1 shadow-2xl shadow-blue-500/5">
-            <div className="rounded-xl bg-[#070b16] p-6">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#0e1428] p-1 shadow-2xl shadow-blue-500/5">
+            <div className="rounded-xl bg-[#0a0f1e] p-6">
               <div className="flex items-center gap-2 mb-5">
                 <div className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
                 <div className="h-2.5 w-2.5 rounded-full bg-amber-500/60" />
@@ -394,14 +394,14 @@ export function LandingPage() {
               </div>
               <div className="grid grid-cols-4 gap-3 mb-4">
                 {[{ l: 'Leads Today', v: '847', c: 'text-white' }, { l: 'Routed', v: '812', c: 'text-emerald-400' }, { l: 'Pending', v: '23', c: 'text-amber-400' }, { l: 'Failed', v: '12', c: 'text-red-400' }].map((s) => (
-                  <div key={s.l} className="rounded-lg border border-white/[0.04] bg-white/[0.02] p-3">
+                  <div key={s.l} className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-3">
                     <div className="text-[10px] text-muted-foreground/40">{s.l}</div>
                     <div className={`mt-1 text-[16px] font-semibold ${s.c}`}>{s.v}</div>
                   </div>
                 ))}
               </div>
               <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2 h-32 rounded-lg border border-white/[0.04] bg-white/[0.01] p-3">
+                <div className="col-span-2 h-32 rounded-lg border border-white/[0.08] bg-white/[0.01] p-3">
                   <div className="text-[10px] text-muted-foreground/30 mb-2">Delivery Trend</div>
                   <div className="flex items-end gap-1 h-20">
                     {[35, 55, 45, 70, 60, 80, 75, 85, 65, 78, 82, 72, 88, 90, 84].map((h, i) => (
@@ -409,7 +409,7 @@ export function LandingPage() {
                     ))}
                   </div>
                 </div>
-                <div className="h-32 rounded-lg border border-white/[0.04] bg-white/[0.01] p-3">
+                <div className="h-32 rounded-lg border border-white/[0.08] bg-white/[0.01] p-3">
                   <div className="text-[10px] text-muted-foreground/30 mb-2">Top Buyers</div>
                   <div className="space-y-2 mt-2">
                     {[{ n: 'Genesis Insurance', p: 85 }, { n: 'Prime Leads', p: 72 }, { n: 'Apex Coverage', p: 60 }].map((b) => (
@@ -439,12 +439,12 @@ export function LandingPage() {
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             {TESTIMONIALS.map((t) => (
-              <div key={t.name} className="rounded-xl border border-white/[0.05] bg-[#0c1021]/60 p-5">
+              <div key={t.name} className="rounded-xl border border-white/[0.08] bg-[#0e1428]/60 p-5">
                 <div className="flex gap-0.5 mb-3">
                   {[...Array(5)].map((_, i) => <Star key={i} size={12} className="fill-amber-400 text-amber-400" />)}
                 </div>
                 <p className="text-[13px] text-muted-foreground/60 leading-relaxed">"{t.text}"</p>
-                <div className="mt-4 border-t border-white/[0.04] pt-3">
+                <div className="mt-4 border-t border-white/[0.08] pt-3">
                   <div className="text-[12px] font-medium text-white/80">{t.name}</div>
                   <div className="text-[11px] text-muted-foreground/40">{t.role}</div>
                 </div>
@@ -461,7 +461,7 @@ export function LandingPage() {
             <p className="text-[11px] uppercase tracking-wider text-blue-400/70 mb-2">FAQ</p>
             <h2 className="text-[28px] font-bold tracking-tight">Frequently asked questions</h2>
           </div>
-          <div className="rounded-xl border border-white/[0.05] bg-[#0c1021]/40 px-5">
+          <div className="rounded-xl border border-white/[0.08] bg-[#0e1428]/40 px-5">
             {FAQ_ITEMS.map((item) => <FAQ key={item.q} {...item} />)}
           </div>
         </div>
@@ -476,7 +476,7 @@ export function LandingPage() {
             <p className="mt-3 text-[14px] text-muted-foreground/50">Start free. Scale when you're ready.</p>
           </div>
           <div className="mx-auto grid max-w-3xl gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-white/[0.05] bg-[#0c1021]/60 p-6">
+            <div className="rounded-xl border border-white/[0.08] bg-[#0e1428]/60 p-6">
               <h3 className="text-[16px] font-semibold text-white/90">Starter</h3>
               <p className="mt-1 text-[12px] text-muted-foreground/50">For small agencies getting started.</p>
               <div className="mt-4 text-[28px] font-bold text-white">$0<span className="text-[13px] font-normal text-muted-foreground/40">/mo</span></div>
@@ -487,7 +487,7 @@ export function LandingPage() {
               </ul>
               <Link to={ROUTES.LOGIN} className="mt-6 block w-full rounded-lg border border-white/[0.08] py-2 text-center text-[13px] font-medium text-white/80 transition hover:bg-white/[0.04]">Get Started</Link>
             </div>
-            <div className="relative rounded-xl border border-blue-500/20 bg-[#0c1021]/80 p-6 shadow-lg shadow-blue-500/5">
+            <div className="relative rounded-xl border border-blue-500/20 bg-[#0e1428]/80 p-6 shadow-lg shadow-blue-500/5">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-3 py-0.5 text-[10px] font-semibold text-white">Most Popular</div>
               <h3 className="text-[16px] font-semibold text-white/90">Pro</h3>
               <p className="mt-1 text-[12px] text-muted-foreground/50">For agencies that need full power.</p>
@@ -516,7 +516,7 @@ export function LandingPage() {
       </section>
 
       {/* ── Footer ─────────────────────────────────── */}
-      <footer className="border-t border-white/[0.04] py-10">
+      <footer className="border-t border-white/[0.08] py-10">
         <div className="mx-auto max-w-6xl px-5">
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div>
@@ -551,7 +551,7 @@ export function LandingPage() {
               </ul>
             </div>
           </div>
-          <div className="mt-8 border-t border-white/[0.04] pt-6 flex flex-col items-center justify-between gap-3 sm:flex-row">
+          <div className="mt-8 border-t border-white/[0.08] pt-6 flex flex-col items-center justify-between gap-3 sm:flex-row">
             <p className="text-[11px] text-muted-foreground/25">&copy; {new Date().getFullYear()} LeadFlowX. All rights reserved.</p>
             <div className="flex items-center gap-4">
               {['Twitter', 'LinkedIn', 'GitHub'].map((s) => (

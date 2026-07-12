@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/utils'
-import { STATUS_STYLES, DELIVERY_STYLES } from '@/types/lead'
+import { getStatusStyle, LEAD_STATUS_COLOR, DELIVERY_STATUS_COLOR } from '@/lib/statusColors'
 import type { LeadDetail } from '@/types/lead'
 import { X } from 'lucide-react'
 
@@ -28,13 +28,13 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       </div>
 
-      <div className="fixed top-0 right-0 z-50 h-full w-full max-w-lg border-l border-white/[0.06] bg-[#0c1021] shadow-drawer animate-slide-in-right">
+      <div className="fixed top-0 right-0 z-50 h-full w-full max-w-lg border-l border-white/[0.08] bg-[#0e1428] shadow-drawer animate-slide-in-right">
         <div className="flex h-full flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
+          <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-4">
             <div className="min-w-0 flex-1">
               {isLoading ? (
-                <div className="h-5 w-32 skeleton bg-white/[0.04] rounded" />
+                <div className="h-5 w-32 skeleton bg-white/[0.05] rounded" />
               ) : (
                 <>
                   <h2 className="text-[14px] font-semibold text-white truncate">{lead?.name}</h2>
@@ -56,9 +56,9 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
               <div className="space-y-5">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="space-y-2.5">
-                    <div className="h-3 w-20 skeleton bg-white/[0.04] rounded" />
-                    <div className="h-4 w-full skeleton bg-white/[0.04] rounded" />
-                    <div className="h-4 w-3/4 skeleton bg-white/[0.04] rounded" />
+                    <div className="h-3 w-20 skeleton bg-white/[0.05] rounded" />
+                    <div className="h-4 w-full skeleton bg-white/[0.05] rounded" />
+                    <div className="h-4 w-3/4 skeleton bg-white/[0.05] rounded" />
                   </div>
                 ))}
               </div>
@@ -73,7 +73,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                   <InfoRow label="Campaign" value={lead.campaignId?.name || '—'} />
                   <div className="flex items-center gap-2.5 py-1">
                     <span className="text-[11px] text-muted-foreground w-[72px] shrink-0">Status</span>
-                    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${STATUS_STYLES[lead.status] || ''}`}>
+                    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(lead.status, LEAD_STATUS_COLOR)}`}>
                       {lead.status}
                     </span>
                   </div>
@@ -88,7 +88,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                       <InfoRow label="Routing" value={lead.assignment.routingMode?.replace(/_/g, ' ') || '—'} />
                       <div className="flex items-center gap-2.5 py-1">
                         <span className="text-[11px] text-muted-foreground w-[72px] shrink-0">Status</span>
-                        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${DELIVERY_STYLES[lead.assignment.status] || ''}`}>
+                        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(lead.assignment.status, DELIVERY_STATUS_COLOR)}`}>
                           {lead.assignment.status}
                         </span>
                       </div>
@@ -106,7 +106,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                   {lead.routingLogs && lead.routingLogs.length > 0 ? (
                     <div className="space-y-3">
                       {lead.routingLogs.map((log) => (
-                        <div key={log._id} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 space-y-2">
+                        <div key={log._id} className="rounded-lg border border-white/[0.08] bg-white/[0.03] p-3 space-y-2">
                           <div className="flex items-center justify-between">
                             <span className="text-[12px] font-medium text-white capitalize">
                               {log.routingMode?.replace(/_/g, ' ')}
@@ -124,7 +124,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                                   className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${
                                     log.selectedBuyerId?._id === b._id
                                       ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                                      : 'bg-white/[0.04] text-white/40'
+                                       : 'bg-white/[0.06] text-white/60'
                                   }`}
                                 >
                                   {b.name}
@@ -148,7 +148,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
 
                 <Section title="Webhook Payload">
                   {lead.rawPayload ? (
-                    <pre className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 text-[11px] text-white/60 whitespace-pre-wrap overflow-x-auto max-h-60 overflow-y-auto font-mono">
+                    <pre className="rounded-lg border border-white/[0.08] bg-white/[0.03] p-3 text-[11px] text-white/70 whitespace-pre-wrap overflow-x-auto max-h-60 overflow-y-auto font-mono">
                       {JSON.stringify(lead.rawPayload, null, 2)}
                     </pre>
                   ) : (
@@ -221,14 +221,14 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function LogEntry({ dotColor, label, value, time }: { dotColor: string; label: string; value?: string; time?: string }) {
   return (
     <div className="flex items-start gap-3 relative">
-      <div className="absolute left-[5px] top-[14px] bottom-0 w-px bg-white/[0.04]" />
-      <div className={`mt-[7px] h-[10px] w-[10px] rounded-full ${dotColor} shrink-0 relative z-10 ring-2 ring-[#0c1021]`} />
+      <div className="absolute left-[5px] top-[14px] bottom-0 w-px bg-white/[0.06]" />
+      <div className={`mt-[7px] h-[10px] w-[10px] rounded-full ${dotColor} shrink-0 relative z-10 ring-2 ring-[#0e1428]`} />
       <div className="min-w-0 flex-1 pb-4">
         <p className="text-[13px] text-white/80">{label}</p>
         {value && <p className="text-[11px] text-muted-foreground capitalize">{value}</p>}
       </div>
       {time && (
-        <span className="text-[10px] text-muted-foreground/60 shrink-0 mt-0.5">{formatDate(time)}</span>
+        <span className="text-[10px] text-muted-foreground/70 shrink-0 mt-0.5">{formatDate(time)}</span>
       )}
     </div>
   )

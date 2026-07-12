@@ -77,9 +77,9 @@ export function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#070b16] px-4">
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0f1e] px-4">
         <div className="fixed inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(59,130,246,0.08),transparent)]" />
-        <div className="relative w-full max-w-[360px] rounded-xl border border-white/[0.06] bg-[#0c1021] p-8 text-center shadow-elevated">
+        <div className="relative w-full max-w-[360px] rounded-xl border border-white/[0.08] bg-[#0e1428] p-8 text-center shadow-elevated">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10">
             <XCircle size={22} className="text-red-400" />
           </div>
@@ -95,9 +95,9 @@ export function ResetPasswordPage() {
 
   if (done) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#070b16] px-4">
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0f1e] px-4">
         <div className="fixed inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(59,130,246,0.08),transparent)]" />
-        <div className="relative w-full max-w-[360px] rounded-xl border border-white/[0.06] bg-[#0c1021] p-8 text-center shadow-elevated">
+        <div className="relative w-full max-w-[360px] rounded-xl border border-white/[0.08] bg-[#0e1428] p-8 text-center shadow-elevated">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
             <CheckCircle size={22} className="text-emerald-400" />
           </div>
@@ -109,7 +109,7 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#070b16] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#0a0f1e] px-4">
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(59,130,246,0.08),transparent)]" />
 
       <div className="relative w-full max-w-[360px] space-y-8">
@@ -120,7 +120,7 @@ export function ResetPasswordPage() {
           <span className="text-[15px] font-semibold text-white tracking-tight">LeadFlowX</span>
         </div>
 
-        <div className="rounded-xl border border-white/[0.06] bg-[#0c1021] p-6 shadow-elevated">
+        <div className="rounded-xl border border-white/[0.08] bg-[#0e1428] p-6 shadow-elevated">
           <div className="mb-6 space-y-1">
             <h1 className="text-[15px] font-semibold text-white tracking-tight">Set new password</h1>
             <p className="text-[12px] text-muted-foreground">
@@ -149,7 +149,7 @@ export function ResetPasswordPage() {
                         className={`h-full flex-1 rounded-full transition-colors ${
                           i <= strength
                             ? strength <= 2 ? 'bg-red-500' : strength === 3 ? 'bg-amber-500' : 'bg-emerald-500'
-                            : 'bg-white/[0.06]'
+                            : 'bg-white/[0.08]'
                         }`}
                       />
                     ))}
@@ -158,7 +158,7 @@ export function ResetPasswordPage() {
                     {strengthChecks.map((check) => (
                       <span
                         key={check.label}
-                        className={`text-[10px] ${check.pass ? 'text-emerald-400' : 'text-muted-foreground/60'}`}
+                        className={`text-[10px] ${check.pass ? 'text-emerald-400' : 'text-muted-foreground/70'}`}
                       >
                         {check.pass ? '✓' : '○'} {check.label}
                       </span>

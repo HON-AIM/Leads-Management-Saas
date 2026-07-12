@@ -72,9 +72,9 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, isPending
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       </div>
 
-      <div className="fixed top-0 right-0 z-50 h-full w-full max-w-lg border-l border-white/[0.06] bg-[#0c1021] shadow-drawer animate-slide-in-right">
+      <div className="fixed top-0 right-0 z-50 h-full w-full max-w-lg border-l border-white/[0.08] bg-[#0e1428] shadow-drawer animate-slide-in-right">
         <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
+          <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-4">
             <div className="min-w-0 flex-1">
               <h2 className="text-[14px] font-semibold text-white truncate">{title}</h2>
               {!isNew && buyer && (
@@ -120,7 +120,7 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, isPending
                       className={`flex-1 rounded-lg border px-3 py-2 text-[12px] font-medium transition-all capitalize ${
                         form.delivery.provider === p
                           ? 'border-blue-500/40 bg-blue-500/10 text-blue-400'
-                          : 'border-white/[0.08] text-muted-foreground hover:border-white/[0.12] hover:text-white/60'
+                          : 'border-white/[0.10] text-muted-foreground hover:border-white/[0.14] hover:text-white/70'
                       }`}
                     >
                       {p === 'none' ? 'None' : p === 'ghl' ? 'GHL' : 'Webhook'}
@@ -170,12 +170,12 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, isPending
                   className="w-full rounded-lg border border-white/[0.08] bg-transparent px-3 py-1.5 text-[13px] text-white/90 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
                 {showStates && stateSearch && filteredStates.length > 0 && (
-                  <div className="absolute z-10 mt-1 w-full max-h-40 overflow-y-auto rounded-lg border border-white/[0.06] bg-[#0c1021] shadow-elevated">
+                  <div className="absolute z-10 mt-1 w-full max-h-40 overflow-y-auto rounded-lg border border-white/[0.08] bg-[#0e1428] shadow-elevated">
                     {filteredStates.slice(0, 12).map((st) => (
                       <button
                         key={st}
                         onClick={() => { toggleState(st); setStateSearch(''); setShowStates(false) }}
-                        className="w-full text-left px-3 py-1.5 text-[12px] hover:bg-white/[0.04] text-white/70 transition-colors"
+                        className="w-full text-left px-3 py-1.5 text-[12px] hover:bg-white/[0.06] text-white/80 transition-colors"
                       >
                         {st}
                       </button>
@@ -183,12 +183,12 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, isPending
                   </div>
                 )}
                 {showStates && stateSearch && filteredStates.length === 0 && (
-                  <div className="absolute z-10 mt-1 w-full rounded-lg border border-white/[0.06] bg-[#0c1021] shadow-elevated px-3 py-2 text-[11px] text-muted-foreground">
+                  <div className="absolute z-10 mt-1 w-full rounded-lg border border-white/[0.08] bg-[#0e1428] shadow-elevated px-3 py-2 text-[11px] text-muted-foreground">
                     No matches
                   </div>
                 )}
               </div>
-              <p className="text-[10px] text-muted-foreground/60 mt-1">
+              <p className="text-[10px] text-muted-foreground/70 mt-1">
                 {form.allowedStates.length === 0 ? 'No states selected — buyer accepts all' : `${form.allowedStates.length} state(s) selected`}
               </p>
             </Section>
@@ -205,7 +205,7 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, isPending
                   <Input type="number" min={0} value={form.monthlyCap} onChange={(e) => update({ monthlyCap: Number(e.target.value) })} />
                 </Field>
               </div>
-              <p className="text-[10px] text-muted-foreground/60">0 = unlimited</p>
+              <p className="text-[10px] text-muted-foreground/70">0 = unlimited</p>
             </Section>
 
             <Section title="Routing">
@@ -220,7 +220,7 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, isPending
             </Section>
           </div>
 
-          <div className="border-t border-white/[0.06] px-6 py-4 flex items-center justify-between">
+          <div className="border-t border-white/[0.08] px-6 py-4 flex items-center justify-between">
             <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
             <Button
               size="sm"

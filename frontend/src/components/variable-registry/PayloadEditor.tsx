@@ -92,8 +92,8 @@ export function PayloadEditor({
 
   return (
     <div className="relative" ref={pickerRef}>
-      <div className="relative rounded-lg border border-white/[0.06] bg-[#070b16] focus-within:border-blue-500/30 transition-colors">
-        <div className="flex items-center justify-between border-b border-white/[0.04] px-3 py-1.5">
+      <div className="relative rounded-lg border border-white/[0.08] bg-[#0a0f1e] focus-within:border-blue-500/30 transition-colors">
+        <div className="flex items-center justify-between border-b border-white/[0.06] px-3 py-1.5">
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/40">
             <Braces size={12} />
             <span>Payload Template</span>
@@ -123,8 +123,8 @@ export function PayloadEditor({
 
       {showPicker && !readOnly && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1">
-          <div className="rounded-lg border border-white/[0.06] bg-[#0c1021] shadow-elevated max-h-[300px] overflow-hidden">
-            <div className="flex items-center gap-2 border-b border-white/[0.04] px-3 py-2">
+          <div className="rounded-lg border border-white/[0.08] bg-[#0e1428] shadow-elevated max-h-[300px] overflow-hidden">
+            <div className="flex items-center gap-2 border-b border-white/[0.06] px-3 py-2">
               <Search size={12} className="text-muted-foreground/40" />
               <input
                 value={query}
@@ -133,7 +133,7 @@ export function PayloadEditor({
                 className="flex-1 bg-transparent text-[11px] text-white placeholder:text-muted-foreground/30 outline-none"
                 autoFocus
               />
-              <button onClick={() => setShowPicker(false)} className="text-muted-foreground/30 hover:text-white/50">
+              <button onClick={() => setShowPicker(false)} className="text-muted-foreground/30 hover:text-white/70">
                 <X size={12} />
               </button>
             </div>
