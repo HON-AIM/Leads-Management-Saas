@@ -10,6 +10,14 @@ const api = axios.create({
   timeout: 15000,
 })
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('accessToken')
+  if (token && !config.url?.includes('/auth/login') && !config.url?.includes('/auth/refresh')) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -20,14 +28,24 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !original._retry && !isLoginRequest) {
       original._retry = true
-      try {
-        await api.post('/auth/refresh')
-        return api(original)
-      } catch {
-        if (!isPublicPage) {
-          window.location.href = '/login'
+      const refreshToken = localStorage.getItem('refreshToken')
+      if (refreshToken) {
+        try {
+          const { data } = await axios.post('/api/auth/refresh', { refreshToken }, { baseURL: import.meta.env.VITE_API_URL || '/api' })
+          const newAccess = data.data?.accessToken
+          if (newAccess) {
+            localStorage.setItem('accessToken', newAccess)
+            original.headers.Authorization = `Bearer ${newAccess}`
+            return api(original)
+          }
+        } catch {
+          // refresh failed
         }
-        return Promise.reject(error)
+      }
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      if (!isPublicPage) {
+        window.location.href = '/login'
       }
     }
 

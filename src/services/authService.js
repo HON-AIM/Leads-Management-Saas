@@ -5,13 +5,18 @@ const logger = require('../utils/logger');
 
 class AuthService {
   async login(email, password, tenantId) {
-    const user = await User.findOne({ email, tenantId }).select('+password').populate('tenantId', 'name slug status');
-    if (!user) throw new Error('Invalid credentials');
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail, tenantId }).select('+password').populate('tenantId', 'name slug status');
+    if (!user) {
+      logger.warn('Login failed: user not found', { email: normalizedEmail, tenantId: tenantId.toString() });
+      throw new Error('Invalid credentials');
+    }
     if (user.status !== 'active') throw new Error('Account is inactive');
     if (user.isLocked()) throw new Error('Account is locked — try again later');
 
     const valid = await user.comparePassword(password);
     if (!valid) {
+      logger.warn('Login failed: wrong password', { email: normalizedEmail });
       await user.incrementFailedAttempts();
       throw new Error('Invalid credentials');
     }

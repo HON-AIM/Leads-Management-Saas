@@ -48,15 +48,28 @@ app.use('/api/variables', require('./src/modules/variable-registry/registry.rout
 app.get('/api/health', async (req, res) => {
   const mongoState = mongoose.connection.readyState;
   const states = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
-  res.json({
-    success: true,
-    data: {
-      status: mongoState === 1 ? 'healthy' : 'degraded',
-      uptime: process.uptime(),
-      timestamp: new Date().toISOString(),
-      mongodb: states[mongoState] || 'unknown',
-    },
-  });
+  const data = {
+    status: mongoState === 1 ? 'healthy' : 'degraded',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    mongodb: states[mongoState] || 'unknown',
+    nodeEnv: process.env.NODE_ENV || 'development',
+  };
+
+  if (mongoState === 1) {
+    try {
+      const Tenant = require('./src/models/Tenant');
+      const User = require('./src/models/User');
+      data.tenants = await Tenant.countDocuments();
+      data.users = await User.countDocuments();
+      const defaultTenant = await Tenant.findOne({ slug: 'default' }).select('_id name slug');
+      data.defaultTenant = defaultTenant ? { id: defaultTenant._id, name: defaultTenant.name, slug: defaultTenant.slug } : null;
+    } catch (e) {
+      data.dbProbeError = e.message;
+    }
+  }
+
+  res.json({ success: true, data });
 });
 
 app.use((err, req, res, _next) => {
