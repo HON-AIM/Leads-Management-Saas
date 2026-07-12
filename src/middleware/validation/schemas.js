@@ -91,6 +91,11 @@ const login = z.object({
   tenantSlug: z.string().min(1, 'Workspace is required'),
 });
 
+const changePassword = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+}).strict();
+
 module.exports = {
   createCampaign,
   updateCampaign,
@@ -99,4 +104,5 @@ module.exports = {
   createLead,
   updateLead,
   login,
+  changePassword,
 };

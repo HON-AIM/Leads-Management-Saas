@@ -1,19 +1,42 @@
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
 import { useNotifications } from '@/hooks/useNotifications'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { LoadingScreen } from '@/components/feedback/LoadingScreen'
 import { QUERY_KEYS } from '@/lib/constants'
 import { formatDate } from '@/lib/utils'
+import api from '@/lib/api'
 import type { Session } from '@/types/auth'
-import { LogOut, Monitor, Smartphone, Tablet } from 'lucide-react'
+import { LogOut, Monitor, Lock, Save } from 'lucide-react'
 
 export function SettingsPage() {
   const { user, logout } = useAuth()
   const { addNotification } = useNotifications()
   const queryClient = useQueryClient()
+
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+
+  const passwordMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.put('/auth/password', { currentPassword, newPassword })
+      return data
+    },
+    onSuccess: () => {
+      addNotification({ type: 'success', title: 'Password updated', description: 'Your password has been changed successfully.' })
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+    },
+    onError: (err: any) => {
+      addNotification({ type: 'error', title: 'Failed', description: err?.response?.data?.error || 'Could not update password.' })
+    },
+  })
 
   const initials = user
     ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.trim() || user.email?.[0]?.toUpperCase() || 'U'
@@ -79,6 +102,62 @@ export function SettingsPage() {
               <p className="font-medium">{user?.tenantName}</p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Change Password */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.05]">
+              <Lock size={14} className="text-muted-foreground" />
+            </div>
+            <div>
+              <CardTitle>Change Password</CardTitle>
+              <CardDescription>Update your account password</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-[12px] font-medium text-muted-foreground">Current Password</label>
+            <Input
+              type="password"
+              placeholder="Enter current password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[12px] font-medium text-muted-foreground">New Password</label>
+            <Input
+              type="password"
+              placeholder="Enter new password (min 8 characters)"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[12px] font-medium text-muted-foreground">Confirm New Password</label>
+            <Input
+              type="password"
+              placeholder="Confirm new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+          </div>
+          {newPassword && confirmPassword && newPassword !== confirmPassword && (
+            <p className="text-[12px] text-red-400">Passwords do not match</p>
+          )}
+          <Button
+            variant="cta"
+            size="sm"
+            disabled={!currentPassword || !newPassword || newPassword !== confirmPassword || passwordMutation.isPending}
+            onClick={() => passwordMutation.mutate()}
+          >
+            <Save size={14} className="mr-1.5" />
+            {passwordMutation.isPending ? 'Updating...' : 'Update Password'}
+          </Button>
         </CardContent>
       </Card>
 

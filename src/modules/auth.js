@@ -76,4 +76,24 @@ router.get('/me', authenticate, async (req, res) => {
   });
 });
 
+router.put('/password', authenticate, validate(require('../middleware/validation/schemas').changePassword), async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    const User = require('../models/User');
+    const user = await User.findById(req.userId).select('+password');
+    if (!user) return error(res, 'User not found', 404);
+
+    const valid = await user.comparePassword(currentPassword);
+    if (!valid) return error(res, 'Current password is incorrect', 400);
+
+    user.password = newPassword;
+    await user.save();
+
+    return success(res, { message: 'Password updated successfully' });
+  } catch (err) {
+    return error(res, err.message, 500);
+  }
+});
+
 module.exports = router;
