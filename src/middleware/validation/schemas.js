@@ -96,6 +96,13 @@ const changePassword = z.object({
   newPassword: z.string().min(8, 'Password must be at least 8 characters'),
 }).strict();
 
+const inviteUser = z.object({
+  email: z.string().email('Invalid email format'),
+  name: z.string().min(1, 'Name is required').max(200),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  role: z.enum(['admin', 'member']).default('member'),
+}).strict();
+
 module.exports = {
   createCampaign,
   updateCampaign,
@@ -105,4 +112,5 @@ module.exports = {
   updateLead,
   login,
   changePassword,
+  inviteUser,
 };

@@ -10,8 +10,8 @@ const userSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     role: {
       type: String,
-      enum: ['super_admin', 'admin', 'manager', 'viewer'],
-      default: 'viewer',
+      enum: ['super_admin', 'admin', 'member', 'manager', 'viewer'],
+      default: 'member',
     },
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },

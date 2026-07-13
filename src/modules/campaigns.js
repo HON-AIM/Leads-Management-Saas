@@ -30,7 +30,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', authorize('admin', 'manager'), validate(createCampaign), async (req, res) => {
+router.post('/', authorize('admin', 'member'), validate(createCampaign), async (req, res) => {
   try {
     const campaign = await campaignService.create({ ...req.body, createdBy: req.userId }, req.tenantId);
     return created(res, campaign);
@@ -39,7 +39,7 @@ router.post('/', authorize('admin', 'manager'), validate(createCampaign), async 
   }
 });
 
-router.put('/:id', authorize('admin', 'manager'), validate(updateCampaign), async (req, res) => {
+router.put('/:id', authorize('admin', 'member'), validate(updateCampaign), async (req, res) => {
   try {
     const campaign = await campaignService.update(req.params.id, req.tenantId, req.body);
     if (!campaign) return notFound(res, 'Campaign not found');
@@ -59,7 +59,7 @@ router.delete('/:id', authorize('admin'), async (req, res) => {
   }
 });
 
-router.post('/:id/buyers', authorize('admin', 'manager'), async (req, res) => {
+router.post('/:id/buyers', authorize('admin', 'member'), async (req, res) => {
   try {
     const campaign = await campaignService.addBuyer(req.params.id, req.tenantId, req.body.buyerId, {
       weight: req.body.weight,
@@ -71,7 +71,7 @@ router.post('/:id/buyers', authorize('admin', 'manager'), async (req, res) => {
   }
 });
 
-router.delete('/:id/buyers/:buyerId', authorize('admin', 'manager'), async (req, res) => {
+router.delete('/:id/buyers/:buyerId', authorize('admin', 'member'), async (req, res) => {
   try {
     const campaign = await campaignService.removeBuyer(req.params.id, req.tenantId, req.params.buyerId);
     return success(res, campaign);

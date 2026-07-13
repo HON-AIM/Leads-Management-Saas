@@ -64,7 +64,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', authorize('admin', 'manager'), validate(createLead), async (req, res) => {
+router.post('/', authorize('admin', 'member'), validate(createLead), async (req, res) => {
   try {
     const lead = await leadService.create({ ...req.body, createdBy: req.userId }, req.tenantId);
     return created(res, lead);
@@ -73,7 +73,7 @@ router.post('/', authorize('admin', 'manager'), validate(createLead), async (req
   }
 });
 
-router.put('/:id', authorize('admin', 'manager'), validate(updateLead), async (req, res) => {
+router.put('/:id', authorize('admin', 'member'), validate(updateLead), async (req, res) => {
   try {
     const lead = await leadService.update(req.params.id, req.tenantId, req.body);
     if (!lead) return notFound(res, 'Lead not found');

@@ -1,15 +1,17 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useIsMobile } from '@/hooks/useMediaQuery'
+import { useAuth } from '@/hooks/useAuth'
 import {
   LayoutDashboard, Megaphone, Users, Building2,
-  FileText, Settings, ChevronLeft, ChevronRight,
+  FileText, Settings, ChevronLeft, ChevronRight, Shield,
 } from 'lucide-react'
 
 interface NavItem {
   icon: React.ReactNode
   label: string
   href: string
+  adminOnly?: boolean
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -19,6 +21,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: <Building2 size={16} />, label: 'Buyers', href: '/buyers' },
   { icon: <FileText size={16} />, label: 'Delivery', href: '/delivery' },
   { icon: <Settings size={16} />, label: 'Settings', href: '/settings' },
+  { icon: <Shield size={16} />, label: 'Team', href: '/team', adminOnly: true },
 ]
 
 const SIDEBAR_EXPANDED_W = 208
@@ -54,6 +57,9 @@ function SidebarLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
 export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const isMobile = useIsMobile()
   const isCollapsed = collapsed && !isMobile
+  const { isAdmin } = useAuth()
+
+  const visibleItems = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin)
 
   return (
     <>
@@ -97,7 +103,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto scrollbar-hide px-2 py-3">
           <div className="space-y-0.5">
-            {NAV_ITEMS.map((item) => (
+            {visibleItems.map((item) => (
               <SidebarLink key={item.href} item={item} collapsed={isCollapsed} />
             ))}
           </div>

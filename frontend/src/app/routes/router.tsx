@@ -12,6 +12,7 @@ import { BuyersPage } from '@/pages/buyers/BuyersPage'
 import { CampaignsPage } from '@/pages/campaigns/CampaignsPage'
 import { DeliveryPage } from '@/pages/delivery/DeliveryPage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
+import { TeamPage } from '@/pages/team/TeamPage'
 import { ROUTES } from '@/lib/constants'
 
 export function AppRouter() {
@@ -29,6 +30,7 @@ export function AppRouter() {
         <Route path={ROUTES.CAMPAIGNS} element={<CampaignsPage />} />
         <Route path={ROUTES.DELIVERY} element={<DeliveryPage />} />
         <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
+        <Route path={ROUTES.TEAM} element={<TeamPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

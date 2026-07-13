@@ -10,6 +10,7 @@ export const ROUTES = {
   CAMPAIGNS: '/campaigns',
   DELIVERY: '/delivery',
   SETTINGS: '/settings',
+  TEAM: '/team',
 } as const
 
 export const QUERY_KEYS = {
