@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { useNotifications } from '@/hooks/useNotifications'
 import { CampaignCard } from '@/components/campaigns/CampaignCard'
 import { CampaignForm } from '@/components/campaigns/CampaignForm'
-import { CampaignDetailDrawer } from '@/components/campaigns/CampaignDetailDrawer'
 import type { Campaign, CampaignFormData } from '@/types/campaign'
 import { Search, Plus } from 'lucide-react'
 
@@ -14,7 +13,6 @@ export function CampaignsPage() {
   const qc = useQueryClient()
   const { addNotification } = useNotifications()
   const [showCreate, setShowCreate] = useState(false)
-  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
   const [editCampaign, setEditCampaign] = useState<Campaign | null>(null)
   const [search, setSearch] = useState('')
 
@@ -127,21 +125,11 @@ export function CampaignsPage() {
             <CampaignCard
               key={c._id}
               campaign={c}
-              onClick={setSelectedCampaign}
               onToggle={(c) => toggleMutation.mutate(c)}
             />
           ))}
         </div>
       )}
-
-      <CampaignDetailDrawer
-        campaign={selectedCampaign}
-        onClose={() => setSelectedCampaign(null)}
-        onEdit={(c) => {
-          setEditCampaign(c)
-          setSelectedCampaign(null)
-        }}
-      />
 
       {(showCreate || editCampaign) && (
         <>

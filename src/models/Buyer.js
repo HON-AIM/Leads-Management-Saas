@@ -29,6 +29,12 @@ const buyerSchema = new mongoose.Schema(
       locationId: { type: String },
       secret: { type: String },
       payloadTemplate: { type: String, default: null },
+      acceptanceRule: {
+        enabled: { type: Boolean, default: false },
+        responseFieldPath: { type: String, default: '' },
+        operator: { type: String, enum: ['equals', 'not_equals', 'contains', 'exists'], default: 'exists' },
+        expectedValue: { type: String, default: '' },
+      },
     },
 
     schedule: {

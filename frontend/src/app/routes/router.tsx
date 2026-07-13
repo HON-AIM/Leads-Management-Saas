@@ -13,6 +13,8 @@ import { CampaignsPage } from '@/pages/campaigns/CampaignsPage'
 import { DeliveryPage } from '@/pages/delivery/DeliveryPage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
 import { TeamPage } from '@/pages/team/TeamPage'
+import { SuppliersPage } from '@/pages/suppliers/SuppliersPage'
+import { ComingSoonPage } from '@/pages/calls/ComingSoonPage'
 import { ROUTES } from '@/lib/constants'
 
 export function AppRouter() {
@@ -31,6 +33,8 @@ export function AppRouter() {
         <Route path={ROUTES.DELIVERY} element={<DeliveryPage />} />
         <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
         <Route path={ROUTES.TEAM} element={<TeamPage />} />
+        <Route path={ROUTES.SUPPLIERS} element={<SuppliersPage />} />
+        <Route path={ROUTES.CALLS} element={<ComingSoonPage title="Calls" />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

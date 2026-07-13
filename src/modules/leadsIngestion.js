@@ -1,6 +1,8 @@
 const router = require('express').Router();
 const Tenant = require('../models/Tenant');
 const leadService = require('../services/leadService');
+const supplierService = require('../services/supplierService');
+const fieldDefinitionService = require('../services/fieldDefinitionService');
 const { runPipeline } = require('../pipeline');
 const { ingestLimiter } = require('../middleware/rateLimit');
 const { success, error, badRequest } = require('../utils/response');
@@ -14,6 +16,7 @@ router.post('/', ingestLimiter, authenticate, async (req, res) => {
   try {
     const { tenantSlug, campaignId } = req.query;
     const apiKey = req.headers['x-api-key'];
+    const supplierKey = req.headers['x-supplier-key'] || req.body?.supplierKey;
     const body = req.body;
 
     if (!tenantSlug) return badRequest(res, 'tenantSlug query param required');
@@ -27,23 +30,40 @@ router.post('/', ingestLimiter, authenticate, async (req, res) => {
     const user = await User.findOne({ apiKey, tenantId, status: 'active' });
     if (!user) return badRequest(res, 'Invalid API key');
 
+    let supplier = null;
+    if (supplierKey) {
+      supplier = await supplierService.getByKey(supplierKey, tenantId);
+      if (!supplier) return badRequest(res, 'Invalid supplier key');
+    }
+
     const campaign = campaignId
       ? await Campaign.findOne({ _id: campaignId, tenantId, status: 'active' })
       : await Campaign.findOne({ tenantId, status: 'active' });
 
     if (!campaign) return badRequest(res, 'No active campaign found');
 
+    const fieldValidation = await fieldDefinitionService.validateRequiredFields(campaign._id, tenantId, body).catch(() => ({ valid: true, missing: [] }));
+    if (!fieldValidation.valid) {
+      return badRequest(res, `Missing required field(s): ${fieldValidation.missing.join(', ')}`);
+    }
+
     const leads = Array.isArray(body) ? body : [body];
     const results = [];
 
     for (const leadData of leads) {
       try {
+        const { supplierKey: _, ...cleanLeadData } = leadData;
         const lead = await leadService.create({
-          ...leadData,
+          ...cleanLeadData,
           campaignId: campaign._id,
-          source: leadData.source || 'webhook',
+          supplierId: supplier?._id || undefined,
+          source: leadData.source || (supplier ? supplier.name : 'webhook'),
           rawPayload: leadData,
         }, tenantId);
+
+        if (supplier) {
+          await supplierService.incrementLeadsReceived(supplier._id, tenantId);
+        }
 
         const ctx = await runPipeline({ lead, campaign, tenantId });
 

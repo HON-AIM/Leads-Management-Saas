@@ -160,6 +160,7 @@ function validateResolvedJson(resolvedString) {
 
 module.exports = {
   DEFAULT_PAYLOAD_TEMPLATE,
+  flattenObject,
   getAvailableTokens,
   resolveTemplate,
   validateTemplateSyntax,

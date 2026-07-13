@@ -22,6 +22,12 @@ export interface Buyer {
     locationId?: string
     secret?: string
     payloadTemplate?: string | null
+    acceptanceRule?: {
+      enabled: boolean
+      responseFieldPath: string
+      operator: 'equals' | 'not_equals' | 'contains' | 'exists'
+      expectedValue: string
+    }
   }
   schedule: {
     enabled: boolean
@@ -51,6 +57,12 @@ export interface BuyerFormData {
     url: string
     apiKey: string
     locationId: string
+    acceptanceRule?: {
+      enabled: boolean
+      responseFieldPath: string
+      operator: 'equals' | 'not_equals' | 'contains' | 'exists'
+      expectedValue: string
+    }
   }
 }
 

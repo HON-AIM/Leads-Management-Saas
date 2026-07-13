@@ -4,9 +4,13 @@ const campaignService = require('../services/campaignService');
 const campaignRepo = require('../repositories/campaignRepository');
 const Campaign = require('../models/Campaign');
 const Buyer = require('../models/Buyer');
+const Lead = require('../models/Lead');
+const LeadAssignment = require('../models/LeadAssignment');
+const RoutingLog = require('../models/RoutingLog');
 const { success, created, error, notFound, paginated } = require('../utils/response');
 const { validate } = require('../middleware/validate');
 const { createCampaign, updateCampaign } = require('../middleware/validation/schemas');
+const fieldDefinitionService = require('../services/fieldDefinitionService');
 
 router.use(authenticate);
 
@@ -79,9 +83,183 @@ router.get('/:id/next-buyer', async (req, res) => {
   }
 });
 
+router.get('/:id/stats', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.tenantId;
+    const campaign = await Campaign.findOne({ _id: id, tenantId });
+    if (!campaign) return notFound(res, 'Campaign not found');
+
+    const campaignObjectId = require('mongoose').Types.ObjectId.createFromHexString(id);
+    const tenantObjectId = require('mongoose').Types.ObjectId.createFromHexString(tenantId.toString());
+
+    const [leadCounts, assignmentStats, activeBuyers] = await Promise.all([
+      Lead.aggregate([
+        { $match: { campaignId: campaignObjectId, tenantId: tenantObjectId } },
+        { $group: { _id: null, total: { $sum: 1 } } },
+      ]),
+      LeadAssignment.aggregate([
+        { $match: { campaignId: campaignObjectId, tenantId: tenantObjectId } },
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ]),
+      Buyer.countDocuments({
+        _id: { $in: campaign.assignedBuyers.map((b) => b.buyerId) },
+        tenantId,
+        status: 'active',
+      }),
+    ]);
+
+    const totalLeads = leadCounts[0]?.total || 0;
+    const assignmentMap = {};
+    for (const a of assignmentStats) { assignmentMap[a._id] = a.count; }
+    const totalDelivered = assignmentMap['delivered'] || 0;
+    const totalFailed = assignmentMap['failed'] || 0;
+    const deliveryRate = (totalDelivered + totalFailed) > 0 ? (totalDelivered / (totalDelivered + totalFailed) * 100) : 0;
+
+    return success(res, {
+      leadsToday: campaign.leadsToday || 0,
+      totalLeads,
+      activeBuyers,
+      deliveryRate: Math.round(deliveryRate * 10) / 10,
+      totalDelivered,
+      totalFailed,
+    });
+  } catch (err) {
+    return error(res, err.message);
+  }
+});
+
+router.get('/:id/costs', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.tenantId;
+    const campaign = await Campaign.findOne({ _id: id, tenantId });
+    if (!campaign) return notFound(res, 'Campaign not found');
+
+    const campaignObjectId = require('mongoose').Types.ObjectId.createFromHexString(id);
+    const tenantObjectId = require('mongoose').Types.ObjectId.createFromHexString(tenantId.toString());
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const [costSummary, dailyTrend] = await Promise.all([
+      LeadAssignment.aggregate([
+        { $match: { campaignId: campaignObjectId, tenantId: tenantObjectId } },
+        { $group: { _id: null, totalCost: { $sum: '$cost' }, totalRevenue: { $sum: '$revenue' }, count: { $sum: 1 } } },
+      ]),
+      LeadAssignment.aggregate([
+        { $match: { campaignId: campaignObjectId, tenantId: tenantObjectId, createdAt: { $gte: thirtyDaysAgo } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            leads: { $sum: 1 },
+            cost: { $sum: '$cost' },
+            revenue: { $sum: '$revenue' },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+    ]);
+
+    const summary = costSummary[0] || { totalCost: 0, totalRevenue: 0, count: 0 };
+    return success(res, {
+      costPerLead: campaign.costPerLead || 0,
+      totalCost: summary.totalCost,
+      totalRevenue: summary.totalRevenue,
+      netMargin: summary.totalRevenue - summary.totalCost,
+      totalAssignments: summary.count,
+      dailyTrend,
+    });
+  } catch (err) {
+    return error(res, err.message);
+  }
+});
+
+router.get('/:id/buyer-distribution', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.tenantId;
+    const campaign = await Campaign.findOne({ _id: id, tenantId });
+    if (!campaign) return notFound(res, 'Campaign not found');
+
+    const campaignObjectId = require('mongoose').Types.ObjectId.createFromHexString(id);
+    const tenantObjectId = require('mongoose').Types.ObjectId.createFromHexString(tenantId.toString());
+
+    const distribution = await LeadAssignment.aggregate([
+      { $match: { campaignId: campaignObjectId, tenantId: tenantObjectId } },
+      {
+        $group: {
+          _id: '$buyerId',
+          total: { $sum: 1 },
+          delivered: { $sum: { $cond: [{ $eq: ['$status', 'delivered'] }, 1, 0] } },
+          failed: { $sum: { $cond: [{ $eq: ['$status', 'failed'] }, 1, 0] } },
+          revenue: { $sum: '$revenue' },
+          cost: { $sum: '$cost' },
+        },
+      },
+      { $sort: { total: -1 } },
+    ]);
+
+    const buyerIds = distribution.map((d) => d._id);
+    const buyers = buyerIds.length > 0
+      ? await Buyer.find({ _id: { $in: buyerIds }, tenantId }).select('name email').lean()
+      : [];
+    const buyerMap = new Map(buyers.map((b) => [b._id.toString(), b]));
+
+    const enriched = distribution.map((d) => ({
+      ...d,
+      buyer: buyerMap.get(d._id.toString()) || { name: 'Unknown', email: '' },
+      deliveryRate: d.total > 0 ? Math.round((d.delivered / d.total) * 1000) / 10 : 0,
+    }));
+
+    const totalAssigned = distribution.reduce((sum, d) => sum + d.total, 0);
+    const buyerCount = distribution.length;
+    let fairness = null;
+    if (campaign.routingMode === 'round_robin' && buyerCount > 1 && totalAssigned > 0) {
+      const expected = totalAssigned / buyerCount;
+      const maxDev = Math.max(...distribution.map((d) => Math.abs(d.total - expected)));
+      const deviationPct = Math.round((maxDev / expected) * 100);
+      fairness = { expectedPerBuyer: Math.round(expected), maxDeviationPct: deviationPct };
+    }
+
+    return success(res, { distribution: enriched, totalAssigned, fairness });
+  } catch (err) {
+    return error(res, err.message);
+  }
+});
+
+router.get('/:id/routing-logs', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.tenantId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+
+    const campaign = await Campaign.findOne({ _id: id, tenantId });
+    if (!campaign) return notFound(res, 'Campaign not found');
+
+    const query = { campaignId: id, tenantId };
+    const [logs, total] = await Promise.all([
+      RoutingLog.find(query)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate('leadId', 'name email state source status')
+        .populate('selectedBuyerId', 'name email')
+        .lean(),
+      RoutingLog.countDocuments(query),
+    ]);
+
+    return paginated(res, { data: logs, total, page, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    return error(res, err.message);
+  }
+});
+
 router.post('/', authorize('admin', 'member'), validate(createCampaign), async (req, res) => {
   try {
     const campaign = await campaignService.create({ ...req.body, createdBy: req.userId }, req.tenantId);
+    await fieldDefinitionService.seedStandardFields(campaign._id, req.tenantId).catch(() => {});
     return created(res, campaign);
   } catch (err) {
     return error(res, err.message, 400);

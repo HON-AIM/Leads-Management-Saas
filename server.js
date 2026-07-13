@@ -43,6 +43,8 @@ app.use('/api/leads', require('./src/modules/leads'));
 app.use('/api/ingest', require('./src/modules/leadsIngestion'));
 app.use('/api/delivery-logs', require('./src/modules/deliveryLogs'));
 app.use('/api/settings', require('./src/modules/settings'));
+app.use('/api/suppliers', require('./src/modules/suppliers'));
+app.use('/api/campaigns/:campaignId/fields', require('./src/modules/fieldDefinitions'));
 app.use('/api/variables', require('./src/modules/variable-registry/registry.routes'));
 
 app.get('/api/health', async (req, res) => {

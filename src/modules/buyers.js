@@ -144,6 +144,48 @@ router.post('/:id/payload-template/preview', authorize('admin', 'manager'), asyn
   }
 });
 
+router.put('/:id/acceptance-rule', authorize('admin', 'manager'), async (req, res) => {
+  try {
+    const { enabled, responseFieldPath, operator, expectedValue } = req.body;
+    const allowedOps = ['equals', 'not_equals', 'contains', 'exists'];
+    if (operator && !allowedOps.includes(operator)) {
+      return error(res, `Invalid operator. Must be one of: ${allowedOps.join(', ')}`, 400);
+    }
+    const buyer = await buyerService.update(req.params.id, req.tenantId, {
+      'delivery.acceptanceRule': {
+        enabled: enabled ?? false,
+        responseFieldPath: responseFieldPath || '',
+        operator: operator || 'exists',
+        expectedValue: expectedValue || '',
+      },
+    });
+    if (!buyer) return notFound(res, 'Buyer not found');
+    return success(res, buyer.delivery.acceptanceRule);
+  } catch (err) {
+    return error(res, err.message, 400);
+  }
+});
+
+router.post('/:id/acceptance-rule/preview', authorize('admin', 'manager'), async (req, res) => {
+  try {
+    const { rule, sampleResponseJson } = req.body;
+    if (!sampleResponseJson) {
+      return error(res, 'sampleResponseJson body is required', 400);
+    }
+    let parsed;
+    if (typeof sampleResponseJson === 'string') {
+      try { parsed = JSON.parse(sampleResponseJson); } catch { return error(res, 'sampleResponseJson is not valid JSON', 400); }
+    } else {
+      parsed = sampleResponseJson;
+    }
+    const { evaluateAcceptance } = require('../services/responseParsingService');
+    const result = evaluateAcceptance(parsed, rule || {});
+    return success(res, { ...result, responseTokens: result.flatTokens });
+  } catch (err) {
+    return error(res, err.message);
+  }
+});
+
 router.post('/:id/payload-template/test-send', authorize('admin', 'manager'), async (req, res) => {
   try {
     const { template, sampleLeadId } = req.body;
@@ -176,11 +218,20 @@ router.post('/:id/payload-template/test-send', authorize('admin', 'manager'), as
         secret: buyer.delivery.secret,
         timeout: 15000,
       });
+      const isHttpSuccess = response.statusCode >= 200 && response.statusCode < 300;
+      const rule = buyer.delivery?.acceptanceRule;
+      let acceptance = { accepted: isHttpSuccess, reason: isHttpSuccess ? 'HTTP 2xx' : `HTTP ${response.statusCode}` };
+      if (isHttpSuccess && rule?.enabled) {
+        const { evaluateAcceptanceFromJson } = require('../services/responseParsingService');
+        acceptance = evaluateAcceptanceFromJson(response.body, rule);
+      }
       return success(res, {
         payloadSent: jsonCheck.parsed,
         statusCode: response.statusCode,
         responseBody: response.body,
-        success: response.statusCode >= 200 && response.statusCode < 300,
+        success: isHttpSuccess && acceptance.accepted,
+        accepted: acceptance.accepted,
+        acceptanceReason: acceptance.reason,
         durationMs: Date.now() - start,
       });
     } catch (err) {
@@ -189,6 +240,8 @@ router.post('/:id/payload-template/test-send', authorize('admin', 'manager'), as
         statusCode: 0,
         responseBody: err.message,
         success: false,
+        accepted: false,
+        acceptanceReason: err.message,
         durationMs: Date.now() - start,
       });
     }

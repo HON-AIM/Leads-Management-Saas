@@ -63,6 +63,12 @@ export const CAMPAIGN_STATUS_COLOR: Record<string, SemanticKey> = {
   inactive: 'neutral',
 }
 
+export const SUPPLIER_STATUS_COLOR: Record<string, SemanticKey> = {
+  active: 'positive',
+  paused: 'caution',
+  inactive: 'neutral',
+}
+
 export function getStatusStyle(status: string, map: Record<string, SemanticKey>): string {
   const key = map[status] ?? 'neutral'
   const c = SEMANTIC_COLORS[key]

@@ -20,6 +20,7 @@ const leadAssignmentSchema = new mongoose.Schema(
     bidAmount: { type: Number },
 
     deliveredAt: { type: Date },
+    responseData: { type: mongoose.Schema.Types.Mixed },
 
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true },
   },

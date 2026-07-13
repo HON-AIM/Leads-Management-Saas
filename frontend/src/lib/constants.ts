@@ -11,6 +11,8 @@ export const ROUTES = {
   DELIVERY: '/delivery',
   SETTINGS: '/settings',
   TEAM: '/team',
+  SUPPLIERS: '/suppliers',
+  CALLS: '/calls',
 } as const
 
 export const QUERY_KEYS = {
@@ -22,6 +24,7 @@ export const QUERY_KEYS = {
   DELIVERY_LOGS: ['delivery-logs'],
   DELIVERY_STATS: ['delivery-stats'],
   DELIVERY_TRENDS: ['delivery-trends'],
+  SUPPLIERS: ['suppliers'],
   CLIENTS: ['clients'],
   SESSIONS: ['sessions'],
   SETTINGS: ['settings'],

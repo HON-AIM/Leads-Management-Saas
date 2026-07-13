@@ -1,14 +1,15 @@
+import { useNavigate } from 'react-router-dom'
 import { formatDate } from '@/lib/utils'
 import { getStatusStyle, CAMPAIGN_STATUS_COLOR } from '@/lib/statusColors'
 import type { Campaign } from '@/types/campaign'
 
 interface CampaignCardProps {
   campaign: Campaign
-  onClick: (campaign: Campaign) => void
   onToggle: (campaign: Campaign) => void
 }
 
-export function CampaignCard({ campaign, onClick, onToggle }: CampaignCardProps) {
+export function CampaignCard({ campaign, onToggle }: CampaignCardProps) {
+  const navigate = useNavigate()
   const statusColor = getStatusStyle(campaign.status, CAMPAIGN_STATUS_COLOR)
 
   const routingLabel: Record<string, string> = {
@@ -21,7 +22,7 @@ export function CampaignCard({ campaign, onClick, onToggle }: CampaignCardProps)
   return (
     <div
       className="group rounded-xl border border-white/[0.08] bg-[#0e1428] p-5 transition-all duration-200 hover:border-white/[0.14] hover:shadow-card-hover cursor-pointer"
-      onClick={() => onClick(campaign)}
+      onClick={() => navigate(`/campaigns/${campaign._id}`)}
     >
       <div className="flex items-start justify-between gap-2 mb-4">
         <div className="min-w-0 flex-1">

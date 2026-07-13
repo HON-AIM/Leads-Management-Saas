@@ -4,6 +4,7 @@ const http = require('http');
 const leadAssignmentRepo = require('../repositories/leadAssignmentRepository');
 const leadService = require('./leadService');
 const payloadTemplateService = require('./payloadTemplateService');
+const responseParsingService = require('./responseParsingService');
 const logger = require('../utils/logger');
 
 class DeliveryService {
@@ -14,16 +15,14 @@ class DeliveryService {
       return { success: true, method: 'no-op' };
     }
 
-    const payload = (() => {
-      try {
-        return this.buildPayload(lead, buyer);
-      } catch (err) {
-        await leadAssignmentRepo.updateStatus(assignment._id, 'failed', { failureReason: err.message });
-        await leadService.markFailed(lead._id, lead.tenantId);
-        return null;
-      }
-    })();
-    if (!payload) return { success: false, error: 'Invalid payload template' };
+    let payload;
+    try {
+      payload = this.buildPayload(lead, buyer);
+    } catch (err) {
+      await leadAssignmentRepo.updateStatus(assignment._id, 'failed', { failureReason: err.message });
+      await leadService.markFailed(lead._id, lead.tenantId);
+      return { success: false, error: err.message };
+    }
     let attempt = 0;
     const maxRetries = config.delivery.maxRetries;
     const timeout = config.delivery.timeoutMs;
@@ -37,9 +36,27 @@ class DeliveryService {
         });
 
         if (response.statusCode >= 200 && response.statusCode < 300) {
-          await leadAssignmentRepo.updateStatus(assignment._id, 'delivered', { deliveredAt: new Date() });
-          await leadService.markDelivered(lead._id, lead.tenantId);
-          return { success: true, statusCode: response.statusCode, attempt };
+          const rule = buyer.delivery?.acceptanceRule;
+          const acceptance = responseParsingService.evaluateAcceptanceFromJson(response.body, rule);
+
+          const assignmentUpdate = {
+            deliveredAt: new Date(),
+            responseData: (() => { try { return JSON.parse(response.body); } catch { return { raw: response.body }; } })(),
+          };
+
+          if (acceptance.accepted) {
+            await leadAssignmentRepo.updateStatus(assignment._id, 'delivered', assignmentUpdate);
+            await leadService.markDelivered(lead._id, lead.tenantId);
+            return { success: true, statusCode: response.statusCode, attempt, accepted: true, acceptanceReason: acceptance.reason };
+          }
+
+          logger.warn('Delivery rejected by acceptance rule', {
+            assignmentId: assignment._id,
+            statusCode: response.statusCode,
+            reason: acceptance.reason,
+            attempt,
+          });
+          continue;
         }
 
         logger.warn('Delivery failed', {

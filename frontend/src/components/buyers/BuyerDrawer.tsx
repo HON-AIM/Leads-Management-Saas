@@ -6,6 +6,7 @@ import { US_STATES } from '@/types/buyer'
 import type { Buyer, BuyerFormData } from '@/types/buyer'
 import { PayloadTab } from '@/components/buyers/PayloadTab'
 import { X, Trash2 } from 'lucide-react'
+import { BUYER_STATUS_COLOR, getStatusStyle } from '@/lib/statusColors'
 
 interface BuyerDrawerProps {
   buyer: Buyer | null
@@ -79,7 +80,22 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, isPending
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-4">
             <div className="min-w-0 flex-1">
-              <h2 className="text-[14px] font-semibold text-white truncate">{title}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-[14px] font-semibold text-white truncate">
+                  {!isNew && buyer ? (
+                    <>Edit Buyer Configuration <span className="text-muted-foreground font-normal">&mdash;</span> {buyer.name}</>
+                  ) : (
+                    title
+                  )}
+                </h2>
+                {!isNew && buyer && (
+                  <span
+                    className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-medium shrink-0 ${getStatusStyle(buyer.status, BUYER_STATUS_COLOR)}`}
+                  >
+                    {buyer.status.charAt(0).toUpperCase() + buyer.status.slice(1)}
+                  </span>
+                )}
+              </div>
               {!isNew && buyer && (
                 <p className="text-[11px] text-muted-foreground truncate">{buyer.email}</p>
               )}

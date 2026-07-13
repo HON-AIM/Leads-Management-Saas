@@ -10,6 +10,7 @@ const leadSchema = new mongoose.Schema(
     state: { type: String, uppercase: true, trim: true },
     source: { type: String, default: 'form' },
     campaignId: { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign' },
+    supplierId: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' },
 
     status: {
       type: String,
@@ -37,6 +38,7 @@ leadSchema.index({ tenantId: 1, state: 1 });
 leadSchema.index({ tenantId: 1, campaignId: 1 });
 leadSchema.index({ tenantId: 1, createdAt: -1 });
 leadSchema.index({ tenantId: 1, source: 1 });
+leadSchema.index({ tenantId: 1, supplierId: 1 });
 
 leadSchema.pre('save', function (next) {
   if (this.email && !this.emailNormalized) {
