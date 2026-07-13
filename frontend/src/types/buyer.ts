@@ -21,6 +21,7 @@ export interface Buyer {
     apiKey?: string
     locationId?: string
     secret?: string
+    payloadTemplate?: string | null
   }
   schedule: {
     enabled: boolean

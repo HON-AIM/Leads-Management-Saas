@@ -28,6 +28,7 @@ const buyerSchema = new mongoose.Schema(
       apiKey: { type: String },
       locationId: { type: String },
       secret: { type: String },
+      payloadTemplate: { type: String, default: null },
     },
 
     schedule: {

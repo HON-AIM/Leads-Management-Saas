@@ -3,6 +3,7 @@ const https = require('https');
 const http = require('http');
 const leadAssignmentRepo = require('../repositories/leadAssignmentRepository');
 const leadService = require('./leadService');
+const payloadTemplateService = require('./payloadTemplateService');
 const logger = require('../utils/logger');
 
 class DeliveryService {
@@ -13,7 +14,16 @@ class DeliveryService {
       return { success: true, method: 'no-op' };
     }
 
-    const payload = this.buildPayload(lead, buyer);
+    const payload = (() => {
+      try {
+        return this.buildPayload(lead, buyer);
+      } catch (err) {
+        await leadAssignmentRepo.updateStatus(assignment._id, 'failed', { failureReason: err.message });
+        await leadService.markFailed(lead._id, lead.tenantId);
+        return null;
+      }
+    })();
+    if (!payload) return { success: false, error: 'Invalid payload template' };
     let attempt = 0;
     const maxRetries = config.delivery.maxRetries;
     const timeout = config.delivery.timeoutMs;
@@ -51,19 +61,18 @@ class DeliveryService {
   }
 
   buildPayload(lead, buyer) {
-    return {
-      lead: {
-        id: lead._id,
-        name: lead.name,
-        email: lead.email,
-        phone: lead.phone,
-        state: lead.state,
-        source: lead.source,
-        customFields: lead.customFields,
-      },
-      buyer: { id: buyer._id, name: buyer.name },
-      timestamp: new Date().toISOString(),
-    };
+    const template = buyer.delivery?.payloadTemplate || payloadTemplateService.DEFAULT_PAYLOAD_TEMPLATE;
+    const resolved = payloadTemplateService.resolveTemplate(template, lead, buyer);
+    try {
+      return JSON.parse(resolved);
+    } catch (err) {
+      logger.error('Invalid resolved payload template', {
+        buyerId: buyer._id,
+        buyerName: buyer.name,
+        error: err.message,
+      });
+      throw new Error('Invalid payload template — resolved output is not valid JSON');
+    }
   }
 
   post(url, body, { secret, timeout } = {}) {
