@@ -222,7 +222,8 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
                     <div className="flex items-center gap-2">
                       <UserPlus size={14} className="text-muted-foreground shrink-0" />
                       <select
-                        className="flex-1 text-xs border border-white/[0.12] rounded-lg px-3 py-1.5 bg-[#0e1428] text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30"
+                        className="flex-1 text-xs border border-white/[0.15] rounded-lg px-3 py-2 bg-[#151d33] text-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 cursor-pointer"
+                        style={{ colorScheme: 'dark' }}
                         value=""
                         onChange={(e) => {
                           if (e.target.value) {
@@ -231,9 +232,9 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
                           }
                         }}
                       >
-                        <option value="">Add buyer to campaign...</option>
+                        <option value="" className="bg-[#151d33] text-white/60">Add buyer to campaign...</option>
                         {availableBuyers.map((b) => (
-                          <option key={b._id} value={b._id}>{b.name}</option>
+                          <option key={b._id} value={b._id} className="bg-[#151d33] text-white">{b.name}</option>
                         ))}
                       </select>
                     </div>

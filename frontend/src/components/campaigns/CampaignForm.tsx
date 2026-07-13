@@ -222,12 +222,14 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
             <Label className="text-xs text-muted-foreground">Assign Buyers *</Label>
             {availableBuyers.length > 0 && (
               <select
-                className="text-xs border border-white/[0.08] rounded-lg px-2 py-1 bg-transparent text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className="text-xs border border-white/[0.15] rounded-lg px-3 py-2 bg-[#151d33] text-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
+                style={{ colorScheme: 'dark' }}
+                value=""
                 onChange={(e) => { if (e.target.value) { addBuyer(e.target.value); e.target.value = '' } }}
               >
-                <option value="">Add buyer...</option>
+                <option value="" className="bg-[#151d33] text-white/60">Add buyer...</option>
                 {availableBuyers.map((b) => (
-                  <option key={b._id} value={b._id}>{b.name}</option>
+                  <option key={b._id} value={b._id} className="bg-[#151d33] text-white">{b.name}</option>
                 ))}
               </select>
             )}
