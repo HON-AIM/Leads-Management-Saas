@@ -1,6 +1,9 @@
 const router = require('express').Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const campaignService = require('../services/campaignService');
+const campaignRepo = require('../repositories/campaignRepository');
+const Campaign = require('../models/Campaign');
+const Buyer = require('../models/Buyer');
 const { success, created, error, notFound, paginated } = require('../utils/response');
 const { validate } = require('../middleware/validate');
 const { createCampaign, updateCampaign } = require('../middleware/validation/schemas');
@@ -25,6 +28,52 @@ router.get('/:id', async (req, res) => {
     const campaign = await campaignService.getById(req.params.id, req.tenantId);
     if (!campaign) return notFound(res, 'Campaign not found');
     return success(res, campaign);
+  } catch (err) {
+    return error(res, err.message);
+  }
+});
+
+router.get('/:id/next-buyer', async (req, res) => {
+  try {
+    const campaign = await Campaign.findOne({ _id: req.params.id, tenantId: req.tenantId })
+      .populate('assignedBuyers.buyerId');
+    if (!campaign) return notFound(res, 'Campaign not found');
+
+    if (campaign.routingMode !== 'round_robin') {
+      return success(res, { nextBuyerId: null, reason: 'not_round_robin' });
+    }
+
+    // Reuse the same eligibility logic as the real routing pipeline (buyerFilter + capFilter stages).
+    // Only applies buyer-status and cap-based checks — NO state filtering since there is no
+    // specific incoming lead to match against. This is "who's eligible right now in general",
+    // not "who's eligible for one specific hypothetical lead."
+    const entries = campaign.assignedBuyers || [];
+    if (!entries.length) {
+      return success(res, { nextBuyerId: null, reason: 'no_buyers' });
+    }
+
+    const buyerIds = entries.map((e) => e.buyerId._id);
+    const buyers = await Buyer.find({ _id: { $in: buyerIds }, tenantId }).lean();
+    const buyerMap = new Map(buyers.map((b) => [b._id.toString(), b]));
+
+    const eligibleIds = [];
+    for (const entry of entries) {
+      const buyer = buyerMap.get(entry.buyerId._id.toString());
+      if (!buyer) continue;
+      if (buyer.status !== 'active') continue;
+      // Cap check (same as capFilter stage)
+      if (buyer.leadCap > 0 && buyer.leadsReceived >= buyer.leadCap) continue;
+      if (buyer.dailyCap > 0 && buyer.dailyLeadsReceived >= buyer.dailyCap) continue;
+      if (buyer.monthlyCap > 0 && buyer.monthlyLeadsReceived >= buyer.monthlyCap) continue;
+      eligibleIds.push(entry.buyerId._id.toString());
+    }
+
+    if (!eligibleIds.length) {
+      return success(res, { nextBuyerId: null, reason: 'no_eligible_buyers' });
+    }
+
+    const nextBuyerId = await campaignRepo.peekNextRoundRobinBuyer(campaign._id, eligibleIds);
+    return success(res, { nextBuyerId });
   } catch (err) {
     return error(res, err.message);
   }

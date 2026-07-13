@@ -45,6 +45,13 @@ class CampaignRepository {
     return result ? result.roundRobinIndex : 0;
   }
 
+  async peekNextRoundRobinBuyer(campaignId, eligibleBuyerIds) {
+    const campaign = await Campaign.findById(campaignId).select('roundRobinIndex').lean();
+    if (!campaign || eligibleBuyerIds.length === 0) return null;
+    const index = campaign.roundRobinIndex % eligibleBuyerIds.length;
+    return eligibleBuyerIds[index];
+  }
+
   async incrementStats(id, tenantId, field) {
     return Campaign.findOneAndUpdate(
       { _id: id, tenantId },

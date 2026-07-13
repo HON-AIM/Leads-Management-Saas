@@ -50,6 +50,21 @@ router.put('/:id', authorize('admin', 'member'), validate(updateBuyer), async (r
   }
 });
 
+router.patch('/:id/status', authorize('admin', 'manager'), async (req, res) => {
+  try {
+    const { status } = req.body;
+    const allowed = ['active', 'paused', 'inactive'];
+    if (!allowed.includes(status)) {
+      return error(res, `Invalid status. Must be one of: ${allowed.join(', ')}`, 400);
+    }
+    const buyer = await buyerService.update(req.params.id, req.tenantId, { status });
+    if (!buyer) return notFound(res, 'Buyer not found');
+    return success(res, buyer);
+  } catch (err) {
+    return error(res, err.message, 400);
+  }
+});
+
 router.delete('/:id', authorize('admin'), async (req, res) => {
   try {
     const result = await buyerService.delete(req.params.id, req.tenantId);
