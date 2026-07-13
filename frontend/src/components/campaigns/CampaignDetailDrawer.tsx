@@ -31,6 +31,17 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
   const { addNotification } = useNotifications()
   const [tab, setTab] = useState<string>('overview')
 
+  const { data: liveCampaign } = useQuery<Campaign>({
+    queryKey: ['campaign-detail', campaign?._id],
+    queryFn: async () => {
+      const { data } = await api.get(`/campaigns/${campaign!._id}`)
+      return data.data ?? data
+    },
+    enabled: !!campaign,
+    staleTime: 5000,
+  })
+  const campaignData = liveCampaign || campaign
+
   const toggleMutation = useMutation({
     mutationFn: async () => {
       await api.patch(`/campaigns/${campaign!._id}/toggle`)
@@ -38,6 +49,7 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
     onSuccess: () => {
       addNotification({ type: 'success', title: 'Toggled', description: `Campaign ${campaign!.status === 'active' ? 'deactivated' : 'activated'}` })
       qc.invalidateQueries({ queryKey: QUERY_KEYS.CAMPAIGNS })
+      qc.invalidateQueries({ queryKey: ['campaign-detail', campaign?._id] })
     },
     onError: () => addNotification({ type: 'error', title: 'Error', description: 'Failed to toggle campaign' }),
   })
@@ -73,7 +85,7 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
   })
   const allBuyers: Buyer[] = Array.isArray(buyersData) ? buyersData : []
 
-  const assignedBuyerIds = campaign?.assignedBuyers?.map((b: any) => typeof b.buyerId === 'object' ? b.buyerId._id : b.buyerId) || []
+  const assignedBuyerIds = (campaignData?.assignedBuyers || campaign?.assignedBuyers)?.map((b: any) => typeof b.buyerId === 'object' ? b.buyerId._id : b.buyerId) || []
   const availableBuyers = allBuyers.filter((b) => b.status === 'active' && !assignedBuyerIds.includes(b._id))
 
   const addBuyerMutation = useMutation({
@@ -83,6 +95,7 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEYS.CAMPAIGNS })
+      qc.invalidateQueries({ queryKey: ['campaign-detail', campaign?._id] })
       addNotification({ type: 'success', title: 'Buyer added', description: 'Buyer has been assigned to this campaign.' })
     },
     onError: (err: any) => {
@@ -96,6 +109,7 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEYS.CAMPAIGNS })
+      qc.invalidateQueries({ queryKey: ['campaign-detail', campaign?._id] })
       addNotification({ type: 'success', title: 'Buyer removed', description: 'Buyer has been unassigned from this campaign.' })
     },
     onError: (err: any) => {
@@ -121,7 +135,7 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
       const { data } = await api.get(`/campaigns/${campaign!._id}/next-buyer`)
       return data.data ?? data
     },
-    enabled: !!campaign && tab === 'buyers' && campaign.routingMode === 'round_robin',
+    enabled: !!campaign && tab === 'buyers' && (campaignData?.routingMode || campaign?.routingMode) === 'round_robin',
     refetchInterval: 15000,
   })
 
@@ -146,13 +160,13 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-4">
               <div className="min-w-0 flex-1">
-                <h2 className="text-[14px] font-semibold text-white truncate">{campaign.name}</h2>
-                {campaign.description && (
-                  <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{campaign.description}</p>
+                <h2 className="text-[14px] font-semibold text-white truncate">{campaignData?.name}</h2>
+                {campaignData?.description && (
+                  <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{campaignData.description}</p>
                 )}
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-4">
-                <Badge className={`text-[10px] px-2 py-0.5 ${getStatusStyle(campaign.status, CAMPAIGN_STATUS_COLOR)}`}>{campaign.status}</Badge>
+                <Badge className={`text-[10px] px-2 py-0.5 ${getStatusStyle(campaignData?.status || campaign.status, CAMPAIGN_STATUS_COLOR)}`}>{campaignData?.status || campaign.status}</Badge>
                 <button onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:text-white hover:bg-white/[0.06] transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
@@ -181,15 +195,15 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
               {tab === 'overview' && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    <Field label="Source" value={campaign.source || 'webhook'} />
-                    <Field label="Routing Mode" value={routingLabel[campaign.routingMode] || campaign.routingMode} />
-                    <Field label="Buyers Assigned" value={`${campaign.assignedBuyers.length}`} />
-                    <Field label="Leads Today" value={`${campaign.leadsToday ?? 0}`} />
-                    <Field label="Cost Per Lead" value={`$${campaign.costPerLead ?? 0}`} />
-                    <Field label="Dedup Window" value={`${campaign.dedupWindowHours ?? 720}h`} />
-                    <Field label="Created" value={formatDate(campaign.createdAt)} />
-                    {campaign.lastActivityAt && (
-                      <Field label="Last Activity" value={formatDate(campaign.lastActivityAt)} />
+                    <Field label="Source" value={campaignData?.source || 'webhook'} />
+                    <Field label="Routing Mode" value={routingLabel[campaignData?.routingMode || ''] || campaignData?.routingMode || ''} />
+                    <Field label="Buyers Assigned" value={`${campaignData?.assignedBuyers?.length ?? 0}`} />
+                    <Field label="Leads Today" value={`${campaignData?.leadsToday ?? 0}`} />
+                    <Field label="Cost Per Lead" value={`$${campaignData?.costPerLead ?? 0}`} />
+                    <Field label="Dedup Window" value={`${campaignData?.dedupWindowHours ?? 720}h`} />
+                    <Field label="Created" value={formatDate(campaignData?.createdAt || '')} />
+                    {campaignData?.lastActivityAt && (
+                      <Field label="Last Activity" value={formatDate(campaignData.lastActivityAt)} />
                     )}
                   </div>
                 </div>
@@ -204,7 +218,7 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
                         <div
                           key={mode}
                           className={`rounded-lg border px-3 py-2 text-[11px] font-medium transition-colors ${
-                            campaign.routingMode === mode
+                            campaignData?.routingMode === mode
                               ? 'border-blue-500/40 bg-blue-500/10 text-blue-400'
                               : 'border-white/[0.08] text-muted-foreground'
                           }`}
@@ -215,20 +229,20 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-[13px] font-semibold text-white mb-2">Assigned Buyers ({campaign.assignedBuyers.length})</h4>
-                    {campaign.assignedBuyers.length === 0 ? (
+                    <h4 className="text-[13px] font-semibold text-white mb-2">Assigned Buyers ({campaignData?.assignedBuyers?.length ?? 0})</h4>
+                    {(!campaignData?.assignedBuyers || campaignData.assignedBuyers.length === 0) ? (
                       <p className="text-xs text-muted-foreground">No buyers assigned</p>
                     ) : (
                       <div className="space-y-1.5">
-                        {campaign.assignedBuyers.map((b, i) => (
+                        {campaignData.assignedBuyers.map((b: any, i: number) => (
                           <div key={i} className="flex items-center justify-between rounded-lg border border-white/[0.08] px-3 py-2">
                             <div>
                               <p className="text-[13px] font-medium text-white">{b.buyerId.name}</p>
                               <p className="text-[11px] text-muted-foreground">{b.buyerId.email}</p>
                             </div>
                             <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                              {campaign.routingMode === 'weighted' && <span>W: {b.weight}</span>}
-                              {campaign.routingMode === 'priority' && <span>P: {b.priority}</span>}
+                              {campaignData?.routingMode === 'weighted' && <span>W: {b.weight}</span>}
+                              {campaignData?.routingMode === 'priority' && <span>P: {b.priority}</span>}
                             </div>
                           </div>
                         ))}
@@ -240,7 +254,7 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
 
               {tab === 'buyers' && (
                 <div className="space-y-4">
-                  {campaign.routingMode === 'round_robin' && (
+                  {(campaignData?.routingMode || campaign.routingMode) === 'round_robin' && (
                     <p className="text-[11px] text-muted-foreground bg-white/[0.03] rounded-lg px-3 py-2 border border-white/[0.06]">
                       Buyers rotate in order. The buyer marked NEXT will receive the next incoming lead, assuming they remain eligible when it arrives.
                     </p>
@@ -268,7 +282,7 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
                     </div>
                   )}
 
-                  {campaign.assignedBuyers.length === 0 ? (
+                  {(!campaignData?.assignedBuyers || campaignData.assignedBuyers.length === 0) ? (
                     <div className="text-center py-10 rounded-lg border border-dashed border-white/[0.12]">
                       <p className="text-[13px] text-muted-foreground mb-3">No buyers assigned to this campaign</p>
                       <Button variant="outline" size="sm" onClick={() => { onEdit(campaign); onClose() }}>
@@ -277,7 +291,7 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {campaign.assignedBuyers.map((b: any, i: number) => {
+                      {campaignData.assignedBuyers.map((b: any, i: number) => {
                         const buyer = typeof b.buyerId === 'object' ? b.buyerId : allBuyers.find((ab) => ab._id === b.buyerId)
                         const buyerId = typeof b.buyerId === 'object' ? b.buyerId._id : b.buyerId
                         return (
@@ -285,7 +299,7 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
                             <div className="flex items-center justify-between mb-1">
                               <p className="text-[13px] font-semibold text-white">{buyer?.name || 'Unknown Buyer'}</p>
                               <div className="flex items-center gap-2">
-                                {campaign.routingMode === 'round_robin' && nextBuyerData?.nextBuyerId === buyerId && (
+                                {(campaignData?.routingMode || campaign.routingMode) === 'round_robin' && nextBuyerData?.nextBuyerId === buyerId && (
                                   <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-bold bg-violet-500/15 text-violet-300 ring-1 ring-inset ring-violet-400/40 uppercase tracking-wide">
                                     <span className="w-1 h-1 rounded-full bg-violet-400 animate-pulse" />
                                     Next
@@ -306,8 +320,8 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
                             {buyer?.email && <p className="text-[11px] text-muted-foreground mb-0.5">{buyer.email}</p>}
                             <p className="text-[10px] text-muted-foreground/60 italic">Status changes apply to this buyer across all campaigns</p>
                             <div className="flex gap-4 mt-2 text-[11px] text-muted-foreground">
-                              {campaign.routingMode === 'weighted' && <span>Weight: {b.weight}</span>}
-                              {campaign.routingMode === 'priority' && <span>Priority: {b.priority}</span>}
+                              {(campaignData?.routingMode || campaign.routingMode) === 'weighted' && <span>Weight: {b.weight}</span>}
+                              {(campaignData?.routingMode || campaign.routingMode) === 'priority' && <span>Priority: {b.priority}</span>}
                             </div>
                             <div className="flex items-center gap-1.5 mt-2">
                               {buyer?.status !== 'active' && (
@@ -351,9 +365,9 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
                   <div>
                     <h4 className="text-[13px] font-semibold text-white mb-1">Webhook URL</h4>
                     <p className="text-[11px] text-muted-foreground mb-3">Post leads to this campaign's endpoint</p>
-                    {campaign.webhookUrl ? (
+                    {campaignData?.webhookUrl ? (
                       <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] p-3">
-                        <p className="text-[11px] font-mono text-white/80 break-all">{campaign.webhookUrl}</p>
+                        <p className="text-[11px] font-mono text-white/80 break-all">{campaignData.webhookUrl}</p>
                       </div>
                     ) : (
                       <p className="text-[13px] text-muted-foreground">No webhook URL configured</p>
@@ -362,7 +376,7 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
                   <div className="rounded-lg border border-white/[0.08] p-4">
                     <h4 className="text-[13px] font-semibold text-white mb-1">Webhook Payload</h4>
                     <pre className="text-[11px] text-white/60 whitespace-pre-wrap overflow-x-auto mt-2 font-mono">
-{`POST ${campaign.webhookUrl || '/your-webhook-url'}
+{`POST ${campaignData?.webhookUrl || '/your-webhook-url'}
 Content-Type: application/json
 
 {
@@ -371,8 +385,8 @@ Content-Type: application/json
   "email": "john@example.com",
   "phone": "5551234567",
   "state": "TX",
-  "source": "${campaign.source || 'webhook'}",
-  "campaign_id": "${campaign._id}",
+  "source": "${campaignData?.source || 'webhook'}",
+  "campaign_id": "${campaign?._id}",
   "timestamp": "2026-07-10T12:00:00Z"
 }`}
                     </pre>
@@ -406,7 +420,7 @@ Content-Type: application/json
                     <div className="flex items-center justify-between px-4 py-3">
                       <div>
                         <p className="text-[13px] font-medium text-white">Campaign Status</p>
-                        <p className="text-[11px] text-muted-foreground">{campaign.status === 'active' ? 'Active and routing leads' : 'Paused'}</p>
+                        <p className="text-[11px] text-muted-foreground">{(campaignData?.status || campaign.status) === 'active' ? 'Active and routing leads' : 'Paused'}</p>
                       </div>
                       <Button
                         variant="outline"
@@ -414,7 +428,7 @@ Content-Type: application/json
                         onClick={() => toggleMutation.mutate()}
                         disabled={toggleMutation.isPending}
                       >
-                        {campaign.status === 'active' ? 'Deactivate' : 'Activate'}
+                        {(campaignData?.status || campaign.status) === 'active' ? 'Deactivate' : 'Activate'}
                       </Button>
                     </div>
                     <div className="flex items-center justify-between px-4 py-3">
