@@ -21,6 +21,7 @@ export function BuyersPage() {
       const { data } = await api.get('/buyers', { params: { limit: 200 } })
       return data
     },
+    refetchOnMount: 'always',
   })
 
   const buyers = data?.data || []

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { QUERY_KEYS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -63,6 +64,7 @@ const OPERATORS = [
 
 export function PayloadTab({ buyerId }: PayloadTabProps) {
   const { addNotification } = useNotifications()
+  const qc = useQueryClient()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const highlightRef = useRef<HTMLDivElement>(null)
 
@@ -125,6 +127,7 @@ export function PayloadTab({ buyerId }: PayloadTabProps) {
     onSuccess: () => {
       addNotification({ type: 'success', title: 'Saved', description: 'Template and acceptance rule saved' })
       setIsDefault(false)
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.BUYERS })
     },
     onError: (err: any) => {
       addNotification({ type: 'error', title: 'Error', description: err?.response?.data?.error || 'Failed to save' })

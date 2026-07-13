@@ -10,6 +10,7 @@ import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { LeadsPage } from '@/pages/leads/LeadsPage'
 import { BuyersPage } from '@/pages/buyers/BuyersPage'
 import { CampaignsPage } from '@/pages/campaigns/CampaignsPage'
+import { CampaignWorkspacePage } from '@/pages/campaigns/CampaignWorkspacePage'
 import { DeliveryPage } from '@/pages/delivery/DeliveryPage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
 import { TeamPage } from '@/pages/team/TeamPage'
@@ -30,6 +31,7 @@ export function AppRouter() {
         <Route path={ROUTES.LEADS} element={<LeadsPage />} />
         <Route path={ROUTES.BUYERS} element={<BuyersPage />} />
         <Route path={ROUTES.CAMPAIGNS} element={<CampaignsPage />} />
+        <Route path="/campaigns/:id" element={<CampaignWorkspacePage />} />
         <Route path={ROUTES.DELIVERY} element={<DeliveryPage />} />
         <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
         <Route path={ROUTES.TEAM} element={<TeamPage />} />
