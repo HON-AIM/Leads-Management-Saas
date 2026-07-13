@@ -4,17 +4,23 @@ import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { LeadDrawer } from '@/components/leads/LeadDrawer'
+import { CreateLeadDrawer } from '@/components/leads/CreateLeadDrawer'
+import { LeadLogsTable } from '@/components/leads/LeadLogsTable'
 import { getStatusStyle, LEAD_STATUS_COLOR } from '@/lib/statusColors'
 import { formatDate } from '@/lib/utils'
 import type { Lead, LeadFilters } from '@/types/lead'
-import { Search, SlidersHorizontal, X, Users, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, SlidersHorizontal, X, Users, ChevronLeft, ChevronRight, Plus, ScrollText } from 'lucide-react'
+
+type Tab = 'leads' | 'logs'
 
 export function LeadsPage() {
+  const [tab, setTab] = useState<Tab>('leads')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState<LeadFilters>({})
   const [showFilters, setShowFilters] = useState(false)
   const [drawerLeadId, setDrawerLeadId] = useState<string | null>(null)
+  const [showCreateDrawer, setShowCreateDrawer] = useState(false)
 
   const hasFilters = Object.values(filters).some(Boolean)
 
@@ -33,6 +39,7 @@ export function LeadsPage() {
       const { data } = await api.get('/leads', { params: queryParams })
       return data
     },
+    enabled: tab === 'leads',
   })
 
   const leads = data?.data || []
@@ -56,9 +63,39 @@ export function LeadsPage() {
         <div>
           <h1 className="text-[18px] font-semibold text-white tracking-tight">Leads</h1>
           <p className="text-[13px] text-muted-foreground mt-0.5">
-            {pagination ? `${pagination.total.toLocaleString()} total` : ''}
+            {tab === 'leads' && pagination ? `${pagination.total.toLocaleString()} total` : ''}
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          {tab === 'leads' && (
+            <Button size="sm" onClick={() => setShowCreateDrawer(true)}>
+              <Plus size={13} className="mr-1" />
+              Add Lead
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 rounded-lg border border-white/[0.08] bg-[#0e1428] p-1 w-fit">
+        <button
+          onClick={() => setTab('leads')}
+          className={`rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors ${
+            tab === 'leads' ? 'bg-blue-500/15 text-blue-400' : 'text-muted-foreground hover:text-white/70'
+          }`}
+        >
+          <Users size={12} className="inline mr-1.5 -mt-0.5" />
+          All Leads
+        </button>
+        <button
+          onClick={() => setTab('logs')}
+          className={`rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors ${
+            tab === 'logs' ? 'bg-blue-500/15 text-blue-400' : 'text-muted-foreground hover:text-white/70'
+          }`}
+        >
+          <ScrollText size={12} className="inline mr-1.5 -mt-0.5" />
+          Logs
+        </button>
       </div>
 
       {/* Search + Filters */}
@@ -108,115 +145,126 @@ export function LeadsPage() {
         )}
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl border border-white/[0.08] bg-[#0e1428] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
-            <thead>
-              <tr className="border-b border-white/[0.06] text-[10px] text-muted-foreground uppercase tracking-wider">
-                <th className="text-left font-medium px-6 py-2.5">Lead</th>
-                <th className="text-left font-medium px-6 py-2.5">Campaign</th>
-                <th className="text-left font-medium px-6 py-2.5">Buyer</th>
-                <th className="text-left font-medium px-6 py-2.5">Source</th>
-                <th className="text-left font-medium px-6 py-2.5">State</th>
-                <th className="text-left font-medium px-6 py-2.5">Status</th>
-                <th className="text-left font-medium px-6 py-2.5">Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <>
-                  {[...Array(5)].map((_, i) => (
-                    <tr key={i} className="border-b border-white/[0.06]">
-                      <td className="px-6 py-3"><div className="h-4 w-32 skeleton bg-white/[0.05] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-20 skeleton bg-white/[0.05] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-20 skeleton bg-white/[0.05] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-16 skeleton bg-white/[0.05] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-8 skeleton bg-white/[0.05] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-16 skeleton bg-white/[0.05] rounded" /></td>
-                      <td className="px-6 py-3"><div className="h-4 w-24 skeleton bg-white/[0.05] rounded" /></td>
+      {tab === 'leads' ? (
+        <>
+          {/* Table */}
+          <div className="rounded-xl border border-white/[0.08] bg-[#0e1428] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-[13px]">
+                <thead>
+                  <tr className="border-b border-white/[0.06] text-[10px] text-muted-foreground uppercase tracking-wider">
+                    <th className="text-left font-medium px-6 py-2.5">Lead</th>
+                    <th className="text-left font-medium px-6 py-2.5">Campaign</th>
+                    <th className="text-left font-medium px-6 py-2.5">Buyer</th>
+                    <th className="text-left font-medium px-6 py-2.5">Source</th>
+                    <th className="text-left font-medium px-6 py-2.5">State</th>
+                    <th className="text-left font-medium px-6 py-2.5">Status</th>
+                    <th className="text-left font-medium px-6 py-2.5">Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoading ? (
+                    <>
+                      {[...Array(5)].map((_, i) => (
+                        <tr key={i} className="border-b border-white/[0.06]">
+                          <td className="px-6 py-3"><div className="h-4 w-32 skeleton bg-white/[0.05] rounded" /></td>
+                          <td className="px-6 py-3"><div className="h-4 w-20 skeleton bg-white/[0.05] rounded" /></td>
+                          <td className="px-6 py-3"><div className="h-4 w-20 skeleton bg-white/[0.05] rounded" /></td>
+                          <td className="px-6 py-3"><div className="h-4 w-16 skeleton bg-white/[0.05] rounded" /></td>
+                          <td className="px-6 py-3"><div className="h-4 w-8 skeleton bg-white/[0.05] rounded" /></td>
+                          <td className="px-6 py-3"><div className="h-4 w-16 skeleton bg-white/[0.05] rounded" /></td>
+                          <td className="px-6 py-3"><div className="h-4 w-24 skeleton bg-white/[0.05] rounded" /></td>
+                        </tr>
+                      ))}
+                    </>
+                  ) : leads.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-16 text-center">
+                        <div className="flex flex-col items-center gap-2">
+                          <Users size={24} className="text-white/20" />
+                          <p className="text-[13px] text-muted-foreground">
+                            {search || hasFilters ? 'No leads match your filters' : 'No leads yet'}
+                          </p>
+                          {(search || hasFilters) && (
+                            <button onClick={clearFilters} className="text-[12px] text-blue-400 hover:text-blue-300 transition-colors">
+                              Clear filters
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : leads.map((l) => (
+                    <tr
+                      key={l._id}
+                      className="border-b border-white/[0.06] last:border-0 hover:bg-white/[0.03] cursor-pointer transition-colors"
+                      onClick={() => setDrawerLeadId(l._id)}
+                    >
+                      <td className="px-6 py-3">
+                        <p className="font-medium text-white/90">{l.name}</p>
+                        <p className="text-[11px] text-muted-foreground">{l.email}</p>
+                      </td>
+                      <td className="px-6 py-3 text-[12px] text-white/70">
+                        {l.campaignId?.name || '—'}
+                      </td>
+                      <td className="px-6 py-3 text-[12px] text-white/70">
+                        {l.buyer?.name || '—'}
+                      </td>
+                      <td className="px-6 py-3 text-[12px] text-white/70 capitalize">{l.source}</td>
+                      <td className="px-6 py-3 text-[12px] text-white/70">{l.state || '—'}</td>
+                      <td className="px-6 py-3">
+                        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(l.status, LEAD_STATUS_COLOR)}`}>
+                          {l.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3 text-[12px] text-white/55">
+                        {formatDate(l.createdAt)}
+                      </td>
                     </tr>
                   ))}
-                </>
-              ) : leads.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-16 text-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <Users size={24} className="text-white/20" />
-                      <p className="text-[13px] text-muted-foreground">
-                        {search || hasFilters ? 'No leads match your filters' : 'No leads yet'}
-                      </p>
-                      {(search || hasFilters) && (
-                        <button onClick={clearFilters} className="text-[12px] text-blue-400 hover:text-blue-300 transition-colors">
-                          Clear filters
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ) : leads.map((l) => (
-                <tr
-                  key={l._id}
-                  className="border-b border-white/[0.06] last:border-0 hover:bg-white/[0.03] cursor-pointer transition-colors"
-                  onClick={() => setDrawerLeadId(l._id)}
-                >
-                  <td className="px-6 py-3">
-                    <p className="font-medium text-white/90">{l.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{l.email}</p>
-                  </td>
-                  <td className="px-6 py-3 text-[12px] text-white/70">
-                    {l.campaignId?.name || '—'}
-                  </td>
-                  <td className="px-6 py-3 text-[12px] text-white/70">
-                    {l.buyer?.name || '—'}
-                  </td>
-                  <td className="px-6 py-3 text-[12px] text-white/70 capitalize">{l.source}</td>
-                  <td className="px-6 py-3 text-[12px] text-white/70">{l.state || '—'}</td>
-                  <td className="px-6 py-3">
-                    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(l.status, LEAD_STATUS_COLOR)}`}>
-                      {l.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3 text-[12px] text-white/55">
-                    {formatDate(l.createdAt)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {pagination && pagination.pages > 1 && (
-          <div className="flex items-center justify-between border-t border-white/[0.06] px-6 py-3">
-            <p className="text-[12px] text-muted-foreground">
-              Page {pagination.page} of {pagination.pages}
-            </p>
-            <div className="flex gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-              >
-                <ChevronLeft size={13} />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(pagination.pages, p + 1))}
-                disabled={page >= pagination.pages}
-              >
-                <ChevronRight size={13} />
-              </Button>
+                </tbody>
+              </table>
             </div>
-          </div>
-        )}
-      </div>
 
-      <LeadDrawer
-        leadId={drawerLeadId}
-        onClose={() => setDrawerLeadId(null)}
+            {/* Pagination */}
+            {pagination && pagination.pages > 1 && (
+              <div className="flex items-center justify-between border-t border-white/[0.06] px-6 py-3">
+                <p className="text-[12px] text-muted-foreground">
+                  Page {pagination.page} of {pagination.pages}
+                </p>
+                <div className="flex gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                  >
+                    <ChevronLeft size={13} />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.min(pagination.pages, p + 1))}
+                    disabled={page >= pagination.pages}
+                  >
+                    <ChevronRight size={13} />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <LeadDrawer
+            leadId={drawerLeadId}
+            onClose={() => setDrawerLeadId(null)}
+          />
+        </>
+      ) : (
+        <LeadLogsTable />
+      )}
+
+      <CreateLeadDrawer
+        open={showCreateDrawer}
+        onClose={() => setShowCreateDrawer(false)}
       />
     </div>
   )

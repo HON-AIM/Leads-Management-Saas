@@ -69,10 +69,11 @@ const updateBuyer = z.object({
 
 const createLead = z.object({
   name: z.string().min(1, 'Lead name is required').max(200),
-  email: z.string().email('Invalid email').optional(),
-  phone: z.string().max(20).optional(),
+  email: z.string().email('Invalid email').optional().nullable(),
+  phone: z.string().max(20).optional().nullable(),
   state: z.string().max(2).optional(),
   source: z.string().max(100).optional(),
+  campaignId: z.string().optional().nullable(),
   customFields: z.record(z.any()).optional(),
 }).strict();
 
