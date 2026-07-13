@@ -23,7 +23,7 @@ router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
 
     const result = await authService.login(email, password, tenant._id);
 
-    res.cookie('accessToken', result.accessToken, { ...COOKIE_OPTS, maxAge: 15 * 60 * 1000 });
+    res.cookie('accessToken', result.accessToken, { ...COOKIE_OPTS, maxAge: 60 * 60 * 1000 });
     res.cookie('refreshToken', result.refreshToken, { ...COOKIE_OPTS, maxAge: 7 * 24 * 60 * 60 * 1000 });
 
     return success(res, { user: result.user, accessToken: result.accessToken, refreshToken: result.refreshToken });
@@ -38,7 +38,7 @@ router.post('/refresh', async (req, res) => {
     if (!refreshToken) return error(res, 'Refresh token required', 400);
     const result = await authService.refresh(refreshToken);
 
-    res.cookie('accessToken', result.accessToken, { ...COOKIE_OPTS, maxAge: 15 * 60 * 1000 });
+    res.cookie('accessToken', result.accessToken, { ...COOKIE_OPTS, maxAge: 60 * 60 * 1000 });
     res.cookie('refreshToken', result.refreshToken, { ...COOKIE_OPTS, maxAge: 7 * 24 * 60 * 60 * 1000 });
 
     return success(res, { accessToken: result.accessToken, refreshToken: result.refreshToken });

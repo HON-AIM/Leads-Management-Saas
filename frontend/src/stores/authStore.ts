@@ -4,6 +4,55 @@ import type { User, LoginRequest, AuthResponse } from '@/types/auth'
 import api from '@/lib/api'
 import { ROUTES } from '@/lib/constants'
 
+let refreshTimer: ReturnType<typeof setTimeout> | null = null
+
+function decodeToken(token: string): { exp?: number } | null {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload
+  } catch {
+    return null
+  }
+}
+
+function scheduleRefresh(logoutFn: () => Promise<void>) {
+  if (refreshTimer) clearTimeout(refreshTimer)
+  refreshTimer = null
+
+  const token = localStorage.getItem('accessToken')
+  if (!token) return
+
+  const payload = decodeToken(token)
+  if (!payload?.exp) return
+
+  const expiresAt = payload.exp * 1000
+  const now = Date.now()
+  const refreshIn = Math.max(expiresAt - now - 120_000, 5_000)
+
+  refreshTimer = setTimeout(async () => {
+    const refreshToken = localStorage.getItem('refreshToken')
+    if (!refreshToken) {
+      await logoutFn()
+      return
+    }
+    try {
+      const { data } = await api.post('/auth/refresh', { refreshToken })
+      const newAccess = data.data?.accessToken
+      const newRefresh = data.data?.refreshToken
+      if (newAccess) {
+        localStorage.setItem('accessToken', newAccess)
+        api.defaults.headers.common['Authorization'] = `Bearer ${newAccess}`
+        if (newRefresh) localStorage.setItem('refreshToken', newRefresh)
+        scheduleRefresh(logoutFn)
+      } else {
+        await logoutFn()
+      }
+    } catch {
+      await logoutFn()
+    }
+  }, refreshIn)
+}
+
 interface AuthState {
   user: User | null
   loading: boolean
@@ -31,10 +80,13 @@ export const useAuthStore = create<AuthState>()(
         if (refreshToken) localStorage.setItem('refreshToken', refreshToken)
         api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`
         set({ user, loading: false, lastRole: user.role })
+        scheduleRefresh(get().logout)
         return user
       },
 
       logout: async () => {
+        if (refreshTimer) clearTimeout(refreshTimer)
+        refreshTimer = null
         try {
           await api.post('/auth/logout')
         } catch {
@@ -59,6 +111,7 @@ export const useAuthStore = create<AuthState>()(
             api.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`
           }
           set({ user: data.data.user, loading: false, initialized: true, lastRole: data.data.user.role })
+          scheduleRefresh(get().logout)
         } catch {
           localStorage.removeItem('accessToken')
           localStorage.removeItem('refreshToken')
