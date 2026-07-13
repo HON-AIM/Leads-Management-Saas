@@ -66,7 +66,6 @@ export function PayloadTab({ buyerId }: PayloadTabProps) {
   const { addNotification } = useNotifications()
   const qc = useQueryClient()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const highlightRef = useRef<HTMLDivElement>(null)
 
   const [template, setTemplate] = useState('')
   const [isDefault, setIsDefault] = useState(true)
@@ -226,27 +225,6 @@ export function PayloadTab({ buyerId }: PayloadTabProps) {
   const standardTokens = tokens.filter((t) => t.source === 'standard')
   const dynamicTokens = tokens.filter((t) => t.source === 'dynamic')
 
-  const highlightedHtml = template
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(
-      /\{\{(\w+(?:\.\w+)*)\}\}/g,
-      '<span style="color:#60a5fa;font-weight:600">{{$1}}</span>'
-    )
-    .replace(/(true|false|null)/g, '<span style="color:#a78bfa">$1</span>')
-    .replace(/"([^"]*)":/g, '<span style="color:#94a3b8">"</span><span style="color:#f0abfc">$1</span><span style="color:#94a3b8">"</span>:')
-    .replace(/: "([^"]*)"/g, ': <span style="color:#86efac">"$1"</span>')
-    .replace(/\n/g, '<br/>')
-    .replace(/ /g, '&nbsp;')
-
-  const handleScroll = () => {
-    if (textareaRef.current && highlightRef.current) {
-      highlightRef.current.scrollTop = textareaRef.current.scrollTop
-      highlightRef.current.scrollLeft = textareaRef.current.scrollLeft
-    }
-  }
-
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -259,23 +237,51 @@ export function PayloadTab({ buyerId }: PayloadTabProps) {
 
   return (
     <div className="space-y-5">
-      {/* Template Editor Section */}
+      {/* POST BODY TEMPLATE */}
       <div>
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-semibold text-white/70 uppercase tracking-wider">POST BODY TEMPLATE</span>
+            {isDefault && (
+              <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-medium bg-blue-500/10 text-blue-400 ring-1 ring-inset ring-blue-400/30">
+                Default
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {!isDefault && (
+              <Button variant="outline" size="sm" onClick={() => resetMutation.mutate()} disabled={resetMutation.isPending} className="h-7 text-[11px]">
+                <RotateCcw size={10} className="mr-1" />
+                Reset
+              </Button>
+            )}
+            <Button
+              size="sm"
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending || (preview !== null && !preview.isValid)}
+              className="h-7 text-[11px]"
+            >
+              {saveMutation.isPending ? 'Saving...' : 'Save'}
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          {/* Editor */}
+          <div className="space-y-1.5">
             <div className="relative">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowTokenPicker(!showTokenPicker)}
-                className="h-6 px-2 text-[10px] font-mono gap-1"
+                className="h-7 mb-1.5 text-[10px] font-mono gap-1.5"
               >
                 <Braces size={10} />
-                {'{ }'} Fields
+                {'{ }'} Insert Field
+                <ChevronDown size={10} className={`transition-transform ${showTokenPicker ? 'rotate-180' : ''}`} />
               </Button>
               {showTokenPicker && (
-                <div className="absolute z-30 mt-1 left-0 w-64 max-h-60 overflow-y-auto rounded-lg border border-white/[0.08] bg-[#0e1428] shadow-elevated">
+                <div className="absolute z-30 mt-1 left-0 w-full max-h-52 overflow-y-auto rounded-lg border border-white/[0.08] bg-[#0e1428] shadow-elevated">
                   {standardTokens.length > 0 && (
                     <>
                       <div className="px-3 py-1.5 text-[9px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-white/[0.06]">
@@ -313,54 +319,23 @@ export function PayloadTab({ buyerId }: PayloadTabProps) {
                 </div>
               )}
             </div>
-            {isDefault && (
-              <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-medium bg-blue-500/10 text-blue-400 ring-1 ring-inset ring-blue-400/30">
-                Default
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {!isDefault && (
-              <Button variant="outline" size="sm" onClick={() => resetMutation.mutate()} disabled={resetMutation.isPending} className="h-7 text-[11px]">
-                <RotateCcw size={10} className="mr-1" />
-                Reset
-              </Button>
-            )}
-            <Button
-              size="sm"
-              onClick={() => saveMutation.mutate()}
-              disabled={saveMutation.isPending || (preview !== null && !preview.isValid)}
-              className="h-7 text-[11px]"
-            >
-              {saveMutation.isPending ? 'Saving...' : 'Save'}
-            </Button>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-2 gap-4 mt-2">
-          <div className="space-y-1.5">
-            <div className="relative">
-              <div
-                ref={highlightRef}
-                className="absolute inset-0 p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap overflow-hidden pointer-events-none rounded-lg"
-                dangerouslySetInnerHTML={{ __html: highlightedHtml || '<span style="color:#475569">Paste or type your JSON template...</span>' }}
-              />
-              <textarea
-                ref={textareaRef}
-                value={template}
-                onChange={(e) => setTemplate(e.target.value)}
-                onScroll={handleScroll}
-                className="w-full h-72 rounded-lg border border-white/[0.08] bg-[#151d33] p-3 font-mono text-[11px] text-transparent caret-blue-400 placeholder:text-transparent focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 resize-none leading-relaxed"
-                spellCheck={false}
-              />
-            </div>
+            <textarea
+              ref={textareaRef}
+              value={template}
+              onChange={(e) => setTemplate(e.target.value)}
+              className="w-full h-72 rounded-lg border border-white/[0.08] bg-[#151d33] p-3 font-mono text-[11px] text-white/80 placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 resize-none leading-relaxed"
+              placeholder='{"first_name": "{{first_name}}", "email": "{{email}}"}'
+              spellCheck={false}
+            />
             <p className="text-[9px] text-muted-foreground/50">
-              Use {'{{field_name}}'} for dynamic values. Strings auto-escape quotes. Wrap object keys in double quotes.
+              Use {'{{field_name}}'} for dynamic values. Wrap keys in double quotes.
             </p>
           </div>
 
+          {/* Live Preview */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between h-[30px]">
               <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Live Preview</span>
               {previewing && <Loader2 size={11} className="text-muted-foreground animate-spin" />}
             </div>
@@ -442,14 +417,14 @@ export function PayloadTab({ buyerId }: PayloadTabProps) {
         </div>
       </div>
 
-      {/* PARSE RESPONSE BODY Section */}
-      <div className="border border-white/[0.08] rounded-lg overflow-hidden">
+      {/* PARSE RESPONSE BODY */}
+      <div className="rounded-lg border border-white/[0.08] overflow-hidden">
         <button
           onClick={() => setShowParseSection(!showParseSection)}
           className="w-full flex items-center justify-between px-4 py-3 bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
         >
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold text-white/70 uppercase tracking-wider">PARSE RESPONSE BODY</span>
+            <span className="text-[11px] font-semibold text-white/70 uppercase tracking-wider">Parse Response Body</span>
             {rule.enabled && (
               <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-medium bg-emerald-500/10 text-emerald-400 ring-1 ring-inset ring-emerald-400/30">
                 Active
@@ -461,16 +436,17 @@ export function PayloadTab({ buyerId }: PayloadTabProps) {
 
         {showParseSection && (
           <div className="px-4 py-4 space-y-4 border-t border-white/[0.06]">
+            {/* Warning */}
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5 flex gap-2">
               <AlertTriangle size={14} className="text-amber-400 mt-0.5 shrink-0" />
               <p className="text-[11px] text-amber-300/80 leading-relaxed">
-                Without an acceptance rule, any HTTP 2xx status marks the lead as <strong className="text-amber-200">Accepted</strong>.
-                Configure a rule below to validate the actual response body content before accepting.
+                Without an acceptance rule, any HTTP 2xx response marks the lead as <strong className="text-amber-200">Accepted</strong>.
+                Add a rule below to validate the buyer's response body before accepting.
               </p>
             </div>
 
+            {/* Enable toggle */}
             <div className="flex items-center gap-3">
-              <Label className="text-[11px] text-muted-foreground">Enable response parsing</Label>
               <button
                 type="button"
                 onClick={() => setRule((r) => ({ ...r, enabled: !r.enabled }))}
@@ -478,59 +454,68 @@ export function PayloadTab({ buyerId }: PayloadTabProps) {
               >
                 <span className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transition-transform mt-0.5 ${rule.enabled ? 'translate-x-4 ml-0.5' : 'translate-x-0.5'}`} />
               </button>
+              <Label className="text-[12px] text-white/70">Enable response body validation</Label>
             </div>
 
             {rule.enabled && (
               <>
-                <div className="grid grid-cols-3 gap-3">
+                {/* Rule config */}
+                <div className="space-y-3">
                   <div className="space-y-1.5">
-                    <Label className="text-[10px]">Response Field Path</Label>
+                    <Label className="text-[11px]">Response Field Path</Label>
                     <Input
                       value={rule.responseFieldPath}
                       onChange={(e) => setRule((r) => ({ ...r, responseFieldPath: e.target.value }))}
-                      placeholder="e.g. status or data.lead_id"
+                      placeholder='e.g. "status" or "data.lead_id"'
                       className="font-mono text-[11px] text-white h-8"
                     />
-                    <p className="text-[9px] text-muted-foreground/50">Dot-path into response JSON</p>
+                    <p className="text-[9px] text-muted-foreground/50">Dot-notation path into the response JSON (e.g. "status", "data.result.id")</p>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px]">Operator</Label>
-                    <div className="flex gap-1">
-                      {OPERATORS.map((op) => (
-                        <button
-                          key={op.value}
-                          type="button"
-                          onClick={() => setRule((r) => ({ ...r, operator: op.value as any }))}
-                          className={`flex-1 rounded-md border px-2 py-1.5 text-[10px] font-medium transition-all ${
-                            rule.operator === op.value
-                              ? 'border-blue-500/40 bg-blue-500/10 text-blue-400'
-                              : 'border-white/[0.10] text-muted-foreground hover:border-white/[0.14] hover:text-white/70'
-                          }`}
-                        >
-                          {op.label}
-                        </button>
-                      ))}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px]">Operator</Label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {OPERATORS.map((op) => (
+                          <button
+                            key={op.value}
+                            type="button"
+                            onClick={() => setRule((r) => ({ ...r, operator: op.value as any }))}
+                            className={`rounded-md border px-3 py-2 text-[11px] font-medium transition-all ${
+                              rule.operator === op.value
+                                ? 'border-blue-500/40 bg-blue-500/10 text-blue-400'
+                                : 'border-white/[0.10] text-muted-foreground hover:border-white/[0.14] hover:text-white/70'
+                            }`}
+                          >
+                            {op.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px]">Expected Value</Label>
-                    <Input
-                      value={rule.expectedValue}
-                      onChange={(e) => setRule((r) => ({ ...r, expectedValue: e.target.value }))}
-                      placeholder={rule.operator === 'exists' ? 'Not needed' : 'e.g. success'}
-                      disabled={rule.operator === 'exists'}
-                      className="font-mono text-[11px] text-white h-8 disabled:opacity-40"
-                    />
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px]">Expected Value</Label>
+                      <Input
+                        value={rule.expectedValue}
+                        onChange={(e) => setRule((r) => ({ ...r, expectedValue: e.target.value }))}
+                        placeholder={rule.operator === 'exists' ? 'Not needed for Exists' : 'e.g. success'}
+                        disabled={rule.operator === 'exists'}
+                        className="font-mono text-[11px] text-white h-8 disabled:opacity-40"
+                      />
+                      <p className="text-[9px] text-muted-foreground/50">
+                        {rule.operator === 'exists' ? 'Checks the field is present and non-empty' : 'Value to compare against'}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
+                {/* Test against sample */}
                 <div className="space-y-2">
-                  <Label className="text-[10px] text-muted-foreground">Test against sample response</Label>
+                  <Label className="text-[11px]">Test against sample response</Label>
                   <textarea
                     value={sampleResponseText}
                     onChange={(e) => setSampleResponseText(e.target.value)}
-                    placeholder={'{\n  "status": "success",\n  "lead_id": "abc123"\n}'}
-                    className="w-full h-24 rounded-lg border border-white/[0.08] bg-[#151d33] p-2.5 font-mono text-[11px] text-white/70 placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
+                    placeholder={'Paste a sample buyer response JSON here...\n\n{\n  "status": "success",\n  "lead_id": "abc123"\n}'}
+                    className="w-full h-28 rounded-lg border border-white/[0.08] bg-[#151d33] p-3 font-mono text-[11px] text-white/70 placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
                     spellCheck={false}
                   />
                   <Button
@@ -543,8 +528,9 @@ export function PayloadTab({ buyerId }: PayloadTabProps) {
                     {previewAcceptMutation.isPending ? <Loader2 size={10} className="mr-1 animate-spin" /> : null}
                     Run Preview
                   </Button>
+
                   {previewAcceptResult && (
-                    <div className={`rounded-lg border px-3 py-2 text-[11px] ${
+                    <div className={`rounded-lg border px-3 py-2.5 text-[11px] ${
                       previewAcceptResult.accepted
                         ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300'
                         : 'border-red-500/30 bg-red-500/5 text-red-300'
