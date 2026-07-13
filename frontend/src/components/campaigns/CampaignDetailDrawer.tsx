@@ -8,6 +8,8 @@ import { useNotifications } from '@/hooks/useNotifications'
 import { formatDate } from '@/lib/utils'
 import { getStatusStyle, CAMPAIGN_STATUS_COLOR, BUYER_STATUS_COLOR } from '@/lib/statusColors'
 import type { Campaign } from '@/types/campaign'
+import type { Buyer } from '@/types/buyer'
+import { UserPlus, X } from 'lucide-react'
 
 interface CampaignDetailDrawerProps {
   campaign: Campaign | null
@@ -59,6 +61,46 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
       return data.data ?? data
     },
     enabled: !!campaign && tab === 'activity',
+  })
+
+  const { data: buyersData } = useQuery({
+    queryKey: QUERY_KEYS.BUYERS,
+    queryFn: async () => {
+      const { data } = await api.get('/buyers')
+      return data.data ?? data.buyers ?? data ?? []
+    },
+    enabled: !!campaign && tab === 'buyers',
+  })
+  const allBuyers: Buyer[] = Array.isArray(buyersData) ? buyersData : []
+
+  const assignedBuyerIds = campaign?.assignedBuyers?.map((b: any) => typeof b.buyerId === 'object' ? b.buyerId._id : b.buyerId) || []
+  const availableBuyers = allBuyers.filter((b) => b.status === 'active' && !assignedBuyerIds.includes(b._id))
+
+  const addBuyerMutation = useMutation({
+    mutationFn: async (buyerId: string) => {
+      const { data } = await api.post(`/campaigns/${campaign!._id}/buyers`, { buyerId, weight: 1, priority: 0 })
+      return data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.CAMPAIGNS })
+      addNotification({ type: 'success', title: 'Buyer added', description: 'Buyer has been assigned to this campaign.' })
+    },
+    onError: (err: any) => {
+      addNotification({ type: 'error', title: 'Failed', description: err?.response?.data?.error || 'Could not add buyer.' })
+    },
+  })
+
+  const removeBuyerMutation = useMutation({
+    mutationFn: async (buyerId: string) => {
+      await api.delete(`/campaigns/${campaign!._id}/buyers/${buyerId}`)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.CAMPAIGNS })
+      addNotification({ type: 'success', title: 'Buyer removed', description: 'Buyer has been unassigned from this campaign.' })
+    },
+    onError: (err: any) => {
+      addNotification({ type: 'error', title: 'Failed', description: err?.response?.data?.error || 'Could not remove buyer.' })
+    },
   })
 
   const routingLabel: Record<string, string> = {
@@ -176,28 +218,63 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
 
               {tab === 'buyers' && (
                 <div className="space-y-4">
+                  {availableBuyers.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <UserPlus size={14} className="text-muted-foreground shrink-0" />
+                      <select
+                        className="flex-1 text-xs border border-white/[0.12] rounded-lg px-3 py-1.5 bg-[#0e1428] text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30"
+                        value=""
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            addBuyerMutation.mutate(e.target.value)
+                            e.target.value = ''
+                          }
+                        }}
+                      >
+                        <option value="">Add buyer to campaign...</option>
+                        {availableBuyers.map((b) => (
+                          <option key={b._id} value={b._id}>{b.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   {campaign.assignedBuyers.length === 0 ? (
-                    <div className="text-center py-10">
-                      <p className="text-[13px] text-muted-foreground">No buyers assigned to this campaign</p>
-                      <Button variant="outline" size="sm" className="mt-3" onClick={() => { onEdit(campaign); onClose() }}>
+                    <div className="text-center py-10 rounded-lg border border-dashed border-white/[0.12]">
+                      <p className="text-[13px] text-muted-foreground mb-3">No buyers assigned to this campaign</p>
+                      <Button variant="outline" size="sm" onClick={() => { onEdit(campaign); onClose() }}>
                         Edit Campaign
                       </Button>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {campaign.assignedBuyers.map((b, i) => (
-                        <div key={i} className="rounded-lg border border-white/[0.08] p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="text-[13px] font-semibold text-white">{b.buyerId.name}</p>
-                            <Badge className={`text-[10px] px-2 py-0.5 ${getStatusStyle(b.buyerId.status, BUYER_STATUS_COLOR)}`}>{b.buyerId.status}</Badge>
+                      {campaign.assignedBuyers.map((b: any, i: number) => {
+                        const buyer = typeof b.buyerId === 'object' ? b.buyerId : allBuyers.find((ab) => ab._id === b.buyerId)
+                        return (
+                          <div key={i} className="rounded-lg border border-white/[0.08] p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-[13px] font-semibold text-white">{buyer?.name || 'Unknown Buyer'}</p>
+                              <div className="flex items-center gap-2">
+                                {buyer?.status && (
+                                  <Badge className={`text-[10px] px-2 py-0.5 ${getStatusStyle(buyer.status, BUYER_STATUS_COLOR)}`}>{buyer.status}</Badge>
+                                )}
+                                <button
+                                  onClick={() => removeBuyerMutation.mutate(typeof b.buyerId === 'object' ? b.buyerId._id : b.buyerId)}
+                                  disabled={removeBuyerMutation.isPending}
+                                  className="text-muted-foreground hover:text-red-400 transition-colors p-0.5"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
+                            </div>
+                            {buyer?.email && <p className="text-[11px] text-muted-foreground">{buyer.email}</p>}
+                            <div className="flex gap-4 mt-2 text-[11px] text-muted-foreground">
+                              {campaign.routingMode === 'weighted' && <span>Weight: {b.weight}</span>}
+                              {campaign.routingMode === 'priority' && <span>Priority: {b.priority}</span>}
+                            </div>
                           </div>
-                          <p className="text-[11px] text-muted-foreground">{b.buyerId.email}</p>
-                          <div className="flex gap-4 mt-2 text-[11px] text-muted-foreground">
-                            {campaign.routingMode === 'weighted' && <span>Weight: {b.weight}</span>}
-                            {campaign.routingMode === 'priority' && <span>Priority: {b.priority}</span>}
-                          </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   )}
                 </div>
