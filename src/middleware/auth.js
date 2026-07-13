@@ -60,7 +60,7 @@ function authorize(...roles) {
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ success: false, error: 'Authentication required' });
     const userRole = typeof req.user.role === 'string' ? req.user.role : req.user.role?.name;
-    if (roles.includes(userRole)) return next();
+    if (userRole === 'super_admin' || roles.includes(userRole)) return next();
     return res.status(403).json({ success: false, error: 'Insufficient permissions' });
   };
 }
