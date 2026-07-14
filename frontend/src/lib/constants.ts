@@ -28,6 +28,7 @@ export const QUERY_KEYS = {
   CLIENTS: ['clients'],
   SESSIONS: ['sessions'],
   SETTINGS: ['settings'],
+  API_KEY: ['api-key'],
   VARIABLES: ['variables'],
   VARIABLE_CATEGORIES: ['variable-categories'],
   VARIABLE_DOCS: ['variable-docs'],

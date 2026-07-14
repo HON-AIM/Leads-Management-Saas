@@ -162,4 +162,55 @@ router.delete('/users/:id', authenticate, authorize('admin'), async (req, res) =
   }
 });
 
+router.get('/api-key', authenticate, async (req, res) => {
+  try {
+    const User = require('../models/User');
+    const user = await User.findById(req.userId).select('+apiKey');
+    if (!user) return error(res, 'User not found', 404);
+
+    if (!user.apiKey) {
+      return success(res, { hasKey: false });
+    }
+
+    const masked = user.apiKey.length > 10
+      ? `${user.apiKey.slice(0, 6)}...${user.apiKey.slice(-4)}`
+      : '****';
+    return success(res, { hasKey: true, masked });
+  } catch (err) {
+    return error(res, err.message, 500);
+  }
+});
+
+router.post('/api-key/generate', authenticate, async (req, res) => {
+  try {
+    const crypto = require('crypto');
+    const User = require('../models/User');
+    const user = await User.findById(req.userId).select('+apiKey');
+    if (!user) return error(res, 'User not found', 404);
+
+    const apiKey = crypto.randomBytes(24).toString('hex');
+    user.apiKey = apiKey;
+    await user.save();
+
+    return success(res, { apiKey });
+  } catch (err) {
+    return error(res, err.message, 500);
+  }
+});
+
+router.post('/api-key/revoke', authenticate, async (req, res) => {
+  try {
+    const User = require('../models/User');
+    const user = await User.findById(req.userId).select('+apiKey');
+    if (!user) return error(res, 'User not found', 404);
+
+    user.apiKey = undefined;
+    await user.save();
+
+    return success(res, { message: 'API key revoked' });
+  } catch (err) {
+    return error(res, err.message, 500);
+  }
+});
+
 module.exports = router;

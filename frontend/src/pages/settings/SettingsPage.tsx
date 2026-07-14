@@ -11,7 +11,7 @@ import { QUERY_KEYS } from '@/lib/constants'
 import { formatDate } from '@/lib/utils'
 import api from '@/lib/api'
 import type { Session } from '@/types/auth'
-import { LogOut, Monitor, Lock, Save } from 'lucide-react'
+import { LogOut, Monitor, Lock, Save, Key, Copy, Check, Trash2 } from 'lucide-react'
 
 export function SettingsPage() {
   const { user, logout } = useAuth()
@@ -21,6 +21,9 @@ export function SettingsPage() {
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [revealedKey, setRevealedKey] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [confirmRevoke, setConfirmRevoke] = useState(false)
 
   const passwordMutation = useMutation({
     mutationFn: async () => {
@@ -37,6 +40,53 @@ export function SettingsPage() {
       addNotification({ type: 'error', title: 'Failed', description: err?.response?.data?.error || 'Could not update password.' })
     },
   })
+
+  const { data: apiKeyData, isLoading: apiKeyLoading } = useQuery<{ success: boolean; data: { hasKey: boolean; masked?: string } }>({
+    queryKey: QUERY_KEYS.API_KEY,
+    queryFn: async () => {
+      const { data } = await api.get('/auth/api-key')
+      return data
+    },
+  })
+
+  const generateKeyMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post('/auth/api-key/generate')
+      return data
+    },
+    onSuccess: (data) => {
+      const key = data?.data?.apiKey || data?.apiKey
+      if (key) setRevealedKey(key)
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.API_KEY })
+      addNotification({ type: 'success', title: 'API key generated', description: 'Copy your key now — it will not be shown again.' })
+    },
+    onError: (err: any) => {
+      addNotification({ type: 'error', title: 'Failed', description: err?.response?.data?.error || 'Could not generate API key.' })
+    },
+  })
+
+  const revokeKeyMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post('/auth/api-key/revoke')
+      return data
+    },
+    onSuccess: () => {
+      setRevealedKey(null)
+      setConfirmRevoke(false)
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.API_KEY })
+      addNotification({ type: 'success', title: 'API key revoked', description: 'The key has been permanently deleted.' })
+    },
+    onError: (err: any) => {
+      addNotification({ type: 'error', title: 'Failed', description: err?.response?.data?.error || 'Could not revoke API key.' })
+    },
+  })
+
+  const copyKey = () => {
+    if (!revealedKey) return
+    navigator.clipboard.writeText(revealedKey)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   const initials = user
     ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.trim() || user.email?.[0]?.toUpperCase() || 'U'
@@ -102,6 +152,103 @@ export function SettingsPage() {
               <p className="font-medium">{user?.tenantName}</p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* API Access */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.05]">
+              <Key size={14} className="text-muted-foreground" />
+            </div>
+            <div>
+              <CardTitle>API Access</CardTitle>
+              <CardDescription>
+                Generate an API key to allow external systems like GoHighLevel, Facebook Lead Ads, or your website forms to send leads into this system.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {apiKeyLoading ? (
+            <div className="flex items-center justify-center py-6">
+              <div className="relative h-5 w-5">
+                <div className="absolute inset-0 rounded-full border-2 border-white/[0.08]" />
+                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 animate-spin" />
+              </div>
+            </div>
+          ) : revealedKey ? (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+                <p className="text-[12px] font-medium text-amber-300">
+                  Copy this key now — you won't be able to see it again. If you lose it, you'll need to generate a new one.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 rounded-lg border border-white/[0.08] bg-[#151d33] px-3 py-2.5 font-mono text-[12px] text-white/80 break-all">
+                  {revealedKey}
+                </code>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 h-9"
+                  onClick={copyKey}
+                >
+                  {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                </Button>
+              </div>
+            </div>
+          ) : apiKeyData?.data?.hasKey ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <code className="rounded-lg border border-white/[0.08] bg-[#151d33] px-3 py-2 font-mono text-[12px] text-white/60">
+                  {apiKeyData.data.masked}
+                </code>
+                <span className="text-[11px] text-emerald-400 font-medium">Active</span>
+              </div>
+              {confirmRevoke ? (
+                <div className="flex items-center gap-2">
+                  <p className="text-[12px] text-red-400">Revoke this key? Any connected external source will stop working.</p>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => revokeKeyMutation.mutate()}
+                    disabled={revokeKeyMutation.isPending}
+                  >
+                    {revokeKeyMutation.isPending ? 'Revoking...' : 'Yes, Revoke'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setConfirmRevoke(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-red-400 hover:text-red-400 hover:bg-red-500/10"
+                  onClick={() => setConfirmRevoke(true)}
+                >
+                  <Trash2 size={12} />
+                  Revoke &amp; Generate New
+                </Button>
+              )}
+            </div>
+          ) : (
+            <Button
+              variant="cta"
+              size="sm"
+              onClick={() => generateKeyMutation.mutate()}
+              disabled={generateKeyMutation.isPending}
+            >
+              <Key size={13} className="mr-1.5" />
+              {generateKeyMutation.isPending ? 'Generating...' : 'Generate API Key'}
+            </Button>
+          )}
         </CardContent>
       </Card>
 

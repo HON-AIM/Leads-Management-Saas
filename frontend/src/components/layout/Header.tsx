@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useIsMobile } from '@/hooks/useMediaQuery'
 import { useLocation } from 'react-router-dom'
-import { Menu, LogOut, Settings, User } from 'lucide-react'
+import { Menu, LogOut, Settings } from 'lucide-react'
 
 const ROUTE_NAMES: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -64,13 +64,6 @@ export function Header({ onMenuToggle }: { onMenuToggle: () => void }) {
               <p className="text-[11px] text-muted-foreground">{user?.email}</p>
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => (window.location.href = '/settings')}
-              className="gap-2 text-[12px]"
-            >
-              <User size={13} />
-              Profile
-            </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => (window.location.href = '/settings')}
               className="gap-2 text-[12px]"
