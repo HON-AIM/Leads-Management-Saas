@@ -25,7 +25,7 @@ const createBuyer = z.object({
   allowedStates: z.array(z.string().max(2)).optional(),
   delivery: z.object({
     provider: z.enum(['none', 'webhook', 'ghl']).optional(),
-    url: z.string().url().optional(),
+    url: z.union([z.string().url(), z.literal('')]).optional(),
     apiKey: z.string().optional(),
     locationId: z.string().optional(),
     secret: z.string().optional(),
@@ -53,7 +53,7 @@ const updateBuyer = z.object({
   allowedStates: z.array(z.string().max(2)).optional(),
   delivery: z.object({
     provider: z.enum(['none', 'webhook', 'ghl']).optional(),
-    url: z.string().url().optional().nullable(),
+    url: z.union([z.string().url(), z.literal('')]).optional().nullable(),
     apiKey: z.string().optional(),
     locationId: z.string().optional(),
     secret: z.string().optional(),

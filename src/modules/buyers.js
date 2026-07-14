@@ -34,7 +34,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', authorize('admin', 'member'), validate(createBuyer), async (req, res) => {
+router.post('/', authorize('admin', 'member', 'manager'), validate(createBuyer), async (req, res) => {
   try {
     const buyer = await buyerService.create({ ...req.body, createdBy: req.userId }, req.tenantId);
     return created(res, buyer);
@@ -43,7 +43,7 @@ router.post('/', authorize('admin', 'member'), validate(createBuyer), async (req
   }
 });
 
-router.put('/:id', authorize('admin', 'member'), validate(updateBuyer), async (req, res) => {
+router.put('/:id', authorize('admin', 'member', 'manager'), validate(updateBuyer), async (req, res) => {
   try {
     const buyer = await buyerService.update(req.params.id, req.tenantId, req.body);
     if (!buyer) return notFound(res, 'Buyer not found');

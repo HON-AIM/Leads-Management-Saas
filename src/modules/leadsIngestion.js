@@ -10,9 +10,8 @@ const logger = require('../utils/logger');
 
 const User = require('../models/User');
 const Campaign = require('../models/Campaign');
-const { authenticate } = require('../middleware/auth');
 
-router.post('/', ingestLimiter, authenticate, async (req, res) => {
+router.post('/', ingestLimiter, async (req, res) => {
   try {
     const { tenantSlug, campaignId } = req.query;
     const apiKey = req.headers['x-api-key'];

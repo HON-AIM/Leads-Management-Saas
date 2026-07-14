@@ -29,6 +29,7 @@ const ingestLimiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => req.headers['x-api-key'] || req.query.tenantSlug || req.ip,
   message: { success: false, error: 'Ingestion rate limit exceeded.' },
 });
 
