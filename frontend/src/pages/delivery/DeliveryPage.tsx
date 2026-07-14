@@ -119,9 +119,9 @@ export function DeliveryPage() {
 
       <div className="grid grid-cols-5 gap-3">
         <StatCard label="Total" value={formatNumber(statsData?.total || 0)} />
-        <StatCard label="Success" value={formatNumber(statsData?.success || 0)} color={getTextColor('success', DELIVERY_STATUS_COLOR)} />
-        <StatCard label="Failed" value={formatNumber(statsData?.failed || 0)} color={getTextColor('failed', DELIVERY_STATUS_COLOR)} />
-        <StatCard label="Retrying" value={formatNumber(statsData?.retrying || 0)} color={getTextColor('retrying', DELIVERY_STATUS_COLOR)} />
+        <StatCard label="Success" value={formatNumber(statsData?.success || 0)} color={getTextColor(DELIVERY_STATUS_COLOR['success'] ?? 'neutral')} />
+        <StatCard label="Failed" value={formatNumber(statsData?.failed || 0)} color={getTextColor(DELIVERY_STATUS_COLOR['failed'] ?? 'neutral')} />
+        <StatCard label="Retrying" value={formatNumber(statsData?.retrying || 0)} color={getTextColor(DELIVERY_STATUS_COLOR['retrying'] ?? 'neutral')} />
         <StatCard label="Success Rate" value={formatPercentage(successRate)} />
       </div>
 
