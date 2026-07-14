@@ -52,6 +52,23 @@ router.post('/', ingestLimiter, async (req, res) => {
     for (const leadData of leads) {
       try {
         const { supplierKey: _, ...cleanLeadData } = leadData;
+
+        if (!cleanLeadData.name) {
+          if (cleanLeadData.full_name) {
+            cleanLeadData.name = cleanLeadData.full_name;
+          } else {
+            const parts = [cleanLeadData.first_name, cleanLeadData.last_name].filter(Boolean);
+            if (parts.length > 0) {
+              cleanLeadData.name = parts.join(' ').trim();
+            }
+          }
+        }
+
+        if (!cleanLeadData.name) {
+          results.push({ status: 'error', error: 'Lead requires a name: provide name, full_name, or first_name/last_name' });
+          continue;
+        }
+
         const lead = await leadService.create({
           ...cleanLeadData,
           campaignId: campaign._id,

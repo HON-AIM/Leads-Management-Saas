@@ -83,12 +83,23 @@ class FieldDefinitionService {
     const requiredFields = await fieldDefinitionRepo.findRequiredByCampaign(campaignId, tenantId);
     if (!requiredFields.length) return { valid: true, missing: [] };
 
+    const has = (field) => {
+      const v = payload[field];
+      return v !== undefined && v !== null && v !== '';
+    };
+
+    const hasNameParts = has('first_name') || has('last_name') || has('full_name');
+    const hasFullName = has('name') || has('full_name');
+
     const missing = [];
     for (const field of requiredFields) {
-      const value = payload[field.fieldName];
-      if (value === undefined || value === null || value === '') {
-        missing.push(field.fieldName);
-      }
+      if (has(field.fieldName)) continue;
+
+      if (field.fieldName === 'name' && hasNameParts) continue;
+      if (field.fieldName === 'first_name' && hasFullName) continue;
+      if (field.fieldName === 'last_name' && hasFullName) continue;
+
+      missing.push(field.fieldName);
     }
 
     return { valid: missing.length === 0, missing };
