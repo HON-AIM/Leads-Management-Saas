@@ -57,7 +57,7 @@ router.get('/:id/next-buyer', async (req, res) => {
     }
 
     const buyerIds = entries.map((e) => e.buyerId._id);
-    const buyers = await Buyer.find({ _id: { $in: buyerIds }, tenantId }).lean();
+    const buyers = await Buyer.find({ _id: { $in: buyerIds }, tenantId: req.tenantId }).lean();
     const buyerMap = new Map(buyers.map((b) => [b._id.toString(), b]));
 
     const eligibleIds = [];
