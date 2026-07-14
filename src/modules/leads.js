@@ -3,8 +3,11 @@ const { authenticate, authorize } = require('../middleware/auth');
 const leadService = require('../services/leadService');
 const leadAssignmentRepo = require('../repositories/leadAssignmentRepository');
 const leadAssignment = require('../models/LeadAssignment');
+const Buyer = require('../models/Buyer');
+const Lead = require('../models/Lead');
+const Campaign = require('../models/Campaign');
 const routingLogRepository = require('../repositories/routingLogRepository');
-const { success, created, error, notFound, paginated } = require('../utils/response');
+const { success, created, error, notFound, paginated, badRequest } = require('../utils/response');
 const { validate } = require('../middleware/validate');
 const { createLead, updateLead } = require('../middleware/validation/schemas');
 
@@ -90,6 +93,48 @@ router.delete('/:id', authorize('admin'), async (req, res) => {
     return success(res, { message: 'Lead deleted' });
   } catch (err) {
     return error(res, err.message);
+  }
+});
+
+router.post('/:id/reassign', authorize('admin', 'member'), async (req, res) => {
+  try {
+    const { buyerId } = req.body;
+    if (!buyerId) return badRequest(res, 'buyerId is required');
+
+    const lead = await Lead.findOne({ _id: req.params.id, tenantId: req.tenantId });
+    if (!lead) return notFound(res, 'Lead not found');
+
+    const buyer = await Buyer.findOne({ _id: buyerId, tenantId: req.tenantId, status: 'active' });
+    if (!buyer) return badRequest(res, 'Buyer not found or inactive');
+
+    const existing = await leadAssignmentRepo.findByLead(lead._id, req.tenantId);
+
+    if (existing) {
+      existing.buyerId = buyerId;
+      existing.status = 'pending';
+      existing.deliveredAt = undefined;
+      await existing.save();
+    } else {
+      await leadAssignmentRepo.create({
+        leadId: lead._id,
+        buyerId: buyer._id,
+        campaignId: lead.campaignId,
+        routingMode: 'manual_reassign',
+        status: 'pending',
+        tenantId: req.tenantId,
+      });
+    }
+
+    lead.status = 'assigned';
+    await lead.save();
+
+    const updated = await Lead.findOne({ _id: lead._id, tenantId: req.tenantId })
+      .populate('campaignId', 'name');
+    const assignment = await leadAssignmentRepo.findByLead(lead._id, req.tenantId);
+
+    return success(res, { ...updated.toObject(), assignment });
+  } catch (err) {
+    return error(res, err.message, 400);
   }
 });
 

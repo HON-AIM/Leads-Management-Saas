@@ -19,6 +19,7 @@ class DashboardService {
       assignmentStats,
       recentAssignments,
       todayLeads,
+      recentUnassigned,
     ] = await Promise.all([
       Lead.countDocuments({ tenantId: tid }),
       Campaign.countDocuments({ tenantId: tid, status: 'active' }),
@@ -46,6 +47,11 @@ class DashboardService {
         .populate('buyerId', 'name email')
         .lean(),
       Lead.countDocuments({ tenantId: tid, createdAt: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) } }),
+      Lead.find({ tenantId: tid, status: 'unassigned' })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .populate('campaignId', 'name')
+        .lean(),
     ]);
 
     const statusMap = {};
@@ -61,11 +67,12 @@ class DashboardService {
       totalUsers,
       todayLeads,
       leads: {
-        pending: statusMap.pending || 0,
-        routed: statusMap.routed || 0,
+        new: statusMap.new || 0,
+        assigned: statusMap.assigned || 0,
         delivered: statusMap.delivered || 0,
         failed: statusMap.failed || 0,
         duplicate: statusMap.duplicate || 0,
+        unassigned: statusMap.unassigned || 0,
       },
       delivery: {
         total: (deliveryStats.pending?.count || 0) + (deliveryStats.delivered?.count || 0) + (deliveryStats.failed?.count || 0),
@@ -76,6 +83,7 @@ class DashboardService {
         cost: deliveryStats.delivered?.cost || 0,
       },
       recentAssignments,
+      recentUnassigned,
     };
   }
 

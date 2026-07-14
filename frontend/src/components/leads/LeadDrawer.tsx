@@ -1,9 +1,13 @@
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { QUERY_KEYS } from '@/lib/constants'
 import { formatDate } from '@/lib/utils'
 import { getStatusStyle, LEAD_STATUS_COLOR, DELIVERY_STATUS_COLOR } from '@/lib/statusColors'
+import { useNotifications } from '@/hooks/useNotifications'
 import type { LeadDetail } from '@/types/lead'
-import { X } from 'lucide-react'
+import type { Buyer } from '@/types/buyer'
+import { X, UserPlus } from 'lucide-react'
 
 interface LeadDrawerProps {
   leadId: string | null
@@ -11,6 +15,10 @@ interface LeadDrawerProps {
 }
 
 export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
+  const qc = useQueryClient()
+  const { addNotification } = useNotifications()
+  const [selectedBuyerId, setSelectedBuyerId] = useState('')
+
   const { data: lead, isLoading } = useQuery<LeadDetail>({
     queryKey: ['lead-detail', leadId],
     queryFn: async () => {
@@ -18,6 +26,33 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
       return data.data ?? data
     },
     enabled: !!leadId,
+  })
+
+  const { data: buyersData } = useQuery({
+    queryKey: ['buyers'],
+    queryFn: async () => {
+      const { data } = await api.get('/buyers')
+      return data.data ?? data.buyers ?? data ?? []
+    },
+  })
+  const allBuyers: Buyer[] = Array.isArray(buyersData) ? buyersData : []
+  const activeBuyers = allBuyers.filter((b) => b.status === 'active')
+
+  const reassignMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post(`/leads/${leadId}/reassign`, { buyerId: selectedBuyerId })
+      return data
+    },
+    onSuccess: () => {
+      addNotification({ type: 'success', title: 'Reassigned', description: 'Lead has been reassigned successfully.' })
+      qc.invalidateQueries({ queryKey: ['lead-detail', leadId] })
+      qc.invalidateQueries({ queryKey: ['leads'] })
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.STATS })
+      setSelectedBuyerId('')
+    },
+    onError: (err: any) => {
+      addNotification({ type: 'error', title: 'Failed', description: err?.response?.data?.error || 'Could not reassign lead.' })
+    },
   })
 
   if (!leadId) return null
@@ -101,6 +136,35 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                     <p className="text-[12px] text-muted-foreground">No assignment</p>
                   )}
                 </Section>
+
+                {lead.status === 'unassigned' && (
+                  <Section title="Reassign Lead">
+                    <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.03] p-4 space-y-3">
+                      <p className="text-[12px] text-amber-300/80">This lead is unassigned. Select a buyer to assign it to.</p>
+                      <div className="flex items-center gap-2">
+                        <UserPlus size={14} className="text-muted-foreground shrink-0" />
+                        <select
+                          value={selectedBuyerId}
+                          onChange={(e) => setSelectedBuyerId(e.target.value)}
+                          className="flex-1 text-xs border border-white/[0.15] rounded-lg px-3 py-2 bg-[#151d33] text-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 cursor-pointer"
+                          style={{ colorScheme: 'dark' }}
+                        >
+                          <option value="" className="bg-[#151d33] text-white/60">Select buyer...</option>
+                          {activeBuyers.map((b) => (
+                            <option key={b._id} value={b._id} className="bg-[#151d33] text-white">{b.name}</option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={() => reassignMutation.mutate()}
+                          disabled={!selectedBuyerId || reassignMutation.isPending}
+                          className="shrink-0 rounded-lg bg-blue-600 px-3 py-2 text-[12px] font-medium text-white hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {reassignMutation.isPending ? 'Assigning...' : 'Assign'}
+                        </button>
+                      </div>
+                    </div>
+                  </Section>
+                )}
 
                 <Section title="Routing Decision">
                   {lead.routingLogs && lead.routingLogs.length > 0 ? (

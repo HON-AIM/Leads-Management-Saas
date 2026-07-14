@@ -1,11 +1,12 @@
 import { lazy, Suspense } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { useAuth } from '@/hooks/useAuth'
-import { formatNumber } from '@/lib/utils'
+import { formatNumber, formatDate } from '@/lib/utils'
 import { getStatusStyle, DELIVERY_STATUS_COLOR, SEMANTIC_COLORS } from '@/lib/statusColors'
-import { Users, CheckCircle2, XCircle, Building2 } from 'lucide-react'
+import { Users, CheckCircle2, XCircle, Building2, AlertTriangle } from 'lucide-react'
 
 const LeadActivityChart = lazy(() =>
   import('@/components/dashboard/LeadActivityChart').then((m) => ({ default: m.LeadActivityChart }))
@@ -15,9 +16,10 @@ interface Overview {
   totalLeads: number
   todayLeads: number
   activeBuyers: number
-  leads: { pending: number; routed: number; delivered: number; failed: number; duplicate: number }
+  leads: { new: number; assigned: number; delivered: number; failed: number; duplicate: number; unassigned: number }
   delivery: { total: number; delivered: number; failed: number }
   recentAssignments: any[]
+  recentUnassigned: any[]
 }
 
 interface BuyerStat {
@@ -98,6 +100,7 @@ function RecentLeadRow({ assignment }: { assignment: any }) {
 
 export function DashboardPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
 
   const { data: overview, isLoading: overviewLoading } = useQuery<Overview>({
     queryKey: QUERY_KEYS.STATS,
@@ -143,13 +146,13 @@ export function DashboardPage() {
 
       {/* KPI Cards */}
       {overviewLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {[...Array(5)].map((_, i) => (
             <SkeletonBlock key={i} className="h-[108px] rounded-xl" />
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <KpiCard
             label="Total Leads"
             value={total}
@@ -169,11 +172,36 @@ export function DashboardPage() {
             color="bg-red-500/10"
           />
           <KpiCard
-            label="Active Buyers"
-            value={overview?.activeBuyers ?? 0}
-            icon={<Building2 size={15} className="text-amber-400" />}
+            label="Unassigned"
+            value={overview?.leads?.unassigned ?? 0}
+            icon={<AlertTriangle size={15} className="text-amber-400" />}
             color="bg-amber-500/10"
           />
+          <KpiCard
+            label="Active Buyers"
+            value={overview?.activeBuyers ?? 0}
+            icon={<Building2 size={15} className="text-violet-400" />}
+            color="bg-violet-500/10"
+          />
+        </div>
+      )}
+
+      {/* Lead Breakdown */}
+      {overview && (
+        <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          {[
+            { label: 'New', value: overview.leads?.new ?? 0, color: 'text-blue-400' },
+            { label: 'Assigned', value: overview.leads?.assigned ?? 0, color: 'text-violet-400' },
+            { label: 'Delivered', value: overview.leads?.delivered ?? 0, color: 'text-emerald-400' },
+            { label: 'Failed', value: overview.leads?.failed ?? 0, color: 'text-red-400' },
+            { label: 'Duplicate', value: overview.leads?.duplicate ?? 0, color: 'text-muted-foreground' },
+            { label: 'Unassigned', value: overview.leads?.unassigned ?? 0, color: 'text-amber-400' },
+          ].map((s) => (
+            <div key={s.label} className="rounded-lg border border-white/[0.08] bg-[#0e1428] px-4 py-3">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.label}</p>
+              <p className={`text-[15px] font-semibold ${s.color}`}>{formatNumber(s.value)}</p>
+            </div>
+          ))}
         </div>
       )}
 
@@ -219,6 +247,53 @@ export function DashboardPage() {
           </table>
         </div>
       </div>
+
+      {/* Unassigned Leads */}
+      {overview && (overview.leads?.unassigned ?? 0) > 0 && (
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.03] overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-amber-500/10">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={14} className="text-amber-400" />
+              <h3 className="text-[13px] font-semibold text-amber-300">Unassigned Leads</h3>
+            </div>
+            <button
+              onClick={() => navigate('/leads?status=unassigned')}
+              className="text-[12px] text-amber-400 hover:text-amber-300 transition-colors"
+            >
+              View all →
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-amber-500/10 text-[10px] text-amber-400/70 uppercase tracking-wider">
+                  <th className="px-6 py-2.5 text-left font-medium">Lead</th>
+                  <th className="px-6 py-2.5 text-left font-medium">Campaign</th>
+                  <th className="px-6 py-2.5 text-left font-medium">Source</th>
+                  <th className="px-6 py-2.5 text-left font-medium">Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(overview.recentUnassigned || []).map((lead: any) => (
+                  <tr
+                    key={lead._id}
+                    className="border-b border-amber-500/[0.06] last:border-0 hover:bg-amber-500/[0.03] cursor-pointer transition-colors"
+                    onClick={() => navigate('/leads?status=unassigned')}
+                  >
+                    <td className="px-6 py-3">
+                      <p className="text-[13px] font-medium text-white/90">{lead.name}</p>
+                      <p className="text-[11px] text-muted-foreground">{lead.email}</p>
+                    </td>
+                    <td className="px-6 py-3 text-[12px] text-white/70">{lead.campaignId?.name || '—'}</td>
+                    <td className="px-6 py-3 text-[12px] text-white/70 capitalize">{lead.source}</td>
+                    <td className="px-6 py-3 text-[12px] text-white/55">{formatDate(lead.createdAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Recent Leads */}
       <div className="rounded-xl border border-white/[0.08] bg-[#0e1428] overflow-hidden">

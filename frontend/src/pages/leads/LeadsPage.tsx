@@ -160,6 +160,7 @@ export function LeadsPage() {
                     <th className="text-left font-medium px-6 py-2.5">State</th>
                     <th className="text-left font-medium px-6 py-2.5">Status</th>
                     <th className="text-left font-medium px-6 py-2.5">Created</th>
+                    <th className="text-left font-medium px-6 py-2.5"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -179,7 +180,7 @@ export function LeadsPage() {
                     </>
                   ) : leads.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-16 text-center">
+                      <td colSpan={8} className="py-16 text-center">
                         <div className="flex flex-col items-center gap-2">
                           <Users size={24} className="text-white/20" />
                           <p className="text-[13px] text-muted-foreground">
@@ -218,6 +219,16 @@ export function LeadsPage() {
                       </td>
                       <td className="px-6 py-3 text-[12px] text-white/55">
                         {formatDate(l.createdAt)}
+                      </td>
+                      <td className="px-6 py-3">
+                        {l.status === 'unassigned' && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDrawerLeadId(l._id) }}
+                            className="text-[11px] text-amber-400 hover:text-amber-300 transition-colors font-medium"
+                          >
+                            Reassign
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
