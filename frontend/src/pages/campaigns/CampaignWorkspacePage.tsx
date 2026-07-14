@@ -19,6 +19,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, L
 
 const TABS = [
   { key: 'overview', label: 'Overview', icon: Activity },
+  { key: 'buyers', label: 'Buyers', icon: Users },
   { key: 'field-mapping', label: 'Field Mapping', icon: Map },
   { key: 'leads', label: 'Leads', icon: Users },
   { key: 'costs', label: 'Costs', icon: DollarSign },
@@ -302,6 +303,11 @@ export function CampaignWorkspacePage() {
               </>
             )}
           </div>
+        )}
+
+        {/* BUYERS */}
+        {tab === 'buyers' && (
+          <CampaignBuyersTab campaign={campaign} />
         )}
 
         {/* FIELD MAPPING */}
