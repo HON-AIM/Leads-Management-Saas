@@ -41,7 +41,8 @@ router.post('/', ingestLimiter, async (req, res) => {
 
     if (!campaign) return badRequest(res, 'No active campaign found');
 
-    const fieldValidation = await fieldDefinitionService.validateRequiredFields(campaign._id, tenantId, body).catch(() => ({ valid: true, missing: [] }));
+    const fieldValidationSample = Array.isArray(body) ? body[0] || {} : body;
+    const fieldValidation = await fieldDefinitionService.validateRequiredFields(campaign._id, tenantId, fieldValidationSample).catch(() => ({ valid: true, missing: [] }));
     if (!fieldValidation.valid) {
       return badRequest(res, `Missing required field(s): ${fieldValidation.missing.join(', ')}`);
     }
