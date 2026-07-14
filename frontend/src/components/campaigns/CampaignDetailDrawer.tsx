@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useNotifications } from '@/hooks/useNotifications'
 import { formatDate } from '@/lib/utils'
-import { getStatusStyle, CAMPAIGN_STATUS_COLOR, BUYER_STATUS_COLOR } from '@/lib/statusColors'
+import { getStatusStyle, CAMPAIGN_STATUS_COLOR, BUYER_STATUS_COLOR, type SemanticKey } from '@/lib/statusColors'
 import type { Campaign } from '@/types/campaign'
 import type { Buyer } from '@/types/buyer'
 import { UserPlus, X } from 'lucide-react'
@@ -166,7 +166,7 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
                 )}
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-4">
-                <Badge className={`text-[10px] px-2 py-0.5 ${getStatusStyle(campaignData?.status || campaign.status, CAMPAIGN_STATUS_COLOR)}`}>{campaignData?.status || campaign.status}</Badge>
+                <Badge className={`text-[10px] px-2 py-0.5 ${getStatusStyle(CAMPAIGN_STATUS_COLOR[campaignData?.status || campaign.status] ?? 'neutral')}`}>{campaignData?.status || campaign.status}</Badge>
                 <button onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:text-white hover:bg-white/[0.06] transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
@@ -306,7 +306,7 @@ export function CampaignDetailDrawer({ campaign, onClose, onEdit }: CampaignDeta
                                   </span>
                                 )}
                                 {buyer?.status && (
-                                  <Badge className={`text-[10px] px-2 py-0.5 ${getStatusStyle(buyer.status, BUYER_STATUS_COLOR)}`}>{buyer.status}</Badge>
+                                  <Badge className={`text-[10px] px-2 py-0.5 ${getStatusStyle(BUYER_STATUS_COLOR[buyer.status] ?? 'neutral')}`}>{buyer.status}</Badge>
                                 )}
                                 <button
                                   onClick={() => removeBuyerMutation.mutate(buyerId)}

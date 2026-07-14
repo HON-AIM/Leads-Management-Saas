@@ -69,18 +69,15 @@ export const SUPPLIER_STATUS_COLOR: Record<string, SemanticKey> = {
   inactive: 'neutral',
 }
 
-export function getStatusStyle(status: string, map: Record<string, SemanticKey>): string {
-  const key = map[status] ?? 'neutral'
+export function getStatusStyle(key: SemanticKey): string {
   const c = SEMANTIC_COLORS[key]
   return `${c.bg} ${c.text} ${c.ring}`
 }
 
-export function getTextColor(status: string, map: Record<string, SemanticKey>): string {
-  const key = map[status] ?? 'neutral'
+export function getTextColor(key: SemanticKey): string {
   return SEMANTIC_COLORS[key].text
 }
 
-export function getStatusDotColor(status: string, map: Record<string, SemanticKey>): string {
-  const key = map[status] ?? 'neutral'
+export function getStatusDotColor(key: SemanticKey): string {
   return SEMANTIC_COLORS[key].dot
 }

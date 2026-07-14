@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/utils'
-import { getStatusStyle, DELIVERY_STATUS_COLOR } from '@/lib/statusColors'
+import { getStatusStyle, DELIVERY_STATUS_COLOR, type SemanticKey } from '@/lib/statusColors'
 import { Button } from '@/components/ui/button'
 import { ScrollText, ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -155,7 +155,7 @@ export function LeadLogsTable() {
                       {log.buyerId?.name || '—'}
                     </td>
                     <td className="px-6 py-3">
-                      <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(log.status, DELIVERY_STATUS_COLOR)}`}>
+                      <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(DELIVERY_STATUS_COLOR[log.status] ?? 'neutral')}`}>
                         {log.status}
                       </span>
                     </td>

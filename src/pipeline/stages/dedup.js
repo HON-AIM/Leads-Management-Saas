@@ -20,7 +20,8 @@ async function dedup(ctx) {
     lead.emailNormalized,
     lead.phoneNormalized,
     tenantId,
-    dedupWindow
+    dedupWindow,
+    lead._id
   )
 
   if (shouldBlockDuplicate(lead, existingLead)) {

@@ -4,7 +4,7 @@ import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { useNotifications } from '@/hooks/useNotifications'
-import { getStatusStyle, SUPPLIER_STATUS_COLOR } from '@/lib/statusColors'
+import { getStatusStyle, SUPPLIER_STATUS_COLOR, type SemanticKey } from '@/lib/statusColors'
 import type { Supplier, SupplierFormData } from '@/types/supplier'
 import { Search, Plus, Pencil, Trash2, Package, Copy, Check, X } from 'lucide-react'
 
@@ -225,7 +225,7 @@ export function SuppliersPage() {
                     </span>
                   </td>
                   <td className="px-6 py-3">
-                    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(s.status, SUPPLIER_STATUS_COLOR)}`}>
+                    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(SUPPLIER_STATUS_COLOR[s.status] ?? 'neutral')}`}>
                       {s.status}
                     </span>
                   </td>

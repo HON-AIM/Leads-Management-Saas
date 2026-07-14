@@ -6,7 +6,7 @@ import { US_STATES } from '@/types/buyer'
 import type { Buyer, BuyerFormData } from '@/types/buyer'
 import { PayloadTab } from '@/components/buyers/PayloadTab'
 import { X, Trash2 } from 'lucide-react'
-import { BUYER_STATUS_COLOR, getStatusStyle } from '@/lib/statusColors'
+import { BUYER_STATUS_COLOR, getStatusStyle, type SemanticKey } from '@/lib/statusColors'
 
 interface BuyerDrawerProps {
   buyer: Buyer | null
@@ -90,7 +90,7 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, isPending
                 </h2>
                 {!isNew && buyer && (
                   <span
-                    className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-medium shrink-0 ${getStatusStyle(buyer.status, BUYER_STATUS_COLOR)}`}
+                    className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-medium shrink-0 ${getStatusStyle(BUYER_STATUS_COLOR[buyer.status] ?? 'neutral')}`}
                   >
                     {buyer.status.charAt(0).toUpperCase() + buyer.status.slice(1)}
                   </span>

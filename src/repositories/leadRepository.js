@@ -53,9 +53,10 @@ class LeadRepository {
     return { leads, total, page, pages: Math.ceil(total / limit) };
   }
 
-  async findDuplicate(emailNormalized, phoneNormalized, tenantId, windowHours) {
+  async findDuplicate(emailNormalized, phoneNormalized, tenantId, windowHours, excludeLeadId) {
     const since = new Date(Date.now() - windowHours * 3600 * 1000);
     const query = { tenantId, createdAt: { $gte: since }, isDuplicate: false };
+    if (excludeLeadId) query._id = { $ne: excludeLeadId };
     const conditions = [];
     if (emailNormalized) conditions.push({ emailNormalized });
     if (phoneNormalized) conditions.push({ phoneNormalized });

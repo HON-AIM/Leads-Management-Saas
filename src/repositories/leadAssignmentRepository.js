@@ -88,6 +88,54 @@ class LeadAssignmentRepository {
       { $sort: { total: -1 } },
     ]);
   }
+
+  async getTrends(tenantId, days = 14) {
+    const tenantObjectId = require('mongoose').Types.ObjectId.createFromHexString(typeof tenantId === 'string' ? tenantId : tenantId.toString());
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+
+    const [daily, hourly] = await Promise.all([
+      LeadAssignment.aggregate([
+        { $match: { tenantId: tenantObjectId, createdAt: { $gte: since } } },
+        {
+          $group: {
+            _id: { date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, status: '$status' },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { '_id.date': 1 } },
+      ]),
+      LeadAssignment.aggregate([
+        { $match: { tenantId: tenantObjectId, createdAt: { $gte: since } } },
+        {
+          $group: {
+            _id: { hour: { $dateToString: { format: '%Y-%m-%dT%H:00:00', date: '$createdAt' } }, status: '$status' },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { '_id.hour': 1 } },
+      ]),
+    ]);
+
+    const dateMap = {};
+    for (const d of daily) {
+      if (!dateMap[d._id.date]) dateMap[d._id.date] = { date: d._id.date, delivered: 0, failed: 0, pending: 0, total: 0 };
+      dateMap[d._id.date][d._id.status] = (dateMap[d._id.date][d._id.status] || 0) + d.count;
+      dateMap[d._id.date].total += d.count;
+    }
+
+    const hourMap = {};
+    for (const h of hourly) {
+      if (!hourMap[h._id.hour]) hourMap[h._id.hour] = { hour: h._id.hour, delivered: 0, failed: 0, pending: 0, total: 0 };
+      hourMap[h._id.hour][h._id.status] = (hourMap[h._id.hour][h._id.status] || 0) + h.count;
+      hourMap[h._id.hour].total += h.count;
+    }
+
+    return {
+      trends: Object.values(dateMap),
+      hourly: Object.values(hourMap),
+    };
+  }
 }
 
 module.exports = new LeadAssignmentRepository();

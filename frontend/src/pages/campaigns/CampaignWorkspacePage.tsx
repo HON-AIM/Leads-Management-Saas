@@ -6,7 +6,7 @@ import { QUERY_KEYS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useNotifications } from '@/hooks/useNotifications'
-import { getStatusStyle, CAMPAIGN_STATUS_COLOR } from '@/lib/statusColors'
+import { getStatusStyle, CAMPAIGN_STATUS_COLOR, LEAD_STATUS_COLOR, type SemanticKey } from '@/lib/statusColors'
 import { formatDate } from '@/lib/utils'
 import { CampaignBuyersTab } from '@/components/campaigns/CampaignBuyersTab'
 import { FieldMappingTab } from '@/components/campaigns/FieldMappingTab'
@@ -172,7 +172,7 @@ export function CampaignWorkspacePage() {
           </button>
           <div className="flex items-center gap-3">
             <h1 className="text-[18px] font-semibold text-white tracking-tight truncate">{campaign.name}</h1>
-            <Badge className={`text-[10px] px-2 py-0.5 shrink-0 ${getStatusStyle(campaign.status, CAMPAIGN_STATUS_COLOR)}`}>
+            <Badge className={`text-[10px] px-2 py-0.5 shrink-0 ${getStatusStyle(CAMPAIGN_STATUS_COLOR[campaign.status] ?? 'neutral')}`}>
               {campaign.status}
             </Badge>
           </div>
@@ -358,7 +358,7 @@ export function CampaignWorkspacePage() {
                       <td className="px-6 py-3 text-[12px] text-white/70 capitalize">{l.source}</td>
                       <td className="px-6 py-3 text-[12px] text-white/70">{l.state || '—'}</td>
                       <td className="px-6 py-3">
-                        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(l.status, { new: 'neutral', assigned: 'info', delivered: 'positive', failed: 'negative', duplicate: 'neutral', unassigned: 'caution' })}`}>
+                        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(LEAD_STATUS_COLOR[l.status] ?? 'neutral')}`}>
                           {l.status}
                         </span>
                       </td>

@@ -5,7 +5,7 @@ import { QUERY_KEYS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { useNotifications } from '@/hooks/useNotifications'
 import { BuyerDrawer } from '@/components/buyers/BuyerDrawer'
-import { getStatusStyle, BUYER_STATUS_COLOR } from '@/lib/statusColors'
+import { getStatusStyle, BUYER_STATUS_COLOR, type SemanticKey } from '@/lib/statusColors'
 import type { Buyer, BuyerFormData } from '@/types/buyer'
 import { Search, Plus, Pencil, Trash2, Building2 } from 'lucide-react'
 
@@ -157,7 +157,7 @@ export function BuyersPage() {
                     <p className="text-[11px] text-muted-foreground">{b.email}</p>
                   </td>
                   <td className="px-6 py-3">
-                    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(b.status, BUYER_STATUS_COLOR)}`}>
+                    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(BUYER_STATUS_COLOR[b.status] ?? 'neutral')}`}>
                       {b.status}
                     </span>
                   </td>

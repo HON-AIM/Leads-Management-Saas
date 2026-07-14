@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { formatDate } from '@/lib/utils'
-import { getStatusStyle, CAMPAIGN_STATUS_COLOR } from '@/lib/statusColors'
+import { getStatusStyle, CAMPAIGN_STATUS_COLOR, type SemanticKey } from '@/lib/statusColors'
 import type { Campaign } from '@/types/campaign'
 
 interface CampaignCardProps {
@@ -10,7 +10,7 @@ interface CampaignCardProps {
 
 export function CampaignCard({ campaign, onToggle }: CampaignCardProps) {
   const navigate = useNavigate()
-  const statusColor = getStatusStyle(campaign.status, CAMPAIGN_STATUS_COLOR)
+  const statusColor = getStatusStyle(CAMPAIGN_STATUS_COLOR[campaign.status] ?? 'neutral')
 
   const routingLabel: Record<string, string> = {
     round_robin: 'Round Robin',

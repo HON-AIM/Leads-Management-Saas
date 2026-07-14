@@ -4,7 +4,7 @@ import { QUERY_KEYS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useNotifications } from '@/hooks/useNotifications'
-import { getStatusStyle, BUYER_STATUS_COLOR } from '@/lib/statusColors'
+import { getStatusStyle, BUYER_STATUS_COLOR, type SemanticKey } from '@/lib/statusColors'
 import type { Campaign } from '@/types/campaign'
 import type { Buyer } from '@/types/buyer'
 import { UserPlus, X } from 'lucide-react'
@@ -131,7 +131,7 @@ export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
                       </span>
                     )}
                     {buyer?.status && (
-                      <Badge className={`text-[10px] px-2 py-0.5 ${getStatusStyle(buyer.status, BUYER_STATUS_COLOR)}`}>{buyer.status}</Badge>
+                      <Badge className={`text-[10px] px-2 py-0.5 ${getStatusStyle(BUYER_STATUS_COLOR[buyer.status] ?? 'neutral')}`}>{buyer.status}</Badge>
                     )}
                     <button
                       onClick={() => removeBuyerMutation.mutate(buyerId)}
@@ -143,7 +143,20 @@ export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
                   </div>
                 </div>
                 {buyer?.email && <p className="text-[11px] text-muted-foreground mb-0.5">{buyer.email}</p>}
-                <p className="text-[10px] text-muted-foreground/60 italic">Status changes apply to this buyer across all campaigns</p>
+                {buyer && (
+                  <div className="mt-2 space-y-1.5">
+                    {buyer.leadCap > 0 && (
+                      <CapBar label="Total" received={buyer.leadsReceived} cap={buyer.leadCap} />
+                    )}
+                    {buyer.dailyCap > 0 && (
+                      <CapBar label="Daily" received={buyer.dailyLeadsReceived} cap={buyer.dailyCap} />
+                    )}
+                    {buyer.monthlyCap > 0 && (
+                      <CapBar label="Monthly" received={buyer.monthlyLeadsReceived} cap={buyer.monthlyCap} />
+                    )}
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground/60 italic mt-1.5">Status changes apply to this buyer across all campaigns</p>
                 <div className="flex gap-4 mt-2 text-[11px] text-muted-foreground">
                   {campaign.routingMode === 'weighted' && <span>Weight: {b.weight}</span>}
                   {campaign.routingMode === 'priority' && <span>Priority: {b.priority}</span>}
@@ -182,6 +195,22 @@ export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
           })}
         </div>
       )}
+    </div>
+  )
+}
+
+function CapBar({ label, received, cap }: { label: string; received: number; cap: number }) {
+  const pct = Math.min((received / cap) * 100, 100)
+  const barColor = pct >= 100 ? 'bg-red-400' : pct >= 80 ? 'bg-amber-400' : 'bg-emerald-400'
+  const textColor = pct >= 100 ? 'text-red-300' : pct >= 80 ? 'text-amber-300' : 'text-emerald-300'
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[10px] text-muted-foreground w-12 shrink-0">{label}</span>
+      <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+        <div className={`h-full rounded-full ${barColor} transition-all duration-300`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className={`text-[10px] font-medium ${textColor} shrink-0 w-16 text-right`}>{received}/{cap}</span>
     </div>
   )
 }

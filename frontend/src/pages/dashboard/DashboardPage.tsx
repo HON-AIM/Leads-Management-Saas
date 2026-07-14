@@ -5,7 +5,7 @@ import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { useAuth } from '@/hooks/useAuth'
 import { formatNumber, formatDate } from '@/lib/utils'
-import { getStatusStyle, DELIVERY_STATUS_COLOR, SEMANTIC_COLORS } from '@/lib/statusColors'
+import { getStatusStyle, DELIVERY_STATUS_COLOR, SEMANTIC_COLORS, type SemanticKey } from '@/lib/statusColors'
 import { Users, CheckCircle2, XCircle, Building2, AlertTriangle } from 'lucide-react'
 
 const LeadActivityChart = lazy(() =>
@@ -77,7 +77,7 @@ function RecentLeadRow({ assignment }: { assignment: any }) {
   const lead = assignment.leadId || {}
   const buyer = assignment.buyerId || {}
 
-  const statusColor = getStatusStyle(assignment.status, DELIVERY_STATUS_COLOR)
+  const statusColor = getStatusStyle(DELIVERY_STATUS_COLOR[assignment.status] ?? 'neutral')
 
   return (
     <tr className="border-b border-white/[0.06] last:border-0 hover:bg-white/[0.03] transition-colors">

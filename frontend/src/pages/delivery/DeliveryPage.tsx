@@ -38,7 +38,7 @@ export function DeliveryPage() {
   const { data: logsData, isLoading: logsLoading } = useQuery<{ success: boolean; logs: DeliveryLog[]; total: number }>({
     queryKey: [...QUERY_KEYS.DELIVERY_LOGS, 'list', { ...filters, skip }],
     queryFn: async () => {
-      const { data } = await api.get(`/delivery/logs?${queryParams.toString()}`)
+      const { data } = await api.get(`/delivery-logs?${queryParams.toString()}`)
       return data
     },
   })
@@ -46,7 +46,7 @@ export function DeliveryPage() {
   const { data: statsData } = useQuery<DeliveryStats>({
     queryKey: QUERY_KEYS.DELIVERY_STATS,
     queryFn: async () => {
-      const { data } = await api.get('/delivery/stats')
+      const { data } = await api.get('/delivery-logs/stats')
       return data
     },
   })
@@ -54,7 +54,7 @@ export function DeliveryPage() {
   const { data: trendsData, isLoading: trendsLoading } = useQuery<DeliveryTrendsResponse>({
     queryKey: QUERY_KEYS.DELIVERY_TRENDS,
     queryFn: async () => {
-      const { data } = await api.get('/delivery/trends?days=14')
+      const { data } = await api.get('/delivery-logs/trends?days=14')
       return data
     },
   })
@@ -62,14 +62,14 @@ export function DeliveryPage() {
   const { data: buyersData } = useQuery<Buyer[]>({
     queryKey: QUERY_KEYS.CLIENTS,
     queryFn: async () => {
-      const { data } = await api.get('/clients')
-      return data.clients || data
+      const { data } = await api.get('/buyers')
+      return data.data ?? data.buyers ?? data
     },
   })
 
   const retryMutation = useMutation({
     mutationFn: async (logId: string) => {
-      const { data } = await api.post(`/delivery/retry/${logId}`)
+      const { data } = await api.post(`/delivery-logs/retry/${logId}`)
       return data
     },
     onSuccess: () => {

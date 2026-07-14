@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { formatDate } from '@/lib/utils'
-import { getStatusStyle, LEAD_STATUS_COLOR, DELIVERY_STATUS_COLOR } from '@/lib/statusColors'
+import { getStatusStyle, LEAD_STATUS_COLOR, DELIVERY_STATUS_COLOR, type SemanticKey } from '@/lib/statusColors'
 import { useNotifications } from '@/hooks/useNotifications'
 import type { LeadDetail } from '@/types/lead'
 import type { Buyer } from '@/types/buyer'
@@ -108,7 +108,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                   <InfoRow label="Campaign" value={lead.campaignId?.name || '—'} />
                   <div className="flex items-center gap-2.5 py-1">
                     <span className="text-[11px] text-muted-foreground w-[72px] shrink-0">Status</span>
-                    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(lead.status, LEAD_STATUS_COLOR)}`}>
+                    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(LEAD_STATUS_COLOR[lead.status] ?? 'neutral')}`}>
                       {lead.status}
                     </span>
                   </div>
@@ -123,7 +123,7 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                       <InfoRow label="Routing" value={lead.assignment.routingMode?.replace(/_/g, ' ') || '—'} />
                       <div className="flex items-center gap-2.5 py-1">
                         <span className="text-[11px] text-muted-foreground w-[72px] shrink-0">Status</span>
-                        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(lead.assignment.status, DELIVERY_STATUS_COLOR)}`}>
+                        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(DELIVERY_STATUS_COLOR[lead.assignment.status] ?? 'neutral')}`}>
                           {lead.assignment.status}
                         </span>
                       </div>

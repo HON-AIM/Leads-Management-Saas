@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { formatDate, formatNumber } from '@/lib/utils'
-import { getStatusStyle, getTextColor, DELIVERY_STATUS_COLOR } from '@/lib/statusColors'
+import { getStatusStyle, getTextColor, DELIVERY_STATUS_COLOR, type SemanticKey } from '@/lib/statusColors'
 import type { DeliveryLog } from '@/types/delivery'
 import { Eye, RefreshCw } from 'lucide-react'
 
@@ -66,7 +66,7 @@ export function DeliveryLogsTable({ logs, isLoading, total, limit, skip, onPageC
                     </td>
                     <td className="px-6 py-3 text-[12px] text-white/70">{buyerName}</td>
                     <td className="px-6 py-3">
-                      <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(log.status, DELIVERY_STATUS_COLOR)}`}>
+                      <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(DELIVERY_STATUS_COLOR[log.status] ?? 'neutral')}`}>
                         {log.status}
                       </span>
                     </td>
@@ -76,8 +76,8 @@ export function DeliveryLogsTable({ logs, isLoading, total, limit, skip, onPageC
                       {log.responseCode ? (
                         <span className={`text-[12px] font-medium ${
                           log.responseCode >= 200 && log.responseCode < 300
-                            ? getTextColor('delivered', DELIVERY_STATUS_COLOR)
-                            : getTextColor('failed', DELIVERY_STATUS_COLOR)
+                            ? getTextColor(DELIVERY_STATUS_COLOR['delivered'] ?? 'neutral')
+                            : getTextColor(DELIVERY_STATUS_COLOR['failed'] ?? 'neutral')
                         }`}>
                           {log.responseCode}
                         </span>

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { LeadDrawer } from '@/components/leads/LeadDrawer'
 import { CreateLeadDrawer } from '@/components/leads/CreateLeadDrawer'
 import { LeadLogsTable } from '@/components/leads/LeadLogsTable'
-import { getStatusStyle, LEAD_STATUS_COLOR } from '@/lib/statusColors'
+import { getStatusStyle, LEAD_STATUS_COLOR, type SemanticKey } from '@/lib/statusColors'
 import { formatDate } from '@/lib/utils'
 import type { Lead, LeadFilters } from '@/types/lead'
 import { Search, SlidersHorizontal, X, Users, ChevronLeft, ChevronRight, Plus, ScrollText } from 'lucide-react'
@@ -213,7 +213,7 @@ export function LeadsPage() {
                       <td className="px-6 py-3 text-[12px] text-white/70 capitalize">{l.source}</td>
                       <td className="px-6 py-3 text-[12px] text-white/70">{l.state || '—'}</td>
                       <td className="px-6 py-3">
-                        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(l.status, LEAD_STATUS_COLOR)}`}>
+                        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(LEAD_STATUS_COLOR[l.status] ?? 'neutral')}`}>
                           {l.status}
                         </span>
                       </td>
