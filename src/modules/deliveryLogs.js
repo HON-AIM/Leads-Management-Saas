@@ -2,8 +2,8 @@ const router = require('express').Router();
 const { authenticate } = require('../middleware/auth');
 const leadAssignmentRepo = require('../repositories/leadAssignmentRepository');
 const routingLogRepo = require('../repositories/routingLogRepository');
-const Lead = require('../models/Lead');
-const Buyer = require('../models/Buyer');
+const DeliveryAttempt = require('../models/DeliveryAttempt');
+const { attemptDelivery } = require('../services/deliveryAttemptService');
 const { success, error, paginated, notFound } = require('../utils/response');
 const logger = require('../utils/logger');
 
@@ -65,13 +65,24 @@ router.get('/trends', async (req, res) => {
   }
 });
 
+router.get('/lead/:leadId/attempts', async (req, res) => {
+  try {
+    const attempts = await DeliveryAttempt.find({ leadId: req.params.leadId, tenantId: req.tenantId })
+      .sort({ attemptNumber: 1 })
+      .populate('buyerId', 'name email')
+      .populate('triggeredByUserId', 'name email')
+      .lean();
+    return success(res, attempts);
+  } catch (err) {
+    return error(res, err.message);
+  }
+});
+
 router.post('/retry/:id', async (req, res) => {
   try {
-    const assignment = await leadAssignmentRepo.findByLeadWithPopulate
-      ? await leadAssignmentRepo.findByLeadWithPopulate(req.params.id, req.tenantId)
-      : await require('../models/LeadAssignment').findOne({ _id: req.params.id, tenantId: req.tenantId })
-          .populate('leadId', 'name email phone state source tenantId')
-          .populate('buyerId', 'name email delivery tenantId');
+    const assignment = await require('../models/LeadAssignment').findOne({ _id: req.params.id, tenantId: req.tenantId })
+      .populate('leadId', 'name email phone state source tenantId')
+      .populate('buyerId', 'name email delivery tenantId');
 
     if (!assignment) return notFound(res, 'Assignment not found');
     if (assignment.status === 'delivered') return error(res, 'Already delivered');
@@ -90,49 +101,22 @@ router.post('/retry/:id', async (req, res) => {
       return success(res, { success: true, method: 'no-op', assignmentId: assignment._id });
     }
 
-    const https = require('https');
-    const http = require('http');
-    const config = require('../config');
-
-    const payload = {
-      lead: { id: lead._id, name: lead.name, email: lead.email, phone: lead.phone, state: lead.state, source: lead.source },
-      buyer: { id: buyer._id, name: buyer.name },
-      timestamp: new Date().toISOString(),
-    };
-
-    const timeout = config.delivery?.timeoutMs || 10000;
-    const parsed = new URL(buyer.delivery.url);
-    const transport = parsed.protocol === 'https:' ? https : http;
-    const data = JSON.stringify(payload);
-    const headers = { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) };
-    if (buyer.delivery.secret) headers['X-Webhook-Secret'] = buyer.delivery.secret;
-
-    const response = await new Promise((resolve, reject) => {
-      const req = transport.request({
-        hostname: parsed.hostname, port: parsed.port, path: parsed.pathname,
-        method: 'POST', headers, timeout,
-      }, (res) => {
-        let body = '';
-        res.on('data', (chunk) => (body += chunk));
-        res.on('end', () => resolve({ statusCode: res.statusCode, body }));
-      });
-      req.on('error', reject);
-      req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
-      req.write(data);
-      req.end();
+    const result = await attemptDelivery({
+      leadAssignment: assignment,
+      lead,
+      buyer,
+      triggeredBy: 'manual_retry',
+      triggeredByUserId: req.userId,
+      tenantId: req.tenantId,
     });
 
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      await leadAssignmentRepo.updateStatus(assignment._id, 'delivered', { deliveredAt: new Date(), responseData: { statusCode: response.statusCode, body: response.body } });
-      const LeadService = require('../services/leadService');
-      await LeadService.markDelivered(lead._id, lead.tenantId);
-      return success(res, { success: true, statusCode: response.statusCode, assignmentId: assignment._id });
-    } else {
-      await leadAssignmentRepo.updateStatus(assignment._id, 'failed', { failureReason: `HTTP ${response.statusCode}`, responseData: { statusCode: response.statusCode, body: response.body } });
-      const LeadService = require('../services/leadService');
-      await LeadService.markFailed(lead._id, lead.tenantId);
-      return success(res, { success: false, statusCode: response.statusCode, assignmentId: assignment._id });
-    }
+    return success(res, {
+      success: result.success,
+      statusCode: result.statusCode,
+      failureReason: result.failureReason,
+      durationMs: result.durationMs,
+      assignmentId: assignment._id,
+    });
   } catch (err) {
     logger.error('Retry delivery failed', { error: err.message, assignmentId: req.params.id });
     return error(res, err.message);

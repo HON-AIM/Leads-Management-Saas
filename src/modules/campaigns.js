@@ -256,6 +256,118 @@ router.get('/:id/routing-logs', async (req, res) => {
   }
 });
 
+router.patch('/:id/toggle', authorize('admin', 'member'), async (req, res) => {
+  try {
+    const campaign = await Campaign.findOne({ _id: req.params.id, tenantId: req.tenantId });
+    if (!campaign) return notFound(res, 'Campaign not found');
+    if (campaign.status === 'active') {
+      campaign.status = 'inactive';
+    } else if (campaign.status === 'inactive') {
+      campaign.status = 'active';
+    }
+    await campaign.save();
+    return success(res, campaign);
+  } catch (err) {
+    return error(res, err.message);
+  }
+});
+
+router.get('/:id/activity', authorize('admin', 'member'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.tenantId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+
+    const campaign = await Campaign.findOne({ _id: id, tenantId });
+    if (!campaign) return notFound(res, 'Campaign not found');
+
+    const campaignObjectId = require('mongoose').Types.ObjectId.createFromHexString(id);
+    const tenantObjectId = require('mongoose').Types.ObjectId.createFromHexString(tenantId.toString());
+
+    const skip = (page - 1) * limit;
+
+    const [leads, routingLogs, assignments, totalCount] = await Promise.all([
+      Lead.find({ campaignId: campaignObjectId, tenantId: tenantObjectId })
+        .select('name email source state status createdAt')
+        .sort({ createdAt: -1 })
+        .lean(),
+      RoutingLog.find({ campaignId: campaignObjectId, tenantId: tenantObjectId })
+        .populate('leadId', 'name email')
+        .populate('selectedBuyerId', 'name email')
+        .sort({ createdAt: -1 })
+        .lean(),
+      LeadAssignment.find({ campaignId: campaignObjectId, tenantId: tenantObjectId })
+        .populate('leadId', 'name email')
+        .populate('buyerId', 'name email')
+        .sort({ createdAt: -1 })
+        .lean(),
+      Lead.countDocuments({ campaignId: campaignObjectId, tenantId: tenantObjectId }),
+    ]);
+
+    const entries = [];
+
+    for (const lead of leads) {
+      entries.push({
+        eventType: 'lead_received',
+        description: `New lead "${lead.name}" received via ${lead.source || 'unknown'}`,
+        timestamp: lead.createdAt,
+        lead: { name: lead.name, email: lead.email },
+        meta: { source: lead.source, state: lead.state },
+      });
+    }
+
+    for (const log of routingLogs) {
+      const leadName = log.leadId?.name || 'Unknown lead';
+      const buyerName = log.selectedBuyerId?.name || null;
+      entries.push({
+        eventType: 'routed',
+        description: buyerName
+          ? `Routed "${leadName}" to ${buyerName}${log.reason ? ` (${log.reason})` : ''}`
+          : `Routing attempted for "${leadName}"${log.reason ? ` — ${log.reason}` : ' — no eligible buyer'}`,
+        timestamp: log.createdAt,
+        lead: log.leadId ? { name: log.leadId.name, email: log.leadId.email } : null,
+        buyer: log.selectedBuyerId ? { name: log.selectedBuyerId.name, email: log.selectedBuyerId.email } : null,
+        meta: { routingMode: log.routingMode, durationMs: log.durationMs },
+      });
+    }
+
+    for (const a of assignments) {
+      const leadName = a.leadId?.name || 'Unknown lead';
+      const buyerName = a.buyerId?.name || 'Unknown buyer';
+      if (a.status === 'delivered') {
+        entries.push({
+          eventType: 'delivered',
+          description: `"${leadName}" delivered to ${buyerName}`,
+          timestamp: a.deliveredAt || a.createdAt,
+          lead: a.leadId ? { name: a.leadId.name, email: a.leadId.email } : null,
+          buyer: a.buyerId ? { name: a.buyerId.name, email: a.buyerId.email } : null,
+          meta: { status: a.status, revenue: a.revenue },
+        });
+      } else if (a.status === 'failed') {
+        entries.push({
+          eventType: 'failed',
+          description: `Delivery to ${buyerName} failed for "${leadName}"`,
+          timestamp: a.updatedAt || a.createdAt,
+          lead: a.leadId ? { name: a.leadId.name, email: a.leadId.email } : null,
+          buyer: a.buyerId ? { name: a.buyerId.name, email: a.buyerId.email } : null,
+          meta: { status: a.status, responseData: a.responseData },
+        });
+      }
+    }
+
+    entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    const paginatedEntries = entries.slice(skip, skip + limit);
+    const total = entries.length;
+    const pages = Math.ceil(total / limit);
+
+    return paginated(res, { data: paginatedEntries, total, page, pages });
+  } catch (err) {
+    return error(res, err.message);
+  }
+});
+
 router.post('/', authorize('admin', 'member'), validate(createCampaign), async (req, res) => {
   try {
     const campaign = await campaignService.create({ ...req.body, createdBy: req.userId }, req.tenantId);

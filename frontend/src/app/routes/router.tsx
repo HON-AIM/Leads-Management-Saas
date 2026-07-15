@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/guards/ProtectedRoute'
 import { PublicRoute } from '@/components/guards/PublicRoute'
 import { AppShell } from '@/components/layout/AppShell'
+import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 import { LandingPage } from '@/pages/marketing/LandingPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
@@ -27,16 +28,16 @@ export function AppRouter() {
       <Route path={ROUTES.RESET_PASSWORD} element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
 
       <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
-        <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
-        <Route path={ROUTES.LEADS} element={<LeadsPage />} />
-        <Route path={ROUTES.BUYERS} element={<BuyersPage />} />
-        <Route path={ROUTES.CAMPAIGNS} element={<CampaignsPage />} />
-        <Route path="/campaigns/:id" element={<CampaignWorkspacePage />} />
-        <Route path={ROUTES.DELIVERY} element={<DeliveryPage />} />
-        <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
-        <Route path={ROUTES.TEAM} element={<TeamPage />} />
-        <Route path={ROUTES.SUPPLIERS} element={<SuppliersPage />} />
-        <Route path={ROUTES.CALLS} element={<ComingSoonPage title="Calls" />} />
+        <Route path={ROUTES.DASHBOARD} element={<ErrorBoundary componentName="Dashboard"><DashboardPage /></ErrorBoundary>} />
+        <Route path={ROUTES.LEADS} element={<ErrorBoundary componentName="Leads"><LeadsPage /></ErrorBoundary>} />
+        <Route path={ROUTES.BUYERS} element={<ErrorBoundary componentName="Buyers"><BuyersPage /></ErrorBoundary>} />
+        <Route path={ROUTES.CAMPAIGNS} element={<ErrorBoundary componentName="Campaigns"><CampaignsPage /></ErrorBoundary>} />
+        <Route path="/campaigns/:id" element={<ErrorBoundary componentName="Campaign Workspace"><CampaignWorkspacePage /></ErrorBoundary>} />
+        <Route path={ROUTES.DELIVERY} element={<ErrorBoundary componentName="Delivery"><DeliveryPage /></ErrorBoundary>} />
+        <Route path={ROUTES.SETTINGS} element={<ErrorBoundary componentName="Settings"><SettingsPage /></ErrorBoundary>} />
+        <Route path={ROUTES.TEAM} element={<ErrorBoundary componentName="Team"><TeamPage /></ErrorBoundary>} />
+        <Route path={ROUTES.SUPPLIERS} element={<ErrorBoundary componentName="Suppliers"><SuppliersPage /></ErrorBoundary>} />
+        <Route path={ROUTES.CALLS} element={<ErrorBoundary componentName="Calls"><ComingSoonPage title="Calls" /></ErrorBoundary>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

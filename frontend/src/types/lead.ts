@@ -49,6 +49,27 @@ export interface LeadFilters {
   dateTo?: string
 }
 
+export interface DeliveryAttempt {
+  _id: string
+  leadAssignmentId: string
+  leadId: string
+  buyerId: { _id: string; name: string; email: string } | string
+  attemptNumber: number
+  payloadSent: Record<string, unknown>
+  webhookUrl?: string
+  statusCode?: number
+  responseBody?: unknown
+  responseHeaders?: Record<string, string>
+  success: boolean
+  failureReason?: string
+  durationMs?: number
+  triggeredBy: 'automatic' | 'manual_retry'
+  triggeredByUserId?: { _id: string; name: string; email: string } | string
+  tenantId: string
+  createdAt: string
+  updatedAt: string
+}
+
 export const STATUS_OPTIONS = [
   { label: 'New', value: 'new' },
   { label: 'Assigned', value: 'assigned' },
