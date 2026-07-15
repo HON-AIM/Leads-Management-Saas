@@ -3,13 +3,19 @@ const { z } = require('zod');
 const createCampaign = z.object({
   name: z.string().min(1, 'Campaign name is required').max(200),
   description: z.string().max(1000).optional(),
-  status: z.enum(['active', 'paused', 'draft']).optional(),
+  status: z.enum(['active', 'inactive']).optional(),
+  costPerLead: z.number().min(0).optional(),
+  routingMode: z.enum(['round_robin', 'weighted', 'priority', 'exclusive']).optional(),
+  dedupWindowHours: z.number().int().min(1).optional(),
 });
 
 const updateCampaign = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().max(1000).optional(),
-  status: z.enum(['active', 'paused', 'draft']).optional(),
+  status: z.enum(['active', 'inactive']).optional(),
+  costPerLead: z.number().min(0).optional(),
+  routingMode: z.enum(['round_robin', 'weighted', 'priority', 'exclusive']).optional(),
+  dedupWindowHours: z.number().int().min(1).optional(),
 });
 
 const createBuyer = z.object({
@@ -82,7 +88,7 @@ const updateLead = z.object({
   email: z.string().email().optional(),
   phone: z.string().max(20).optional(),
   state: z.string().max(2).optional(),
-  status: z.enum(['new', 'contacted', 'qualified', 'converted', 'rejected', 'duplicate']).optional(),
+  status: z.enum(['new', 'assigned', 'delivered', 'failed', 'duplicate', 'unassigned']).optional(),
   customFields: z.record(z.any()).optional(),
 }).strict();
 

@@ -1,6 +1,6 @@
 const { attemptDelivery } = require('../../services/deliveryAttemptService');
 const leadAssignmentRepo = require('../../repositories/leadAssignmentRepository');
-const leadService = require('../../services/leadService');
+const Lead = require('../../models/Lead');
 const config = require('../../config');
 const logger = require('../../utils/logger');
 
@@ -12,13 +12,12 @@ async function deliver(ctx) {
 
   if (!buyer.delivery || buyer.delivery.provider === 'none' || !buyer.delivery.url) {
     await leadAssignmentRepo.updateStatus(assignment._id, 'delivered', { deliveredAt: new Date() });
-    await leadService.markDelivered(lead._id, lead.tenantId);
+    await Lead.findByIdAndUpdate(lead._id, { status: 'delivered' });
     ctx.deliveryResult = { success: true, method: 'no-op' };
     return;
   }
 
   const maxRetries = config.delivery.maxRetries;
-  const timeout = config.delivery.initialDelayMs;
   let attempt = 0;
 
   while (attempt < maxRetries) {
@@ -33,6 +32,7 @@ async function deliver(ctx) {
     });
 
     if (result.success) {
+      await Lead.findByIdAndUpdate(lead._id, { status: 'delivered' });
       ctx.deliveryResult = { success: true, statusCode: result.statusCode, attempt };
       return;
     }
@@ -47,6 +47,7 @@ async function deliver(ctx) {
     if (attempt < maxRetries) await delay(attempt * config.delivery.initialDelayMs);
   }
 
+  await Lead.findByIdAndUpdate(lead._id, { status: 'failed' });
   ctx.deliveryResult = { success: false, attempts: maxRetries };
 }
 

@@ -6,7 +6,7 @@ import { QUERY_KEYS } from '@/lib/constants'
 import { useAuth } from '@/hooks/useAuth'
 import { formatNumber, formatDate } from '@/lib/utils'
 import { getStatusStyle, DELIVERY_STATUS_COLOR, SEMANTIC_COLORS, type SemanticKey } from '@/lib/statusColors'
-import { Users, CheckCircle2, XCircle, Building2, AlertTriangle } from 'lucide-react'
+import { Users, CheckCircle2, XCircle, Building2, AlertTriangle, RotateCcw } from 'lucide-react'
 
 const LeadActivityChart = lazy(() =>
   import('@/components/dashboard/LeadActivityChart').then((m) => ({ default: m.LeadActivityChart }))
@@ -17,7 +17,7 @@ interface Overview {
   todayLeads: number
   activeBuyers: number
   leads: { new: number; assigned: number; delivered: number; failed: number; duplicate: number; unassigned: number }
-  delivery: { total: number; delivered: number; failed: number }
+  delivery: { total: number; delivered: number; failed: number; returned: number; pending: number }
   recentAssignments: any[]
   recentUnassigned: any[]
 }
@@ -132,6 +132,7 @@ export function DashboardPage() {
 
   const delivered = overview?.delivery?.delivered ?? 0
   const failed = overview?.delivery?.failed ?? 0
+  const returned = overview?.delivery?.returned ?? 0
   const total = overview?.totalLeads ?? 0
 
   return (
@@ -146,13 +147,13 @@ export function DashboardPage() {
 
       {/* KPI Cards */}
       {overviewLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {[...Array(5)].map((_, i) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+          {[...Array(6)].map((_, i) => (
             <SkeletonBlock key={i} className="h-[108px] rounded-xl" />
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
           <KpiCard
             label="Total Leads"
             value={total}
@@ -170,6 +171,12 @@ export function DashboardPage() {
             value={failed}
             icon={<XCircle size={15} className="text-red-400" />}
             color="bg-red-500/10"
+          />
+          <KpiCard
+            label="Returned"
+            value={returned}
+            icon={<RotateCcw size={15} className="text-amber-400" />}
+            color="bg-amber-500/10"
           />
           <KpiCard
             label="Unassigned"

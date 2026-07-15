@@ -22,8 +22,8 @@ async function assign(ctx) {
     tenantId,
     campaignId: campaign._id,
     routingMode: campaign.routingMode,
-    cost: ctx.selectedBuyer.buyer.pricePerLead || 0,
-    revenue: campaign.costPerLead || 0,
+    cost: campaign.costPerLead || 0,
+    revenue: ctx.selectedBuyer.buyer.pricePerLead || 0,
     status: 'pending',
   })
 

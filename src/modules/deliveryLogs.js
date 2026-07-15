@@ -3,6 +3,7 @@ const { authenticate } = require('../middleware/auth');
 const leadAssignmentRepo = require('../repositories/leadAssignmentRepository');
 const routingLogRepo = require('../repositories/routingLogRepository');
 const DeliveryAttempt = require('../models/DeliveryAttempt');
+const Lead = require('../models/Lead');
 const { attemptDelivery } = require('../services/deliveryAttemptService');
 const { success, error, paginated, notFound } = require('../utils/response');
 const logger = require('../utils/logger');
@@ -96,8 +97,7 @@ router.post('/retry/:id', async (req, res) => {
 
     if (!buyer.delivery.url || buyer.delivery.provider === 'none') {
       await leadAssignmentRepo.updateStatus(assignment._id, 'delivered', { deliveredAt: new Date() });
-      const LeadService = require('../services/leadService');
-      await LeadService.markDelivered(lead._id, lead.tenantId);
+      await Lead.findByIdAndUpdate(lead._id, { status: 'delivered' });
       return success(res, { success: true, method: 'no-op', assignmentId: assignment._id });
     }
 
@@ -109,6 +109,8 @@ router.post('/retry/:id', async (req, res) => {
       triggeredByUserId: req.userId,
       tenantId: req.tenantId,
     });
+
+    await Lead.findByIdAndUpdate(lead._id, { status: result.success ? 'delivered' : 'failed' });
 
     return success(res, {
       success: result.success,
