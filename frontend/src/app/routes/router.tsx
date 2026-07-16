@@ -16,7 +16,6 @@ import { DeliveryPage } from '@/pages/delivery/DeliveryPage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
 import { TeamPage } from '@/pages/team/TeamPage'
 import { SuppliersPage } from '@/pages/suppliers/SuppliersPage'
-import { ComingSoonPage } from '@/pages/calls/ComingSoonPage'
 import { ROUTES } from '@/lib/constants'
 
 export function AppRouter() {
@@ -37,7 +36,6 @@ export function AppRouter() {
         <Route path={ROUTES.SETTINGS} element={<ErrorBoundary componentName="Settings"><SettingsPage /></ErrorBoundary>} />
         <Route path={ROUTES.TEAM} element={<ErrorBoundary componentName="Team"><TeamPage /></ErrorBoundary>} />
         <Route path={ROUTES.SUPPLIERS} element={<ErrorBoundary componentName="Suppliers"><SuppliersPage /></ErrorBoundary>} />
-        <Route path={ROUTES.CALLS} element={<ErrorBoundary componentName="Calls"><ComingSoonPage title="Calls" /></ErrorBoundary>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

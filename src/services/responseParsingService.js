@@ -64,6 +64,9 @@ function evaluateAcceptance(responseBody, rule) {
 }
 
 function evaluateAcceptanceFromJson(responseBody, rule) {
+  if (!rule || !rule.enabled) {
+    return { accepted: true, reason: 'No acceptance rule configured — treating HTTP 2xx as success', flatTokens: {} };
+  }
   let parsed = responseBody;
   if (typeof responseBody === 'string') {
     try { parsed = JSON.parse(responseBody); } catch { return { accepted: false, reason: 'Response body is not valid JSON', flatTokens: {} }; }

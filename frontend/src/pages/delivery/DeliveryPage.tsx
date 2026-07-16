@@ -35,7 +35,7 @@ export function DeliveryPage() {
   if (filters.dateFrom) queryParams.set('dateFrom', filters.dateFrom)
   if (filters.dateTo) queryParams.set('dateTo', filters.dateTo)
 
-  const { data: logsData, isLoading: logsLoading } = useQuery<{ success: boolean; logs: DeliveryLog[]; total: number }>({
+  const { data: logsData, isLoading: logsLoading } = useQuery<{ success: boolean; data: DeliveryLog[]; pagination: { total: number; page: number; pages: number } }>({
     queryKey: [...QUERY_KEYS.DELIVERY_LOGS, 'list', { ...filters, skip }],
     queryFn: async () => {
       const { data } = await api.get(`/delivery-logs?${queryParams.toString()}`)
@@ -90,8 +90,8 @@ export function DeliveryPage() {
     setSkip(0)
   }, [])
 
-  const logs = logsData?.logs || []
-  const total = logsData?.total || 0
+  const logs = logsData?.data || []
+  const total = logsData?.pagination?.total || 0
   const buyers = (buyersData || []).map((b: Buyer) => ({ _id: b._id, name: b.name }))
 
   const successRate = statsData && statsData.total > 0

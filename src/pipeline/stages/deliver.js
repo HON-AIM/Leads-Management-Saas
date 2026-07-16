@@ -1,4 +1,5 @@
 const { attemptDelivery } = require('../../services/deliveryAttemptService');
+const DeliveryAttempt = require('../../models/DeliveryAttempt');
 const leadAssignmentRepo = require('../../repositories/leadAssignmentRepository');
 const Lead = require('../../models/Lead');
 const config = require('../../config');
@@ -11,6 +12,22 @@ async function deliver(ctx) {
   const buyer = selectedBuyer.buyer;
 
   if (!buyer.delivery || buyer.delivery.provider === 'none' || !buyer.delivery.url) {
+    await DeliveryAttempt.create({
+      leadAssignmentId: assignment._id,
+      leadId: lead._id,
+      buyerId: buyer._id,
+      attemptNumber: 1,
+      payloadSent: null,
+      webhookUrl: '',
+      statusCode: null,
+      responseBody: null,
+      responseHeaders: null,
+      success: true,
+      failureReason: 'No-op delivery: no webhook URL configured',
+      durationMs: 0,
+      triggeredBy: 'automatic',
+      tenantId: lead.tenantId,
+    });
     await leadAssignmentRepo.updateStatus(assignment._id, 'delivered', { deliveredAt: new Date() });
     await Lead.findByIdAndUpdate(lead._id, { status: 'delivered' });
     ctx.deliveryResult = { success: true, method: 'no-op' };

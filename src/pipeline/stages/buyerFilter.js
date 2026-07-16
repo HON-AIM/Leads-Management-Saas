@@ -17,15 +17,25 @@ async function buyerFilter(ctx) {
   const configMap = new Map(entries.map((e) => [e.buyerId.toString(), e]))
 
   ctx.buyerPool = []
+  const rejected = []
 
   for (const entry of entries) {
     const buyer = buyerMap.get(entry.buyerId.toString())
-    if (!buyer) continue
+    if (!buyer) {
+      rejected.push({ id: entry.buyerId, reason: 'buyer not found or deleted' })
+      continue
+    }
 
-    if (buyer.status !== 'active') continue
+    if (buyer.status !== 'active') {
+      rejected.push({ buyer: buyer.name, reason: `status is ${buyer.status}` })
+      continue
+    }
 
     if (buyer.schedule?.enabled) {
-      if (!isWithinSchedule(buyer)) continue
+      if (!isWithinSchedule(buyer)) {
+        rejected.push({ buyer: buyer.name, reason: `outside schedule (${buyer.schedule.days?.join(',') || 'all days'} ${buyer.schedule.startTime || '09:00'}-${buyer.schedule.endTime || '17:00'})` })
+        continue
+      }
     }
 
     ctx.buyerPool.push({ buyer, config: entry })
@@ -33,7 +43,9 @@ async function buyerFilter(ctx) {
 
   if (!ctx.buyerPool.length) {
     ctx.stop = true
-    ctx.stopReason = 'No eligible buyers after filtering'
+    ctx.stopReason = rejected.length
+      ? `No eligible buyers after filtering: ${rejected.map((r) => `${r.buyer || r.id} - ${r.reason}`).join('; ')}`
+      : 'No eligible buyers after filtering'
   }
 }
 

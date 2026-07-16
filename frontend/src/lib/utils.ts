@@ -25,8 +25,3 @@ export function formatNumber(num: number) {
 export function formatPercentage(value: number, decimals = 1) {
   return `${value.toFixed(decimals)}%`
 }
-
-export function truncate(str: string, length = 50) {
-  if (str.length <= length) return str
-  return str.slice(0, length) + '...'
-}

@@ -7,7 +7,7 @@ import api from '@/lib/api'
 import {
   LayoutDashboard, Megaphone, Users, Building2,
   FileText, Settings, ChevronLeft, ChevronRight, Shield,
-  Phone, Package, HelpCircle, ExternalLink, MessageSquare,
+  Package, HelpCircle, ExternalLink, MessageSquare,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -24,7 +24,6 @@ const NAV_ITEMS: NavItem[] = [
   { icon: <LayoutDashboard size={16} />, label: 'Dashboard', href: '/dashboard' },
   { icon: <Megaphone size={16} />, label: 'Campaigns', href: '/campaigns' },
   { icon: <Users size={16} />, label: 'Leads', href: '/leads' },
-  { icon: <Phone size={16} />, label: 'Calls', href: '/calls', disabled: true, badge: 'Soon' },
   { icon: <Building2 size={16} />, label: 'Buyers', href: '/buyers' },
   { icon: <Package size={16} />, label: 'Suppliers', href: '/suppliers' },
   { icon: <FileText size={16} />, label: 'Delivery', href: '/delivery' },

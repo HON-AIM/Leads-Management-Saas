@@ -8,7 +8,7 @@
  *         values were inverted (buyer.pricePerLead was stored as cost and
  *         campaign.costPerLead was stored as revenue).
  *
- * Usage:  node backfillLeadStatus.js
+ * Usage:  node backfillCorrections.js
  *         Review the printed summary, then type "yes" to confirm.
  *
  * SAFE TO RUN MULTIPLE TIMES — idempotent. Already-correct records are skipped.

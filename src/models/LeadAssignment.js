@@ -21,6 +21,7 @@ const leadAssignmentSchema = new mongoose.Schema(
 
     deliveredAt: { type: Date },
     responseData: { type: mongoose.Schema.Types.Mixed },
+    failureReason: { type: String },
 
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true },
   },

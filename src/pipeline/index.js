@@ -29,7 +29,7 @@ async function runPipeline(input) {
   const ctx = createContext(input)
 
   for (const stage of STAGES) {
-    if (ctx.stop) break
+    if (ctx.stop && stage.name !== 'log') continue
 
     try {
       await stage.fn(ctx)
@@ -53,7 +53,7 @@ async function runPartialPipeline(input, stageNames) {
   const stageMap = Object.fromEntries(STAGES.map((s) => [s.name, s.fn]))
 
   for (const name of stageNames) {
-    if (ctx.stop) break
+    if (ctx.stop && name !== 'log') continue
     const fn = stageMap[name]
     if (!fn) throw new Error(`Unknown pipeline stage: "${name}"`)
 

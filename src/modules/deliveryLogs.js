@@ -96,6 +96,23 @@ router.post('/retry/:id', async (req, res) => {
     buyer.delivery = buyer.delivery || {};
 
     if (!buyer.delivery.url || buyer.delivery.provider === 'none') {
+      await DeliveryAttempt.create({
+        leadAssignmentId: assignment._id,
+        leadId: lead._id,
+        buyerId: buyer._id,
+        attemptNumber: (await DeliveryAttempt.countDocuments({ leadAssignmentId: assignment._id })) + 1,
+        payloadSent: null,
+        webhookUrl: '',
+        statusCode: null,
+        responseBody: null,
+        responseHeaders: null,
+        success: true,
+        failureReason: 'No-op retry: no webhook URL configured',
+        durationMs: 0,
+        triggeredBy: 'manual_retry',
+        triggeredByUserId: req.userId,
+        tenantId: req.tenantId,
+      });
       await leadAssignmentRepo.updateStatus(assignment._id, 'delivered', { deliveredAt: new Date() });
       await Lead.findByIdAndUpdate(lead._id, { status: 'delivered' });
       return success(res, { success: true, method: 'no-op', assignmentId: assignment._id });
