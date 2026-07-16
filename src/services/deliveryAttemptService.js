@@ -7,13 +7,13 @@ const payloadTemplateService = require('./payloadTemplateService');
 const responseParsingService = require('./responseParsingService');
 const logger = require('../utils/logger');
 
-async function attemptDelivery({ leadAssignment, lead, buyer, triggeredBy = 'automatic', triggeredByUserId, tenantId }) {
+async function attemptDelivery({ leadAssignment, lead, buyer, campaign, supplier, triggeredBy = 'automatic', triggeredByUserId, tenantId }) {
   const attemptNumber = (await DeliveryAttempt.countDocuments({ leadAssignmentId: leadAssignment._id })) + 1;
 
   let payloadSent;
   try {
     const template = buyer.delivery?.payloadTemplate || payloadTemplateService.DEFAULT_PAYLOAD_TEMPLATE;
-    const resolved = payloadTemplateService.resolveTemplate(template, lead, buyer);
+    const resolved = payloadTemplateService.resolveTemplate(template, lead, buyer, { campaign, supplier });
     payloadSent = JSON.parse(resolved);
   } catch (err) {
     const durationMs = 0;

@@ -6,13 +6,18 @@ class LeadAssignmentRepository {
   }
 
   async findByLead(leadId, tenantId) {
-    return LeadAssignment.findOne({ leadId, tenantId }).populate('buyerId', 'name email');
+    return LeadAssignment.findOne({ leadId, tenantId }).sort({ createdAt: -1 }).populate('buyerId', 'name email status');
+  }
+
+  async findAllByLead(leadId, tenantId) {
+    return LeadAssignment.find({ leadId, tenantId }).sort({ createdAt: -1 }).populate('buyerId', 'name email status');
   }
 
   async findByLeadIds(leadIds, tenantId) {
     if (!leadIds.length) return [];
     return LeadAssignment.find({ leadId: { $in: leadIds }, tenantId })
-      .populate('buyerId', 'name email')
+      .sort({ createdAt: -1 })
+      .populate('buyerId', 'name email status')
       .lean();
   }
 

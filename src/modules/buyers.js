@@ -4,6 +4,7 @@ const buyerService = require('../services/buyerService');
 const payloadTemplateService = require('../services/payloadTemplateService');
 const deliveryService = require('../services/deliveryService');
 const Lead = require('../models/Lead');
+const Campaign = require('../models/Campaign');
 const { success, created, error, notFound, paginated } = require('../utils/response');
 const { validate } = require('../middleware/validate');
 const { createBuyer, updateBuyer } = require('../middleware/validation/schemas');
@@ -83,7 +84,8 @@ router.get('/:id/payload-template', async (req, res) => {
     const buyer = await buyerService.getById(req.params.id, req.tenantId);
     if (!buyer) return notFound(res, 'Buyer not found');
     const sampleLead = payloadTemplateService.getSampleLead(buyer._id, buyer.name);
-    const availableTokens = payloadTemplateService.getAvailableTokens(sampleLead, buyer);
+    const campaign = await Campaign.findOne({ 'assignedBuyers.buyerId': buyer._id, tenantId: req.tenantId }).lean();
+    const availableTokens = payloadTemplateService.getAvailableTokens(sampleLead, buyer, { campaign });
     return success(res, {
       template: buyer.delivery?.payloadTemplate || payloadTemplateService.DEFAULT_PAYLOAD_TEMPLATE,
       isDefault: !buyer.delivery?.payloadTemplate,

@@ -58,8 +58,9 @@ function getSampleLead(buyerId, buyerName) {
   };
 }
 
-function getAvailableTokens(lead, buyer) {
+function getAvailableTokens(lead, buyer, context = {}) {
   const sample = lead || getSampleLead(buyer?._id, buyer?.name);
+  const { campaign, supplier } = context;
   const tokens = [];
 
   const nameParts = (sample.name || '').split(' ');
@@ -82,6 +83,33 @@ function getAvailableTokens(lead, buyer) {
 
   tokens.push(...standardTokens);
 
+  const resolvedCampaign = campaign || resolveRef(sample.campaignId);
+  const resolvedSupplier = supplier || resolveRef(sample.supplierId);
+
+  if (resolvedCampaign) {
+    tokens.push(
+      { token: 'campaign_id', label: 'Campaign ID', value: String(resolvedCampaign._id || ''), source: 'campaign' },
+      { token: 'campaign_name', label: 'Campaign Name', value: resolvedCampaign.name || '', source: 'campaign' },
+      { token: 'campaign_routing_mode', label: 'Campaign Routing Mode', value: resolvedCampaign.routingMode || '', source: 'campaign' },
+    );
+  }
+
+  if (resolvedSupplier) {
+    tokens.push(
+      { token: 'supplier_id', label: 'Supplier ID', value: String(resolvedSupplier._id || ''), source: 'supplier' },
+      { token: 'supplier_name', label: 'Supplier Name', value: resolvedSupplier.name || '', source: 'supplier' },
+      { token: 'supplier_type', label: 'Supplier Type', value: resolvedSupplier.type || '', source: 'supplier' },
+      { token: 'supplier_key', label: 'Supplier Key', value: resolvedSupplier.supplierKey || '', source: 'supplier' },
+    );
+  }
+
+  const now = new Date();
+  tokens.push(
+    { token: 'current_date', label: 'Current Date', value: now.toISOString().slice(0, 10), source: 'system' },
+    { token: 'current_time', label: 'Current Time', value: now.toISOString().slice(11, 19), source: 'system' },
+    { token: 'current_timestamp', label: 'Current Timestamp', value: now.toISOString(), source: 'system' },
+  );
+
   const raw = sample.rawPayload || {};
   if (typeof raw === 'object' && raw !== null && Object.keys(raw).length > 0) {
     const flat = flattenObject(raw, 'raw');
@@ -99,8 +127,14 @@ function getAvailableTokens(lead, buyer) {
   return tokens;
 }
 
-function resolveTemplate(templateString, lead, buyer) {
-  const tokens = getAvailableTokens(lead, buyer);
+function resolveRef(ref) {
+  if (!ref) return null;
+  if (typeof ref === 'object' && ref._id) return ref;
+  return null;
+}
+
+function resolveTemplate(templateString, lead, buyer, context = {}) {
+  const tokens = getAvailableTokens(lead, buyer, context);
   const tokenMap = {};
   for (const t of tokens) {
     tokenMap[t.token] = jsonEscape(t.value);

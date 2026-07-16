@@ -44,6 +44,7 @@ async function deliver(ctx) {
       leadAssignment: assignment,
       lead,
       buyer,
+      campaign: ctx.campaign,
       triggeredBy: 'automatic',
       tenantId: lead.tenantId,
     });

@@ -77,9 +77,9 @@ class DeliveryService {
     return { success: false, attempts: maxRetries };
   }
 
-  buildPayload(lead, buyer) {
+  buildPayload(lead, buyer, context = {}) {
     const template = buyer.delivery?.payloadTemplate || payloadTemplateService.DEFAULT_PAYLOAD_TEMPLATE;
-    const resolved = payloadTemplateService.resolveTemplate(template, lead, buyer);
+    const resolved = payloadTemplateService.resolveTemplate(template, lead, buyer, context);
     try {
       return JSON.parse(resolved);
     } catch (err) {

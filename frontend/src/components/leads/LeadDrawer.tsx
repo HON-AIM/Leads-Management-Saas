@@ -7,7 +7,7 @@ import { getStatusStyle, LEAD_STATUS_COLOR, DELIVERY_STATUS_COLOR, type Semantic
 import { useNotifications } from '@/hooks/useNotifications'
 import type { LeadDetail, DeliveryAttempt } from '@/types/lead'
 import type { Buyer } from '@/types/buyer'
-import { X, UserPlus, ChevronDown, ChevronRight, Check, Clock, Webhook } from 'lucide-react'
+import { X, ChevronDown, ChevronRight, Check, Clock, Webhook, RefreshCw, MousePointerClick } from 'lucide-react'
 
 interface LeadDrawerProps {
   leadId: string | null
@@ -38,6 +38,13 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
   const allBuyers: Buyer[] = Array.isArray(buyersData) ? buyersData : []
   const activeBuyers = allBuyers.filter((b) => b.status === 'active')
 
+  const canReassign = lead && (
+    lead.status === 'unassigned' || lead.status === 'new' || lead.status === 'failed' ||
+    (lead.assignment && ['paused', 'inactive', 'full'].includes(
+      typeof lead.assignment.buyerId === 'object' ? (lead.assignment.buyerId as any).status : ''
+    ))
+  )
+
   const { data: attemptsData } = useQuery<DeliveryAttempt[]>({
     queryKey: ['delivery-attempts', leadId],
     queryFn: async () => {
@@ -49,18 +56,34 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
 
   const reassignMutation = useMutation({
     mutationFn: async () => {
-      const { data } = await api.post(`/leads/${leadId}/reassign`, { buyerId: selectedBuyerId })
+      const { data } = await api.post(`/leads/${leadId}/reassign`)
       return data
     },
     onSuccess: () => {
-      addNotification({ type: 'success', title: 'Reassigned', description: 'Lead has been reassigned successfully.' })
+      addNotification({ type: 'success', title: 'Reassigned', description: 'Lead has been routed to a new buyer.' })
+      qc.invalidateQueries({ queryKey: ['lead-detail', leadId] })
+      qc.invalidateQueries({ queryKey: ['leads'] })
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.STATS })
+    },
+    onError: (err: any) => {
+      addNotification({ type: 'error', title: 'Failed', description: err?.response?.data?.error || 'Could not reassign lead.' })
+    },
+  })
+
+  const manualAssignMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post(`/leads/${leadId}/assign`, { buyerId: selectedBuyerId })
+      return data
+    },
+    onSuccess: () => {
+      addNotification({ type: 'success', title: 'Assigned', description: 'Lead has been manually assigned.' })
       qc.invalidateQueries({ queryKey: ['lead-detail', leadId] })
       qc.invalidateQueries({ queryKey: ['leads'] })
       qc.invalidateQueries({ queryKey: QUERY_KEYS.STATS })
       setSelectedBuyerId('')
     },
     onError: (err: any) => {
-      addNotification({ type: 'error', title: 'Failed', description: err?.response?.data?.error || 'Could not reassign lead.' })
+      addNotification({ type: 'error', title: 'Failed', description: err?.response?.data?.error || 'Could not assign lead.' })
     },
   })
 
@@ -162,33 +185,57 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                   )}
                 </Section>
 
-                {lead.status === 'unassigned' && (
-                  <Section title="Reassign Lead">
-                    <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.03] p-4 space-y-3">
-                      <p className="text-[12px] text-amber-300/80">This lead is unassigned. Select a buyer to assign it to.</p>
-                      <div className="flex items-center gap-2">
-                        <UserPlus size={14} className="text-muted-foreground shrink-0" />
-                        <select
-                          value={selectedBuyerId}
-                          onChange={(e) => setSelectedBuyerId(e.target.value)}
-                          className="flex-1 text-xs border border-white/[0.15] rounded-lg px-3 py-2 bg-[#151d33] text-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 cursor-pointer"
-                          style={{ colorScheme: 'dark' }}
-                        >
-                          <option value="" className="bg-[#151d33] text-white/60">Select buyer...</option>
-                          {activeBuyers.map((b) => (
-                            <option key={b._id} value={b._id} className="bg-[#151d33] text-white">{b.name}</option>
-                          ))}
-                        </select>
+                {canReassign && (
+                  <>
+                    <Section title="Reassign Lead">
+                      <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.03] p-4 space-y-3">
+                        <p className="text-[12px] text-amber-300/80">
+                          {lead.status === 'unassigned' || lead.status === 'new'
+                            ? 'This lead is unassigned. Re-running the routing engine will automatically select the best buyer.'
+                            : lead.status === 'failed'
+                            ? 'This lead failed delivery. Re-running the routing engine will try to route it to a different buyer.'
+                            : 'This lead is assigned to a paused buyer. Re-running the routing engine will find a new buyer.'}
+                        </p>
                         <button
                           onClick={() => reassignMutation.mutate()}
-                          disabled={!selectedBuyerId || reassignMutation.isPending}
-                          className="shrink-0 rounded-lg bg-blue-600 px-3 py-2 text-[12px] font-medium text-white hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={reassignMutation.isPending}
+                          className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-[12px] font-medium text-amber-300 hover:bg-amber-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {reassignMutation.isPending ? 'Assigning...' : 'Assign'}
+                          <RefreshCw size={13} className={reassignMutation.isPending ? 'animate-spin' : ''} />
+                          {reassignMutation.isPending ? 'Routing...' : 'Reassign (Retry Routing)'}
                         </button>
                       </div>
-                    </div>
-                  </Section>
+                    </Section>
+
+                    <Section title="Manual Assign">
+                      <div className="rounded-lg border border-blue-500/20 bg-blue-500/[0.03] p-4 space-y-3">
+                        <p className="text-[12px] text-blue-300/80">
+                          Override the routing engine and assign this lead to a specific buyer.
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <MousePointerClick size={14} className="text-muted-foreground shrink-0" />
+                          <select
+                            value={selectedBuyerId}
+                            onChange={(e) => setSelectedBuyerId(e.target.value)}
+                            className="flex-1 text-xs border border-white/[0.15] rounded-lg px-3 py-2 bg-[#151d33] text-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 cursor-pointer"
+                            style={{ colorScheme: 'dark' }}
+                          >
+                            <option value="" className="bg-[#151d33] text-white/60">Select buyer...</option>
+                            {activeBuyers.map((b) => (
+                              <option key={b._id} value={b._id} className="bg-[#151d33] text-white">{b.name}</option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => manualAssignMutation.mutate()}
+                            disabled={!selectedBuyerId || manualAssignMutation.isPending}
+                            className="shrink-0 rounded-lg bg-blue-600 px-3 py-2 text-[12px] font-medium text-white hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {manualAssignMutation.isPending ? 'Assigning...' : 'Assign'}
+                          </button>
+                        </div>
+                      </div>
+                    </Section>
+                  </>
                 )}
 
                 <Section title="Routing Decision">

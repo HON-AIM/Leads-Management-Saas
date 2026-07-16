@@ -221,7 +221,8 @@ export function LeadsPage() {
                         {formatDate(l.createdAt)}
                       </td>
                       <td className="px-6 py-3">
-                        {l.status === 'unassigned' && (
+                        {(l.status === 'unassigned' || l.status === 'failed' || l.status === 'new' ||
+                          (l.buyer && ['paused', 'inactive', 'full'].includes((l.buyer as any).status))) && (
                           <button
                             onClick={(e) => { e.stopPropagation(); setDrawerLeadId(l._id) }}
                             className="text-[11px] text-amber-400 hover:text-amber-300 transition-colors font-medium"
