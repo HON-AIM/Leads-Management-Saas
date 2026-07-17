@@ -17,6 +17,7 @@ class LeadService {
       emailNormalized: emailNorm,
       phoneNormalized: phoneNorm,
       phone: normalizePhone(data.phone) || data.phone,
+      stateRaw: data.state || null,
       state: stateNorm || data.state?.toUpperCase(),
       tenantId,
     });

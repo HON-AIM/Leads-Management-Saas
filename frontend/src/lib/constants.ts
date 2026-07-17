@@ -7,6 +7,7 @@ export const ROUTES = {
   BUYERS: '/buyers',
   CAMPAIGNS: '/campaigns',
   DELIVERY: '/delivery',
+  REPORTS: '/reports',
   SETTINGS: '/settings',
   TEAM: '/team',
   SUPPLIERS: '/suppliers',
@@ -26,4 +27,5 @@ export const QUERY_KEYS = {
   SESSIONS: ['sessions'],
   SETTINGS: ['settings'],
   API_KEY: ['api-key'],
+  REPORTS: ['reports'],
 } as const

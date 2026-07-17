@@ -16,11 +16,27 @@ const config = {
     refreshExpiry: '7d',
   },
 
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
-    password: process.env.REDIS_PASSWORD || undefined,
-  },
+  redis: (() => {
+    const url = process.env.REDIS_URL;
+    if (url) {
+      try {
+        const parsed = new URL(url);
+        return {
+          host: parsed.hostname,
+          port: parseInt(parsed.port, 10) || 6379,
+          password: parsed.password || undefined,
+          tls: parsed.protocol === 'rediss:',
+          url,
+        };
+      } catch (_) {}
+    }
+    return {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+      password: process.env.REDIS_PASSWORD || undefined,
+      tls: false,
+    };
+  })(),
 
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
   allowedOrigins: (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean),

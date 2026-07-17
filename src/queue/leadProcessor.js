@@ -1,6 +1,7 @@
 const { runPipeline } = require('../pipeline');
 const Campaign = require('../models/Campaign');
 const Lead = require('../models/Lead');
+const Supplier = require('../models/Supplier');
 const logger = require('../utils/logger');
 
 async function processLead(data) {
@@ -11,15 +12,31 @@ async function processLead(data) {
     Campaign.findById(campaignId),
   ]);
 
-  if (!lead) throw new Error('Lead not found');
-  if (!campaign) throw new Error('Campaign not found');
+  if (!lead) throw new Error(`Lead ${leadId} not found`);
+  if (!campaign) throw new Error(`Campaign ${campaignId} not found`);
 
-  const ctx = await runPipeline({ lead, campaign, tenantId });
+  let supplier = null;
+  if (lead.supplierId) {
+    supplier = await Supplier.findById(lead.supplierId);
+  }
+
+  const ctx = await runPipeline({ lead, campaign, supplier, tenantId });
+
+  if (ctx.error) {
+    logger.error('Pipeline error during lead processing', {
+      leadId,
+      error: ctx.error.message,
+      stopReason: ctx.stopReason,
+    });
+    await Lead.findByIdAndUpdate(leadId, { status: 'failed' });
+    return { leadId, status: 'failed', error: ctx.error.message };
+  }
 
   if (!ctx.assignment) {
-    lead.status = 'unassigned';
-    await lead.save();
-    return { status: 'unassigned', leadId };
+    if (lead.status === 'new') {
+      await Lead.findByIdAndUpdate(leadId, { status: 'unassigned' });
+    }
+    return { leadId, status: lead.status, reason: ctx.stopReason };
   }
 
   return {

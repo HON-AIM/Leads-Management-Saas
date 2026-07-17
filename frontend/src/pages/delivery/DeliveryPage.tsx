@@ -99,7 +99,7 @@ export function DeliveryPage() {
     : 0
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-[18px] font-semibold text-white tracking-tight">Delivery</h1>
@@ -175,9 +175,9 @@ export function DeliveryPage() {
 
 function StatCard({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-[#0e1428] p-4">
-      <p className="text-[11px] text-muted-foreground font-medium">{label}</p>
-      <p className={`text-[18px] font-semibold mt-1 ${color || 'text-white'}`}>{value}</p>
+    <div className="rounded-xl border border-white/[0.08] bg-[#0e1428] p-5">
+      <p className="text-[12px] text-muted-foreground font-medium">{label}</p>
+      <p className={`text-[22px] font-semibold mt-1 ${color || 'text-white'}`}>{value}</p>
     </div>
   )
 }

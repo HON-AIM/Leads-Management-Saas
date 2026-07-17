@@ -6,11 +6,13 @@ const connection = {
   host: config.redis.host,
   port: config.redis.port,
   password: config.redis.password || undefined,
+  tls: config.redis.tls || undefined,
   maxRetriesPerRequest: null,
 };
 
 let leadQueue = null;
 let leadWorker = null;
+let queueAvailable = false;
 
 function getLeadQueue() {
   if (!leadQueue) {
@@ -23,13 +25,42 @@ function getLeadQueue() {
         removeOnFail: 50,
       },
     });
-    logger.info('Lead processing queue initialized');
+    leadQueue.on('error', (err) => {
+      if (queueAvailable) {
+        logger.warn('Redis queue connection lost — falling back to inline processing', { error: err.message });
+        queueAvailable = false;
+      }
+    });
   }
   return leadQueue;
 }
 
+async function initializeQueue() {
+  try {
+    const queue = getLeadQueue();
+    await Promise.race([
+      queue.waitUntilReady(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Redis connection timeout')), 3000)),
+    ]);
+    queueAvailable = true;
+    logger.info('Redis queue connected and ready');
+    return true;
+  } catch (err) {
+    queueAvailable = false;
+    try { await leadQueue?.close(); } catch (_) {}
+    leadQueue = null;
+    logger.warn('Redis unavailable — using inline processing fallback', { error: err.message });
+    return false;
+  }
+}
+
+function isQueueAvailable() {
+  return queueAvailable;
+}
+
 function createLeadWorker(processFn) {
   leadWorker = new Worker('lead-processing', async (job) => {
+    logger.info('Processing lead job', { jobId: job.id, leadId: job.data.leadId });
     return processFn(job.data);
   }, {
     connection,
@@ -38,11 +69,23 @@ function createLeadWorker(processFn) {
   });
 
   leadWorker.on('completed', (job) => {
-    logger.debug('Lead job completed', { jobId: job.id });
+    logger.info('Lead job completed', { jobId: job.id, leadId: job.data.leadId });
   });
 
   leadWorker.on('failed', (job, err) => {
-    logger.error('Lead job failed', { jobId: job?.id, error: err.message });
+    logger.error('Lead job failed', {
+      jobId: job?.id,
+      leadId: job?.data?.leadId,
+      error: err.message,
+      attemptsMade: job?.attemptsMade,
+    });
+  });
+
+  leadWorker.on('error', (err) => {
+    if (queueAvailable) {
+      logger.warn('Worker Redis connection lost', { error: err.message });
+      queueAvailable = false;
+    }
   });
 
   logger.info('Lead processing worker started (concurrency: 10)');
@@ -50,10 +93,18 @@ function createLeadWorker(processFn) {
 }
 
 async function addLeadJob(data) {
-  const queue = getLeadQueue();
-  return queue.add('process-lead', data, {
-    priority: data.priority || 5,
-  });
+  if (!queueAvailable) return null;
+  try {
+    const queue = getLeadQueue();
+    const job = await queue.add('process-lead', data, {
+      priority: data.priority || 5,
+    });
+    return job;
+  } catch (err) {
+    logger.warn('Failed to enqueue lead — falling back to inline', { error: err.message });
+    queueAvailable = false;
+    return null;
+  }
 }
 
 async function closeQueue() {
@@ -65,7 +116,8 @@ async function closeQueue() {
     await leadQueue.close();
     leadQueue = null;
   }
+  queueAvailable = false;
   logger.info('Queue system shut down');
 }
 
-module.exports = { getLeadQueue, createLeadWorker, addLeadJob, closeQueue };
+module.exports = { initializeQueue, isQueueAvailable, getLeadQueue, createLeadWorker, addLeadJob, closeQueue };

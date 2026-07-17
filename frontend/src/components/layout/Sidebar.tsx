@@ -7,7 +7,7 @@ import api from '@/lib/api'
 import {
   LayoutDashboard, Megaphone, Users, Building2,
   FileText, Settings, ChevronLeft, ChevronRight, Shield,
-  Package, HelpCircle, ExternalLink, MessageSquare,
+  Package, HelpCircle, ExternalLink, MessageSquare, BarChart3,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -27,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: <Building2 size={16} />, label: 'Buyers', href: '/buyers' },
   { icon: <Package size={16} />, label: 'Suppliers', href: '/suppliers' },
   { icon: <FileText size={16} />, label: 'Delivery', href: '/delivery' },
+  { icon: <BarChart3 size={16} />, label: 'Reports', href: '/reports' },
   { icon: <Settings size={16} />, label: 'Settings', href: '/settings' },
   { icon: <Shield size={16} />, label: 'Team', href: '/team', adminOnly: true },
 ]

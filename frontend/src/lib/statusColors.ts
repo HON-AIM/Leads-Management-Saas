@@ -77,7 +77,3 @@ export function getStatusStyle(key: SemanticKey): string {
 export function getTextColor(key: SemanticKey): string {
   return SEMANTIC_COLORS[key].text
 }
-
-export function getStatusDotColor(key: SemanticKey): string {
-  return SEMANTIC_COLORS[key].dot
-}

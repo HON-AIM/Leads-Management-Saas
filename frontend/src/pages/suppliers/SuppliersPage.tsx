@@ -88,7 +88,7 @@ export function SuppliersPage() {
   const showForm = creating || editing
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-[18px] font-semibold text-white tracking-tight">Suppliers</h1>
@@ -116,7 +116,7 @@ export function SuppliersPage() {
               <input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full rounded-lg border border-white/[0.08] bg-[#0a0f1e] px-3 py-2 text-[13px] text-white placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30"
+                className="w-full rounded-lg border border-white/[0.08] bg-[#0e1428] px-3 py-2 text-[13px] text-white placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30"
                 placeholder="e.g. Google Ads Leads"
               />
             </div>
@@ -125,7 +125,7 @@ export function SuppliersPage() {
               <select
                 value={form.type}
                 onChange={(e) => setForm({ ...form, type: e.target.value as Supplier['type'] })}
-                className="w-full rounded-lg border border-white/[0.08] bg-[#0a0f1e] px-3 py-2 text-[13px] text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30"
+                className="w-full rounded-lg border border-white/[0.08] bg-[#0e1428] px-3 py-2 text-[13px] text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30"
               >
                 <option value="webhook">Webhook</option>
                 <option value="manual">Manual</option>
@@ -139,7 +139,7 @@ export function SuppliersPage() {
             <input
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full rounded-lg border border-white/[0.08] bg-[#0a0f1e] px-3 py-2 text-[13px] text-white placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30"
+              className="w-full rounded-lg border border-white/[0.08] bg-[#0e1428] px-3 py-2 text-[13px] text-white placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30"
               placeholder="Optional description"
             />
           </div>

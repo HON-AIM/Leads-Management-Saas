@@ -6,6 +6,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const { connectDatabase: connectDB } = require('./src/config/database');
+const { initializeQueue, closeQueue, isQueueAvailable } = require('./src/queue');
 const logger = require('./src/utils/logger');
 const { apiLimiter } = require('./src/middleware/rateLimit');
 
@@ -44,6 +45,7 @@ app.use('/api/ingest', require('./src/modules/leadsIngestion'));
 app.use('/api/delivery-logs', require('./src/modules/deliveryLogs'));
 app.use('/api/settings', require('./src/modules/settings'));
 app.use('/api/suppliers', require('./src/modules/suppliers'));
+app.use('/api/reports', require('./src/modules/reports'));
 app.use('/api/campaigns/:campaignId/fields', require('./src/modules/fieldDefinitions'));
 app.use('/api/variables', require('./src/modules/variable-registry/registry.routes'));
 
@@ -55,6 +57,7 @@ app.get('/api/health', async (req, res) => {
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
     mongodb: states[mongoState] || 'unknown',
+    queue: isQueueAvailable() ? 'redis-connected' : 'inline-fallback',
     nodeEnv: process.env.NODE_ENV || 'development',
   };
 
@@ -88,6 +91,16 @@ async function start() {
     await connectDB();
     logger.info('MongoDB connected');
 
+    const queueReady = await initializeQueue();
+    if (queueReady) {
+      const { createLeadWorker } = require('./src/queue');
+      const { processLead } = require('./src/queue/leadProcessor');
+      createLeadWorker(processLead);
+      logger.info('BullMQ worker active — leads will be queued for background processing');
+    } else {
+      logger.info('Running in inline mode — leads will be processed synchronously (no Redis)');
+    }
+
     if (config.isProduction) {
       try {
         const Tenant = require('./src/models/Tenant');
@@ -106,7 +119,8 @@ async function start() {
 
     const shutdown = async (signal) => {
       logger.info(`${signal} received — shutting down`);
-      server.close(() => {
+      server.close(async () => {
+        await closeQueue();
         mongoose.connection.close(false, () => {
           logger.info('Shutdown complete');
           process.exit(0);

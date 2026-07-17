@@ -7,7 +7,7 @@ import { useNotifications } from '@/hooks/useNotifications'
 import { CampaignCard } from '@/components/campaigns/CampaignCard'
 import { CampaignForm } from '@/components/campaigns/CampaignForm'
 import type { Campaign, CampaignFormData } from '@/types/campaign'
-import { Search, Plus } from 'lucide-react'
+import { Search, Plus, MessageSquare } from 'lucide-react'
 
 export function CampaignsPage() {
   const qc = useQueryClient()
@@ -75,7 +75,7 @@ export function CampaignsPage() {
   )
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-[18px] font-semibold text-white tracking-tight">Campaigns</h1>
@@ -106,9 +106,7 @@ export function CampaignsPage() {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.05] mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/20">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
+            <MessageSquare size={20} className="text-white/20" />
           </div>
           <p className="text-[13px] text-muted-foreground">
             {search ? 'No campaigns match your search' : 'No campaigns yet'}

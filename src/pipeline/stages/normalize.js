@@ -16,6 +16,7 @@ function normalize(ctx) {
     if (normalized) lead.phone = normalized
   }
   if (lead.state) {
+    if (!lead.stateRaw) lead.stateRaw = lead.state;
     const normalized = normalizeState(lead.state)
     if (normalized) lead.state = normalized
     else lead.state = lead.state.toUpperCase()

@@ -17,7 +17,7 @@ async function deliver(ctx) {
       leadId: lead._id,
       buyerId: buyer._id,
       attemptNumber: 1,
-      payloadSent: null,
+      payloadSent: {},
       webhookUrl: '',
       statusCode: null,
       responseBody: null,
@@ -45,6 +45,7 @@ async function deliver(ctx) {
       lead,
       buyer,
       campaign: ctx.campaign,
+      supplier: ctx.supplier,
       triggeredBy: 'automatic',
       tenantId: lead.tenantId,
     });

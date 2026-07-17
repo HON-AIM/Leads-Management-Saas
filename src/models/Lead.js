@@ -8,6 +8,7 @@ const leadSchema = new mongoose.Schema(
     phoneNormalized: { type: String },
     emailNormalized: { type: String },
     state: { type: String, uppercase: true, trim: true },
+    stateRaw: { type: String, trim: true },
     source: { type: String, default: 'form' },
     campaignId: { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign' },
     supplierId: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' },

@@ -40,7 +40,7 @@ class LeadRepository {
     const query = { tenantId, assignedBuyerId: buyerId };
     if (status) query.status = status;
 
-    const LeadAssignment = require('./leadAssignment');
+    const LeadAssignment = require('../models/LeadAssignment');
     const assignmentQuery = { buyerId, tenantId };
     const assignments = await LeadAssignment.find(assignmentQuery).select('leadId').lean();
     const leadIds = assignments.map((a) => a.leadId);

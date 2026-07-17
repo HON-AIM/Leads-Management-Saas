@@ -13,6 +13,7 @@ import { BuyersPage } from '@/pages/buyers/BuyersPage'
 import { CampaignsPage } from '@/pages/campaigns/CampaignsPage'
 import { CampaignWorkspacePage } from '@/pages/campaigns/CampaignWorkspacePage'
 import { DeliveryPage } from '@/pages/delivery/DeliveryPage'
+import { ReportsPage } from '@/pages/reports/ReportsPage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
 import { TeamPage } from '@/pages/team/TeamPage'
 import { SuppliersPage } from '@/pages/suppliers/SuppliersPage'
@@ -33,6 +34,7 @@ export function AppRouter() {
         <Route path={ROUTES.CAMPAIGNS} element={<ErrorBoundary componentName="Campaigns"><CampaignsPage /></ErrorBoundary>} />
         <Route path="/campaigns/:id" element={<ErrorBoundary componentName="Campaign Workspace"><CampaignWorkspacePage /></ErrorBoundary>} />
         <Route path={ROUTES.DELIVERY} element={<ErrorBoundary componentName="Delivery"><DeliveryPage /></ErrorBoundary>} />
+        <Route path={ROUTES.REPORTS} element={<ErrorBoundary componentName="Reports"><ReportsPage /></ErrorBoundary>} />
         <Route path={ROUTES.SETTINGS} element={<ErrorBoundary componentName="Settings"><SettingsPage /></ErrorBoundary>} />
         <Route path={ROUTES.TEAM} element={<ErrorBoundary componentName="Team"><TeamPage /></ErrorBoundary>} />
         <Route path={ROUTES.SUPPLIERS} element={<ErrorBoundary componentName="Suppliers"><SuppliersPage /></ErrorBoundary>} />

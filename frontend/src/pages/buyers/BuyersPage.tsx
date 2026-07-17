@@ -77,7 +77,7 @@ export function BuyersPage() {
   const isPending = createMutation.isPending || updateMutation.isPending
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-[18px] font-semibold text-white tracking-tight">Buyers</h1>

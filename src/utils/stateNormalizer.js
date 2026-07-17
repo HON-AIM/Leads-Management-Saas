@@ -19,10 +19,42 @@ const US_STATES = {
   wi: 'WI', wy: 'WY', dc: 'DC',
 };
 
+const ABBREVIATION_TO_FULL = {
+  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California',
+  CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', FL: 'Florida', GA: 'Georgia',
+  HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa',
+  KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana', ME: 'Maine', MD: 'Maryland',
+  MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota', MS: 'Mississippi', MO: 'Missouri',
+  MT: 'Montana', NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire', NJ: 'New Jersey',
+  NM: 'New Mexico', NY: 'New York', NC: 'North Carolina', ND: 'North Dakota', OH: 'Ohio',
+  OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania', RI: 'Rhode Island', SC: 'South Carolina',
+  SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont',
+  VA: 'Virginia', WA: 'Washington', WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming',
+  DC: 'District of Columbia',
+};
+
 function normalizeState(state) {
   if (!state || typeof state !== 'string') return null;
-  const trimmed = state.trim().toLowerCase();
-  return US_STATES[trimmed] || null;
+
+  const trimmed = state.trim();
+  if (!trimmed) return null;
+
+  const lower = trimmed.toLowerCase();
+  const direct = US_STATES[lower];
+  if (direct) return direct;
+
+  const stripped = lower.replace(/[^a-z]/g, '');
+  if (stripped.length >= 2 && stripped.length <= 3) {
+    const fromStripped = US_STATES[stripped];
+    if (fromStripped) return fromStripped;
+  }
+
+  return null;
 }
 
-module.exports = { normalizeState, US_STATES };
+function stateToFullName(abbr) {
+  if (!abbr || typeof abbr !== 'string') return null;
+  return ABBREVIATION_TO_FULL[abbr.toUpperCase()] || null;
+}
+
+module.exports = { normalizeState, stateToFullName, US_STATES, ABBREVIATION_TO_FULL };

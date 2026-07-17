@@ -132,8 +132,14 @@ router.post('/:id/reassign', authorize('admin', 'member'), async (req, res) => {
     const campaign = await Campaign.findOne({ _id: lead.campaignId, tenantId: req.tenantId, status: 'active' });
     if (!campaign) return badRequest(res, 'Lead has no active campaign. Assign a campaign first or use manual assignment.');
 
+    let supplier = null;
+    if (lead.supplierId) {
+      const Supplier = require('../models/Supplier');
+      supplier = await Supplier.findById(lead.supplierId);
+    }
+
     const ctx = await runPartialPipeline(
-      { lead, campaign, tenantId: req.tenantId },
+      { lead, campaign, supplier, tenantId: req.tenantId },
       ['buyerFilter', 'capFilter', 'stateFilter', 'assign', 'deliver', 'log']
     );
 
@@ -226,6 +232,11 @@ router.post('/:id/assign', authorize('admin', 'member'), async (req, res) => {
       await leadService.markDelivered(lead._id, req.tenantId);
       deliveryResult = { success: true, method: 'no-op' };
     } else {
+      let supplier = null;
+      if (lead.supplierId) {
+        const Supplier = require('../models/Supplier');
+        supplier = await Supplier.findById(lead.supplierId);
+      }
       const maxRetries = config.delivery.maxRetries;
       let attempt = 0;
       let lastResult;
@@ -235,6 +246,8 @@ router.post('/:id/assign', authorize('admin', 'member'), async (req, res) => {
           leadAssignment: assignment,
           lead,
           buyer,
+          campaign,
+          supplier,
           triggeredBy: 'manual',
           triggeredByUserId: req.userId,
           tenantId: req.tenantId,

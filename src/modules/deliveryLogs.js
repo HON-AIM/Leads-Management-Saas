@@ -28,8 +28,24 @@ router.get('/', async (req, res) => {
 
 router.get('/stats', async (req, res) => {
   try {
-    const stats = await leadAssignmentRepo.getStats(req.tenantId);
-    return success(res, stats);
+    const raw = await leadAssignmentRepo.getStats(req.tenantId);
+    const byStatus = raw.map(s => ({
+      _id: s._id,
+      count: s.count || 0,
+      avgDuration: s.avgDuration || 0,
+      maxDuration: s.maxDuration || 0,
+      minDuration: s.minDuration || 0,
+    }));
+    const total = raw.reduce((a, s) => a + (s.count || 0), 0);
+    const statusMap = {};
+    for (const s of raw) statusMap[s._id] = s.count || 0;
+    return success(res, {
+      total,
+      success: statusMap.delivered || 0,
+      failed: statusMap.failed || 0,
+      retrying: statusMap.retrying || 0,
+      byStatus,
+    });
   } catch (err) {
     return error(res, err.message);
   }

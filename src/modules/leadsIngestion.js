@@ -1,15 +1,15 @@
 const router = require('express').Router();
 const Tenant = require('../models/Tenant');
-const leadService = require('../services/leadService');
+const Lead = require('../models/Lead');
+const User = require('../models/User');
+const Campaign = require('../models/Campaign');
 const supplierService = require('../services/supplierService');
 const fieldDefinitionService = require('../services/fieldDefinitionService');
-const { runPipeline } = require('../pipeline');
+const { addLeadJob, isQueueAvailable } = require('../queue');
+const { processLead } = require('../queue/leadProcessor');
 const { ingestLimiter } = require('../middleware/rateLimit');
 const { success, error, badRequest } = require('../utils/response');
 const logger = require('../utils/logger');
-
-const User = require('../models/User');
-const Campaign = require('../models/Campaign');
 
 router.post('/', ingestLimiter, async (req, res) => {
   try {
@@ -49,6 +49,7 @@ router.post('/', ingestLimiter, async (req, res) => {
 
     const leads = Array.isArray(body) ? body : [body];
     const results = [];
+    const useQueue = isQueueAvailable();
 
     for (const leadData of leads) {
       try {
@@ -70,33 +71,42 @@ router.post('/', ingestLimiter, async (req, res) => {
           continue;
         }
 
-        const lead = await leadService.create({
-          ...cleanLeadData,
+        const lead = await Lead.create({
+          name: cleanLeadData.name,
+          email: cleanLeadData.email,
+          phone: cleanLeadData.phone,
+          state: cleanLeadData.state,
           campaignId: campaign._id,
           supplierId: supplier?._id || undefined,
           source: leadData.source || (supplier ? supplier.name : 'webhook'),
           rawPayload: leadData,
-        }, tenantId);
+          tenantId,
+          status: 'new',
+        });
 
         if (supplier) {
           await supplierService.incrementLeadsReceived(supplier._id, tenantId);
         }
 
-        const ctx = await runPipeline({ lead, campaign, tenantId });
-
-        if (ctx.assignment) {
-          results.push({
-            id: lead._id,
-            status: ctx.deliveryResult?.success ? 'delivered' : 'delivery-failed',
-            buyer: ctx.selectedBuyer?.buyer?.name,
+        if (useQueue) {
+          await addLeadJob({
+            leadId: lead._id.toString(),
+            campaignId: campaign._id.toString(),
+            tenantId: tenantId.toString(),
           });
-        } else if (lead.isDuplicate) {
-          results.push({ id: lead._id, status: 'duplicate' });
+          results.push({ id: lead._id, status: 'queued' });
         } else {
-          results.push({ id: lead._id, status: 'unassigned', reason: ctx.stopReason });
+          processLead({
+            leadId: lead._id.toString(),
+            campaignId: campaign._id.toString(),
+            tenantId: tenantId.toString(),
+          }).catch((err) => {
+            logger.error('Inline lead processing error', { leadId: lead._id, error: err.message });
+          });
+          results.push({ id: lead._id, status: 'processing' });
         }
       } catch (err) {
-        logger.error('Lead processing error', { error: err.message, leadData });
+        logger.error('Lead ingestion error', { error: err.message, leadData });
         results.push({ status: 'error', error: err.message });
       }
     }
