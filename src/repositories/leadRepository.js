@@ -30,7 +30,7 @@ class LeadRepository {
       ];
     }
     const [leads, total] = await Promise.all([
-      Lead.find(query).populate('campaignId', 'name').sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit),
+      Lead.find(query).populate('campaignId', 'name').lean().sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit),
       Lead.countDocuments(query),
     ]);
     return { leads, total, page, pages: Math.ceil(total / limit) };

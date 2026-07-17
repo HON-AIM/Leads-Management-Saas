@@ -102,7 +102,7 @@ export function CampaignWorkspacePage() {
 
   const { data: logsData, isLoading: logsLoading } = useQuery({
     queryKey: ['campaign-logs', id],
-    queryFn: async () => { const { data } = await api.get(`/campaigns/${id}/routing-logs`); return data.data },
+    queryFn: async () => { const { data } = await api.get(`/campaigns/${id}/routing-logs`); return data },
     enabled: !!id && tab === 'logs',
   })
 
