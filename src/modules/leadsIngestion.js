@@ -3,8 +3,11 @@ const Tenant = require('../models/Tenant');
 const Lead = require('../models/Lead');
 const User = require('../models/User');
 const Campaign = require('../models/Campaign');
+const Setting = require('../models/Setting');
 const supplierService = require('../services/supplierService');
 const fieldDefinitionService = require('../services/fieldDefinitionService');
+const { normalizeEmailForDedup, normalizePhoneForDedup } = require('../utils/deduplication');
+const { normalizePhone } = require('../utils/phone');
 const { addLeadJob, isQueueAvailable } = require('../queue');
 const { processLead } = require('../queue/leadProcessor');
 const { ingestLimiter } = require('../middleware/rateLimit');
@@ -51,6 +54,10 @@ router.post('/', ingestLimiter, async (req, res) => {
     const results = [];
     const useQueue = isQueueAvailable();
 
+    const settings = await Setting.findOne({ tenantId }).lean().catch(() => null);
+    const dedupWindowHours = settings?.dedupWindowHours || 720;
+    const dedupSince = new Date(Date.now() - dedupWindowHours * 3600 * 1000);
+
     for (const leadData of leads) {
       try {
         const { supplierKey: _, ...cleanLeadData } = leadData;
@@ -71,6 +78,27 @@ router.post('/', ingestLimiter, async (req, res) => {
           continue;
         }
 
+        const emailNorm = cleanLeadData.email ? normalizeEmailForDedup(cleanLeadData.email) : null;
+        const phoneNorm = cleanLeadData.phone ? normalizePhoneForDedup(normalizePhone(cleanLeadData.phone) || cleanLeadData.phone) : null;
+
+        let isDuplicate = false;
+        let duplicateOf = null;
+
+        if (emailNorm || phoneNorm) {
+          const dupQuery = { tenantId, createdAt: { $gte: dedupSince }, isDuplicate: false };
+          const conds = [];
+          if (emailNorm) conds.push({ emailNormalized: emailNorm });
+          if (phoneNorm) conds.push({ phoneNormalized: phoneNorm });
+          if (conds.length) {
+            dupQuery.$or = conds;
+            const existingLead = await Lead.findOne(dupQuery).sort({ createdAt: -1 }).select('_id');
+            if (existingLead) {
+              isDuplicate = true;
+              duplicateOf = existingLead._id;
+            }
+          }
+        }
+
         const lead = await Lead.create({
           name: cleanLeadData.name,
           email: cleanLeadData.email,
@@ -81,11 +109,18 @@ router.post('/', ingestLimiter, async (req, res) => {
           source: leadData.source || (supplier ? supplier.name : 'webhook'),
           rawPayload: leadData,
           tenantId,
-          status: 'new',
+          status: isDuplicate ? 'duplicate' : 'new',
+          isDuplicate,
+          duplicateOf,
         });
 
         if (supplier) {
           await supplierService.incrementLeadsReceived(supplier._id, tenantId);
+        }
+
+        if (isDuplicate) {
+          results.push({ id: lead._id, status: 'duplicate', duplicateOf: duplicateOf.toString() });
+          continue;
         }
 
         if (useQueue) {

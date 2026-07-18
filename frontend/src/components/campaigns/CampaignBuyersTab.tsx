@@ -145,8 +145,10 @@ export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
                 {buyer?.email && <p className="text-[11px] text-muted-foreground mb-0.5">{buyer.email}</p>}
                 {buyer && (
                   <div className="mt-2 space-y-1.5">
-                    {buyer.leadCap > 0 && (
+                    {buyer.leadCap > 0 ? (
                       <CapBar label="Total" received={buyer.leadsReceived} cap={buyer.leadCap} />
+                    ) : (
+                      <UnlimitedCapLabel label="Total" received={buyer.leadsReceived} />
                     )}
                     {buyer.dailyCap > 0 && (
                       <CapBar label="Daily" received={buyer.dailyLeadsReceived} cap={buyer.dailyCap} />
@@ -210,7 +212,16 @@ function CapBar({ label, received, cap }: { label: string; received: number; cap
       <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
         <div className={`h-full rounded-full ${barColor} transition-all duration-300`} style={{ width: `${pct}%` }} />
       </div>
-      <span className={`text-[10px] font-medium ${textColor} shrink-0 w-16 text-right`}>{received}/{cap}</span>
+      <span className={`text-[10px] font-medium ${textColor} shrink-0 w-24 text-right`}>{received}/{cap} ({Math.round(pct)}%)</span>
+    </div>
+  )
+}
+
+function UnlimitedCapLabel({ label, received }: { label: string; received: number }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[10px] text-muted-foreground w-12 shrink-0">{label}</span>
+      <span className="text-[10px] font-medium text-muted-foreground">{received} received &middot; Unlimited</span>
     </div>
   )
 }
