@@ -38,28 +38,23 @@ function jsonEscape(str) {
     .replace(/\t/g, '\\t');
 }
 
-function getSampleLead(buyerId, buyerName) {
+function getPreviewLead(buyerId, buyerName) {
   return {
-    _id: '64f1a2b3c4d5e6f7a8b9c0d1',
-    name: 'Jane Smith',
-    email: 'jane.smith@example.com',
-    phone: '(555) 123-4567',
-    state: 'TX',
-    source: 'facebook',
+    _id: '',
+    name: '',
+    email: '',
+    phone: '',
+    state: '',
+    source: '',
     createdAt: new Date().toISOString(),
-    buyerId: buyerId || '64f1a2b3c4d5e6f7a8b9c0d2',
-    buyerName: buyerName || 'Sample Buyer',
-    rawPayload: {
-      motivation: 'buying first home',
-      area_enfoque: 'residential',
-      budget_range: '$300k-$500k',
-      timeline: '3 months',
-    },
+    buyerId: buyerId || '',
+    buyerName: buyerName || '',
+    rawPayload: {},
   };
 }
 
 function getAvailableTokens(lead, buyer, context = {}) {
-  const sample = lead || getSampleLead(buyer?._id, buyer?.name);
+  const sample = lead || getPreviewLead(buyer?._id, buyer?.name);
   const { campaign, supplier } = context;
   const tokens = [];
 
@@ -199,5 +194,5 @@ module.exports = {
   resolveTemplate,
   validateTemplateSyntax,
   validateResolvedJson,
-  getSampleLead,
+  getPreviewLead,
 };

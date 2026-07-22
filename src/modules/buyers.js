@@ -83,7 +83,7 @@ router.get('/:id/payload-template', async (req, res) => {
   try {
     const buyer = await buyerService.getById(req.params.id, req.tenantId);
     if (!buyer) return notFound(res, 'Buyer not found');
-    const sampleLead = payloadTemplateService.getSampleLead(buyer._id, buyer.name);
+    const sampleLead = payloadTemplateService.getPreviewLead(buyer._id, buyer.name);
     const campaign = await Campaign.findOne({ 'assignedBuyers.buyerId': buyer._id, tenantId: req.tenantId }).lean();
     const availableTokens = payloadTemplateService.getAvailableTokens(sampleLead, buyer, { campaign });
     return success(res, {
@@ -130,7 +130,7 @@ router.post('/:id/payload-template/preview', authorize('admin', 'manager'), asyn
       lead = await Lead.findOne({ _id: sampleLeadId, tenantId: req.tenantId }).lean();
     }
     if (!lead) {
-      lead = payloadTemplateService.getSampleLead(buyer._id, buyer.name);
+      lead = payloadTemplateService.getPreviewLead(buyer._id, buyer.name);
     }
 
     const resolved = payloadTemplateService.resolveTemplate(template, lead, buyer);
@@ -205,7 +205,7 @@ router.post('/:id/payload-template/test-send', authorize('admin', 'manager'), as
       lead = await Lead.findOne({ _id: sampleLeadId, tenantId: req.tenantId }).lean();
     }
     if (!lead) {
-      lead = payloadTemplateService.getSampleLead(buyer._id, buyer.name);
+      lead = payloadTemplateService.getPreviewLead(buyer._id, buyer.name);
     }
 
     const resolved = payloadTemplateService.resolveTemplate(template, lead, buyer);

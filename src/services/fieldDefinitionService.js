@@ -8,7 +8,6 @@ const STANDARD_FIELDS = [
   { fieldName: 'email', description: 'Email address of the lead', type: 'Email', isStandard: true, isRequired: true },
   { fieldName: 'campaign_id', description: "Identifies which campaign the lead belongs to — auto-populated, always equals this campaign's ID", type: 'String', isStandard: true, isRequired: true },
   { fieldName: 'supplier_id', description: 'Identifies which supplier sent the lead — Supplier tracking not yet active', type: 'String', isStandard: true, isRequired: false },
-  { fieldName: 'test_lead', description: 'Set to true to mark this as a test lead — excluded from billing/stats', type: 'Boolean', isStandard: true, isRequired: false },
 ];
 
 class FieldDefinitionService {
