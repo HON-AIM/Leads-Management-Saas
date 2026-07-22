@@ -6,7 +6,7 @@ class CampaignRepository {
   }
 
   async findById(id, tenantId) {
-    return Campaign.findOne({ _id: id, tenantId }).populate('assignedBuyers.buyerId', 'name email status');
+    return Campaign.findOne({ _id: id, tenantId }).populate('assignedBuyers.buyerId', 'name email status leadCap dailyCap monthlyCap leadsReceived dailyLeadsReceived monthlyLeadsReceived');
   }
 
   async findInTenant(tenantId, { page = 1, limit = 50, status } = {}) {
@@ -17,7 +17,7 @@ class CampaignRepository {
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate('assignedBuyers.buyerId', 'name email status'),
+        .populate('assignedBuyers.buyerId', 'name email status leadCap dailyCap monthlyCap leadsReceived dailyLeadsReceived monthlyLeadsReceived'),
       Campaign.countDocuments(query),
     ]);
     return { campaigns, total, page, pages: Math.ceil(total / limit) };
