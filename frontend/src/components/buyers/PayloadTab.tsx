@@ -514,7 +514,7 @@ export function PayloadTab({ buyerId }: PayloadTabProps) {
                   <textarea
                     value={sampleResponseText}
                     onChange={(e) => setSampleResponseText(e.target.value)}
-                    placeholder={'Paste a sample buyer response JSON here...\n\n{\n  "status": "success",\n  "lead_id": "abc123"\n}'}
+                    placeholder={'Paste a buyer response JSON here to test your acceptance rule...'}
                     className="w-full h-28 rounded-lg border border-white/[0.08] bg-[#151d33] p-3 font-mono text-[11px] text-white/70 placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
                     spellCheck={false}
                   />

@@ -124,7 +124,7 @@ export function TeamPage() {
               <Input
                 value={inviteName}
                 onChange={(e) => setInviteName(e.target.value)}
-                placeholder="e.g. John Smith"
+                placeholder="Full name"
                 className="text-white"
               />
             </div>
@@ -134,7 +134,7 @@ export function TeamPage() {
                 type="email"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="john@example.com"
+                placeholder="email@example.com"
                 className="text-white"
               />
             </div>

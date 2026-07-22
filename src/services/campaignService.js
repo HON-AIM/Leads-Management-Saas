@@ -1,6 +1,10 @@
 const Campaign = require('../models/Campaign');
 const campaignRepo = require('../repositories/campaignRepository');
 const Buyer = require('../models/Buyer');
+const Lead = require('../models/Lead');
+const LeadAssignment = require('../models/LeadAssignment');
+const RoutingLog = require('../models/RoutingLog');
+const FieldDefinition = require('../models/FieldDefinition');
 const logger = require('../utils/logger');
 
 class CampaignService {
@@ -21,7 +25,16 @@ class CampaignService {
   }
 
   async delete(id, tenantId) {
-    return campaignRepo.findByIdAndDelete(id, tenantId);
+    const campaign = await campaignRepo.findByIdAndDelete(id, tenantId);
+    if (!campaign) return null;
+    const tenantFilter = { tenantId };
+    await Promise.all([
+      Lead.deleteMany({ campaignId: id, ...tenantFilter }),
+      LeadAssignment.deleteMany({ campaignId: id, ...tenantFilter }),
+      RoutingLog.deleteMany({ campaignId: id, ...tenantFilter }),
+      FieldDefinition.deleteMany({ campaignId: id, ...tenantFilter }),
+    ]);
+    return campaign;
   }
 
   async addBuyer(campaignId, tenantId, buyerId, config = {}) {

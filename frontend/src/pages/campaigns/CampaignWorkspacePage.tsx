@@ -13,7 +13,7 @@ import { FieldMappingTab } from '@/components/campaigns/FieldMappingTab'
 import type { Campaign } from '@/types/campaign'
 import {
   ArrowLeft, Copy, Check, Users, DollarSign, TrendingUp,
-  BarChart3, ScrollText, Map, Activity, Pencil, Save, X,
+  BarChart3, ScrollText, Map, Activity, Pencil, Save, X, Trash2,
 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts'
 
@@ -191,6 +191,19 @@ export function CampaignWorkspacePage() {
           </Button>
           <Button variant="outline" size="sm" onClick={startEditOverview}>
             <Pencil size={12} className="mr-1" /> Edit
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-red-400 border-red-500/20 hover:bg-red-500/10 hover:text-red-400"
+            onClick={() => {
+              if (confirm(`Delete "${campaign.name}"? This will also remove all associated leads, assignments, logs, and field mappings. This cannot be undone.`)) {
+                deleteMutation.mutate()
+              }
+            }}
+            disabled={deleteMutation.isPending}
+          >
+            <Trash2 size={12} className="mr-1" /> {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
           </Button>
         </div>
       </div>

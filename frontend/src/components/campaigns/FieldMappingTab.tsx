@@ -343,8 +343,8 @@ function FieldRow({ field, editingField, setEditingField, editDesc, setEditDesc,
   const isEditing = editingField === field._id
 
   const sampleValue: Record<string, string> = {
-    String: '"John"', Number: '42', Boolean: 'true', Phone: '"5551234567"',
-    Email: '"john@example.com"', Date: '"2026-01-15"', List: '"option_a"',
+    String: '""', Number: '0', Boolean: 'true', Phone: '""',
+    Email: '""', Date: '""', List: '""',
   }
 
   return (

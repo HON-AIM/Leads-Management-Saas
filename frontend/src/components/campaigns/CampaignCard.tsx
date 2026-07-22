@@ -6,9 +6,10 @@ import type { Campaign } from '@/types/campaign'
 interface CampaignCardProps {
   campaign: Campaign
   onToggle: (campaign: Campaign) => void
+  onDelete: (campaign: Campaign) => void
 }
 
-export function CampaignCard({ campaign, onToggle }: CampaignCardProps) {
+export function CampaignCard({ campaign, onToggle, onDelete }: CampaignCardProps) {
   const navigate = useNavigate()
   const statusColor = getStatusStyle(CAMPAIGN_STATUS_COLOR[campaign.status] ?? 'neutral')
 
@@ -59,12 +60,20 @@ export function CampaignCard({ campaign, onToggle }: CampaignCardProps) {
         <span className="text-[10px] text-muted-foreground/75">
           {campaign.lastActivityAt ? `Last active ${formatDate(campaign.lastActivityAt)}` : 'No activity yet'}
         </span>
-        <button
-          className="text-[10px] text-muted-foreground hover:text-white/70 opacity-0 group-hover:opacity-100 transition-all"
-          onClick={(e) => { e.stopPropagation(); onToggle(campaign) }}
-        >
-          {campaign.status === 'active' ? 'Deactivate' : 'Activate'}
-        </button>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+          <button
+            className="text-[10px] text-muted-foreground hover:text-white/70 transition-colors px-1.5 py-0.5 rounded"
+            onClick={(e) => { e.stopPropagation(); onToggle(campaign) }}
+          >
+            {campaign.status === 'active' ? 'Deactivate' : 'Activate'}
+          </button>
+          <button
+            className="text-[10px] text-muted-foreground hover:text-red-400 transition-colors px-1.5 py-0.5 rounded hover:bg-red-500/10"
+            onClick={(e) => { e.stopPropagation(); onDelete(campaign) }}
+          >
+            Delete
+          </button>
+        </div>
       </div>
     </div>
   )

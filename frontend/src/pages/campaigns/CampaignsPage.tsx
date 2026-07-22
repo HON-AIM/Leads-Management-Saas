@@ -69,6 +69,17 @@ export function CampaignsPage() {
     onError: () => addNotification({ type: 'error', title: 'Error', description: 'Failed to toggle campaign' }),
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/campaigns/${id}`)
+    },
+    onSuccess: () => {
+      addNotification({ type: 'success', title: 'Deleted', description: 'Campaign deleted' })
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.CAMPAIGNS })
+    },
+    onError: () => addNotification({ type: 'error', title: 'Error', description: 'Failed to delete campaign' }),
+  })
+
   const filtered = campaigns.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     (c.source || '').toLowerCase().includes(search.toLowerCase())
@@ -124,6 +135,11 @@ export function CampaignsPage() {
               key={c._id}
               campaign={c}
               onToggle={(c) => toggleMutation.mutate(c)}
+              onDelete={(c) => {
+                if (confirm(`Delete "${c.name}"? This will also remove all associated leads, assignments, logs, and field mappings. This cannot be undone.`)) {
+                  deleteMutation.mutate(c._id)
+                }
+              }}
             />
           ))}
         </div>

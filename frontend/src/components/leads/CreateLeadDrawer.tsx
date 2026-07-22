@@ -115,7 +115,7 @@ export function CreateLeadDrawer({ open, onClose }: CreateLeadDrawerProps) {
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="John Doe"
+                placeholder="Full name"
                 className="field-input"
                 required
               />
@@ -126,7 +126,7 @@ export function CreateLeadDrawer({ open, onClose }: CreateLeadDrawerProps) {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="john@example.com"
+                placeholder="email@example.com"
                 className="field-input"
               />
             </Field>
@@ -136,7 +136,7 @@ export function CreateLeadDrawer({ open, onClose }: CreateLeadDrawerProps) {
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="(555) 123-4567"
+                placeholder="(555) 000-0000"
                 className="field-input"
               />
             </Field>

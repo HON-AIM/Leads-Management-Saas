@@ -245,7 +245,7 @@ export function LandingPage() {
                     <span className="ml-2 text-[10px] text-muted-foreground/30">LeadFlowX — Dashboard</span>
                   </div>
                   <div className="grid grid-cols-3 gap-3 mb-4">
-                    {[{ l: 'Total Leads', v: '12,847', c: 'text-white' }, { l: 'Active Buyers', v: '24', c: 'text-emerald-400' }, { l: 'Delivery Rate', v: '98.6%', c: 'text-blue-400' }].map((s) => (
+                    {[{ l: 'Total Leads', v: '—', c: 'text-white' }, { l: 'Active Buyers', v: '—', c: 'text-emerald-400' }, { l: 'Delivery Rate', v: '—', c: 'text-blue-400' }].map((s) => (
                       <div key={s.l} className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-3">
                         <div className="text-[10px] text-muted-foreground/40">{s.l}</div>
                         <div className={`mt-1 text-[18px] font-semibold ${s.c}`}>{s.v}</div>
@@ -255,7 +255,7 @@ export function LandingPage() {
                   <div className="h-28 rounded-lg border border-white/[0.08] bg-white/[0.01] p-3">
                     <div className="text-[10px] text-muted-foreground/30 mb-2">Lead Activity</div>
                     <div className="flex items-end gap-1.5 h-16">
-                      {[40, 65, 55, 80, 70, 90, 85, 95, 75, 88, 92, 78].map((h, i) => (
+                      {[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0].map((h, i) => (
                         <div key={i} className="flex-1 rounded-t bg-blue-500/30" style={{ height: `${h}%` }} />
                       ))}
                     </div>
@@ -265,7 +265,7 @@ export function LandingPage() {
               <div className="absolute -bottom-4 -right-4 rounded-xl border border-white/[0.08] bg-[#0e1428] px-3 py-2 shadow-lg">
                 <div className="flex items-center gap-2">
                   <Zap size={14} className="text-emerald-400" />
-                  <span className="text-[11px] text-white/70">Lead routed in 0.3s</span>
+                  <span className="text-[11px] text-white/70">Ready to route leads</span>
                 </div>
               </div>
             </div>
@@ -393,7 +393,7 @@ export function LandingPage() {
                 <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/60" />
               </div>
               <div className="grid grid-cols-4 gap-3 mb-4">
-                {[{ l: 'Leads Today', v: '847', c: 'text-white' }, { l: 'Routed', v: '812', c: 'text-emerald-400' }, { l: 'Pending', v: '23', c: 'text-amber-400' }, { l: 'Failed', v: '12', c: 'text-red-400' }].map((s) => (
+                {[{ l: 'Leads Today', v: '—', c: 'text-white' }, { l: 'Routed', v: '—', c: 'text-emerald-400' }, { l: 'Pending', v: '—', c: 'text-amber-400' }, { l: 'Failed', v: '—', c: 'text-red-400' }].map((s) => (
                   <div key={s.l} className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-3">
                     <div className="text-[10px] text-muted-foreground/40">{s.l}</div>
                     <div className={`mt-1 text-[16px] font-semibold ${s.c}`}>{s.v}</div>
@@ -404,7 +404,7 @@ export function LandingPage() {
                 <div className="col-span-2 h-32 rounded-lg border border-white/[0.08] bg-white/[0.01] p-3">
                   <div className="text-[10px] text-muted-foreground/30 mb-2">Delivery Trend</div>
                   <div className="flex items-end gap-1 h-20">
-                    {[35, 55, 45, 70, 60, 80, 75, 85, 65, 78, 82, 72, 88, 90, 84].map((h, i) => (
+                    {[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0].map((h, i) => (
                       <div key={i} className="flex-1 rounded-t bg-emerald-500/25" style={{ height: `${h}%` }} />
                     ))}
                   </div>
@@ -412,7 +412,7 @@ export function LandingPage() {
                 <div className="h-32 rounded-lg border border-white/[0.08] bg-white/[0.01] p-3">
                   <div className="text-[10px] text-muted-foreground/30 mb-2">Top Buyers</div>
                   <div className="space-y-2 mt-2">
-                    {[{ n: 'Genesis Insurance', p: 85 }, { n: 'Prime Leads', p: 72 }, { n: 'Apex Coverage', p: 60 }].map((b) => (
+                    {[].map((b) => (
                       <div key={b.n}>
                         <div className="flex justify-between text-[9px] text-muted-foreground/40 mb-0.5">
                           <span>{b.n}</span><span>{b.p}%</span>
