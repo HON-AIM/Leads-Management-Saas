@@ -11,15 +11,16 @@ async function attemptDelivery({ leadAssignment, lead, buyer, campaign, supplier
   const attemptNumber = (await DeliveryAttempt.countDocuments({ leadAssignmentId: leadAssignment._id })) + 1;
 
   let payloadSent;
+  let payloadTemplate;
   try {
-    const template = buyer.delivery?.payloadTemplate || payloadTemplateService.DEFAULT_PAYLOAD_TEMPLATE;
-    const resolved = payloadTemplateService.resolveTemplate(template, lead, buyer, { campaign, supplier });
+    payloadTemplate = buyer.delivery?.payloadTemplate || payloadTemplateService.DEFAULT_PAYLOAD_TEMPLATE;
+    const resolved = payloadTemplateService.resolveTemplate(payloadTemplate, lead, buyer, { campaign, supplier });
     payloadSent = JSON.parse(resolved);
   } catch (err) {
     const durationMs = 0;
     await DeliveryAttempt.create({
       leadAssignmentId: leadAssignment._id, leadId: lead._id, buyerId: buyer._id,
-      attemptNumber, payloadSent: {}, webhookUrl: buyer.delivery?.url || '',
+      attemptNumber, payloadTemplate: payloadTemplate || '', payloadSent: {}, webhookUrl: buyer.delivery?.url || '',
       statusCode: null, responseBody: null, responseHeaders: null,
       success: false, failureReason: `Payload template error: ${err.message}`, durationMs,
       triggeredBy, triggeredByUserId, tenantId,
@@ -71,7 +72,7 @@ async function attemptDelivery({ leadAssignment, lead, buyer, campaign, supplier
 
   await DeliveryAttempt.create({
     leadAssignmentId: leadAssignment._id, leadId: lead._id, buyerId: buyer._id,
-    attemptNumber, payloadSent, webhookUrl: buyer.delivery.url,
+    attemptNumber, payloadTemplate, payloadSent, webhookUrl: buyer.delivery.url,
     statusCode, responseBody, responseHeaders, success, failureReason, durationMs,
     triggeredBy, triggeredByUserId, tenantId,
   });

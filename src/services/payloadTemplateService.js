@@ -1,5 +1,40 @@
 const logger = require('../utils/logger');
 
+const VARIABLE_REGISTRY = {
+  standard: [
+    { token: 'first_name', label: 'First Name', source: 'lead', getter: (lead) => (lead.name || '').split(' ')[0] || '' },
+    { token: 'last_name', label: 'Last Name', source: 'lead', getter: (lead) => (lead.name || '').split(' ').slice(1).join(' ') || '' },
+    { token: 'name', label: 'Full Name', source: 'lead', getter: (lead) => lead.name || '' },
+    { token: 'email', label: 'Email', source: 'lead', getter: (lead) => lead.email || '' },
+    { token: 'phone', label: 'Phone', source: 'lead', getter: (lead) => lead.phone || '' },
+    { token: 'state', label: 'State', source: 'lead', getter: (lead) => lead.state || '' },
+    { token: 'source', label: 'Source', source: 'lead', getter: (lead) => lead.source || '' },
+    { token: 'lead_id', label: 'Lead ID', source: 'lead', getter: (lead) => String(lead._id || '') },
+    { token: 'created_at', label: 'Created At', source: 'lead', getter: (lead) => lead.createdAt || new Date().toISOString() },
+  ],
+  buyer: [
+    { token: 'buyer_id', label: 'Buyer ID', source: 'buyer', getter: (_lead, buyer) => String(buyer?._id || '') },
+    { token: 'buyer_name', label: 'Buyer Name', source: 'buyer', getter: (_lead, buyer) => buyer?.name || '' },
+    { token: 'ghl_user_id', label: 'GHL User ID', source: 'buyer', getter: (_lead, buyer) => buyer?.ghlUserId || '' },
+  ],
+  campaign: [
+    { token: 'campaign_id', label: 'Campaign ID', source: 'campaign', getter: (_lead, _buyer, ctx) => String(ctx.campaign?._id || '') },
+    { token: 'campaign_name', label: 'Campaign Name', source: 'campaign', getter: (_lead, _buyer, ctx) => ctx.campaign?.name || '' },
+    { token: 'campaign_routing_mode', label: 'Campaign Routing Mode', source: 'campaign', getter: (_lead, _buyer, ctx) => ctx.campaign?.routingMode || '' },
+  ],
+  supplier: [
+    { token: 'supplier_id', label: 'Supplier ID', source: 'supplier', getter: (_lead, _buyer, ctx) => String(ctx.supplier?._id || '') },
+    { token: 'supplier_name', label: 'Supplier Name', source: 'supplier', getter: (_lead, _buyer, ctx) => ctx.supplier?.name || '' },
+    { token: 'supplier_type', label: 'Supplier Type', source: 'supplier', getter: (_lead, _buyer, ctx) => ctx.supplier?.type || '' },
+    { token: 'supplier_key', label: 'Supplier Key', source: 'supplier', getter: (_lead, _buyer, ctx) => ctx.supplier?.supplierKey || '' },
+  ],
+  system: [
+    { token: 'current_date', label: 'Current Date', source: 'system', getter: () => new Date().toISOString().slice(0, 10) },
+    { token: 'current_time', label: 'Current Time', source: 'system', getter: () => new Date().toISOString().slice(11, 19) },
+    { token: 'current_timestamp', label: 'Current Timestamp', source: 'system', getter: () => new Date().toISOString() },
+  ],
+};
+
 const DEFAULT_PAYLOAD_TEMPLATE = JSON.stringify({
   first_name: '{{first_name}}',
   last_name: '{{last_name}}',
@@ -8,6 +43,7 @@ const DEFAULT_PAYLOAD_TEMPLATE = JSON.stringify({
   state: '{{state}}',
   source: '{{source}}',
   lead_id: '{{lead_id}}',
+  assigned_user_id: '{{ghl_user_id}}',
 }, null, 2);
 
 function flattenObject(obj, prefix = '') {
@@ -56,54 +92,28 @@ function getPreviewLead(buyerId, buyerName) {
 function getAvailableTokens(lead, buyer, context = {}) {
   const sample = lead || getPreviewLead(buyer?._id, buyer?.name);
   const { campaign, supplier } = context;
+  const ctx = { campaign, supplier };
   const tokens = [];
 
-  const nameParts = (sample.name || '').split(' ');
-  const firstName = nameParts[0] || '';
-  const lastName = nameParts.slice(1).join(' ') || '';
-
-  const standardTokens = [
-    { token: 'first_name', label: 'First Name', value: firstName, source: 'standard' },
-    { token: 'last_name', label: 'Last Name', value: lastName, source: 'standard' },
-    { token: 'name', label: 'Full Name', value: sample.name || '', source: 'standard' },
-    { token: 'email', label: 'Email', value: sample.email || '', source: 'standard' },
-    { token: 'phone', label: 'Phone', value: sample.phone || '', source: 'standard' },
-    { token: 'state', label: 'State', value: sample.state || '', source: 'standard' },
-    { token: 'source', label: 'Source', value: sample.source || '', source: 'standard' },
-    { token: 'lead_id', label: 'Lead ID', value: String(sample._id || ''), source: 'standard' },
-    { token: 'created_at', label: 'Created At', value: sample.createdAt || new Date().toISOString(), source: 'standard' },
-    { token: 'buyer_id', label: 'Buyer ID', value: String(sample.buyerId || buyer?._id || ''), source: 'standard' },
-    { token: 'buyer_name', label: 'Buyer Name', value: sample.buyerName || buyer?.name || '', source: 'standard' },
-  ];
-
-  tokens.push(...standardTokens);
-
-  const resolvedCampaign = campaign || resolveRef(sample.campaignId);
-  const resolvedSupplier = supplier || resolveRef(sample.supplierId);
-
-  if (resolvedCampaign) {
-    tokens.push(
-      { token: 'campaign_id', label: 'Campaign ID', value: String(resolvedCampaign._id || ''), source: 'campaign' },
-      { token: 'campaign_name', label: 'Campaign Name', value: resolvedCampaign.name || '', source: 'campaign' },
-      { token: 'campaign_routing_mode', label: 'Campaign Routing Mode', value: resolvedCampaign.routingMode || '', source: 'campaign' },
-    );
+  for (const def of VARIABLE_REGISTRY.standard) {
+    tokens.push({ token: def.token, label: def.label, value: def.getter(sample, buyer, ctx), source: def.source });
   }
-
-  if (resolvedSupplier) {
-    tokens.push(
-      { token: 'supplier_id', label: 'Supplier ID', value: String(resolvedSupplier._id || ''), source: 'supplier' },
-      { token: 'supplier_name', label: 'Supplier Name', value: resolvedSupplier.name || '', source: 'supplier' },
-      { token: 'supplier_type', label: 'Supplier Type', value: resolvedSupplier.type || '', source: 'supplier' },
-      { token: 'supplier_key', label: 'Supplier Key', value: resolvedSupplier.supplierKey || '', source: 'supplier' },
-    );
+  for (const def of VARIABLE_REGISTRY.buyer) {
+    tokens.push({ token: def.token, label: def.label, value: def.getter(sample, buyer, ctx), source: def.source });
   }
-
-  const now = new Date();
-  tokens.push(
-    { token: 'current_date', label: 'Current Date', value: now.toISOString().slice(0, 10), source: 'system' },
-    { token: 'current_time', label: 'Current Time', value: now.toISOString().slice(11, 19), source: 'system' },
-    { token: 'current_timestamp', label: 'Current Timestamp', value: now.toISOString(), source: 'system' },
-  );
+  if (campaign) {
+    for (const def of VARIABLE_REGISTRY.campaign) {
+      tokens.push({ token: def.token, label: def.label, value: def.getter(sample, buyer, ctx), source: def.source });
+    }
+  }
+  if (supplier) {
+    for (const def of VARIABLE_REGISTRY.supplier) {
+      tokens.push({ token: def.token, label: def.label, value: def.getter(sample, buyer, ctx), source: def.source });
+    }
+  }
+  for (const def of VARIABLE_REGISTRY.system) {
+    tokens.push({ token: def.token, label: def.label, value: def.getter(sample, buyer, ctx), source: def.source });
+  }
 
   const raw = sample.rawPayload || {};
   if (typeof raw === 'object' && raw !== null && Object.keys(raw).length > 0) {
@@ -188,6 +198,7 @@ function validateResolvedJson(resolvedString) {
 }
 
 module.exports = {
+  VARIABLE_REGISTRY,
   DEFAULT_PAYLOAD_TEMPLATE,
   flattenObject,
   getAvailableTokens,

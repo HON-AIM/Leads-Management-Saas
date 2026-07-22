@@ -42,6 +42,7 @@ app.use('/api/campaigns', require('./src/modules/campaigns'));
 app.use('/api/buyers', require('./src/modules/buyers'));
 app.use('/api/leads', require('./src/modules/leads'));
 app.use('/api/ingest', require('./src/modules/leadsIngestion'));
+app.use('/api/webhook', require('./src/modules/webhook'));
 app.use('/api/delivery-logs', require('./src/modules/deliveryLogs'));
 app.use('/api/settings', require('./src/modules/settings'));
 app.use('/api/suppliers', require('./src/modules/suppliers'));

@@ -22,6 +22,7 @@ function toForm(buyer: Buyer | null): BuyerFormData {
     name: buyer?.name || '',
     email: buyer?.email || '',
     phone: buyer?.phone || '',
+    ghlUserId: buyer?.ghlUserId || '',
     weight: buyer?.weight ?? 1,
     priority: buyer?.priority ?? 0,
     allowedStates: buyer?.allowedStates || [],
@@ -146,6 +147,10 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, isPending
               </Field>
               <Field label="Phone">
                 <Input value={form.phone} onChange={(e) => update({ phone: e.target.value })} placeholder="Optional" className="text-white" />
+              </Field>
+              <Field label="GHL User ID">
+                <Input value={form.ghlUserId} onChange={(e) => update({ ghlUserId: e.target.value })} placeholder="GHL User ID for lead assignment" className="font-mono text-[12px] text-white" />
+                <p className="text-[10px] text-muted-foreground/70">Used in payload as {'{{ghl_user_id}}'}</p>
               </Field>
             </Section>
 

@@ -16,7 +16,7 @@ interface Token {
   token: string
   label: string
   value: string
-  source: 'standard' | 'dynamic'
+  source: 'lead' | 'buyer' | 'campaign' | 'supplier' | 'system' | 'dynamic'
 }
 
 interface TemplateData {
@@ -222,7 +222,11 @@ export function PayloadTab({ buyerId }: PayloadTabProps) {
     }, 0)
   }
 
-  const standardTokens = tokens.filter((t) => t.source === 'standard')
+  const leadTokens = tokens.filter((t) => t.source === 'lead')
+  const buyerTokens = tokens.filter((t) => t.source === 'buyer')
+  const campaignTokens = tokens.filter((t) => t.source === 'campaign')
+  const supplierTokens = tokens.filter((t) => t.source === 'supplier')
+  const systemTokens = tokens.filter((t) => t.source === 'system')
   const dynamicTokens = tokens.filter((t) => t.source === 'dynamic')
 
   if (isLoading) {
@@ -282,12 +286,19 @@ export function PayloadTab({ buyerId }: PayloadTabProps) {
               </Button>
               {showTokenPicker && (
                 <div className="absolute z-30 mt-1 left-0 w-full max-h-52 overflow-y-auto rounded-lg border border-white/[0.08] bg-[#0e1428] shadow-elevated">
-                  {standardTokens.length > 0 && (
-                    <>
+                  {[
+                    { label: 'Lead Fields', items: leadTokens },
+                    { label: 'Buyer Fields', items: buyerTokens },
+                    { label: 'Campaign Fields', items: campaignTokens },
+                    { label: 'Supplier Fields', items: supplierTokens },
+                    { label: 'System Fields', items: systemTokens },
+                    { label: 'Dynamic Fields', items: dynamicTokens },
+                  ].filter(g => g.items.length > 0).map((group) => (
+                    <div key={group.label}>
                       <div className="px-3 py-1.5 text-[9px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-white/[0.06]">
-                        Standard Fields
+                        {group.label}
                       </div>
-                      {standardTokens.map((t) => (
+                      {group.items.map((t) => (
                         <button
                           key={t.token}
                           onClick={() => { insertToken(t.token); setShowTokenPicker(false) }}
@@ -297,25 +308,8 @@ export function PayloadTab({ buyerId }: PayloadTabProps) {
                           <span className="text-muted-foreground/60 font-mono text-[10px]">{`{{${t.token}}}`}</span>
                         </button>
                       ))}
-                    </>
-                  )}
-                  {dynamicTokens.length > 0 && (
-                    <>
-                      <div className="px-3 py-1.5 text-[9px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-white/[0.06]">
-                        Dynamic Fields
-                      </div>
-                      {dynamicTokens.map((t) => (
-                        <button
-                          key={t.token}
-                          onClick={() => { insertToken(t.token); setShowTokenPicker(false) }}
-                          className="w-full text-left px-3 py-1.5 text-[11px] hover:bg-white/[0.06] transition-colors flex items-center justify-between"
-                        >
-                          <span className="text-white/80">{t.label}</span>
-                          <span className="text-muted-foreground/60 font-mono text-[10px]">{`{{${t.token}}}`}</span>
-                        </button>
-                      ))}
-                    </>
-                  )}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

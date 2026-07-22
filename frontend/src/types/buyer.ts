@@ -3,6 +3,7 @@ export interface Buyer {
   name: string
   email: string
   phone?: string
+  ghlUserId?: string
   status: 'active' | 'paused' | 'inactive' | 'full'
   leadCap: number
   dailyCap: number
@@ -46,6 +47,7 @@ export interface BuyerFormData {
   name: string
   email: string
   phone: string
+  ghlUserId: string
   weight: number
   priority: number
   allowedStates: string[]

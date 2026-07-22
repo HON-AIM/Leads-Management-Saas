@@ -7,6 +7,7 @@ const deliveryAttemptSchema = new mongoose.Schema(
     buyerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Buyer', required: true },
 
     attemptNumber: { type: Number, required: true },
+    payloadTemplate: { type: String },
     payloadSent: { type: mongoose.Schema.Types.Mixed, required: true },
     webhookUrl: { type: String },
 

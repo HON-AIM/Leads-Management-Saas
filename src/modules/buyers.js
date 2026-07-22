@@ -46,9 +46,16 @@ router.post('/', authorize('admin', 'member', 'manager'), validate(createBuyer),
 
 router.put('/:id', authorize('admin', 'member', 'manager'), validate(updateBuyer), async (req, res) => {
   try {
-    const buyer = await buyerService.update(req.params.id, req.tenantId, req.body);
+    const buyer = await buyerService.getById(req.params.id, req.tenantId);
     if (!buyer) return notFound(res, 'Buyer not found');
-    return success(res, buyer);
+
+    const updateData = { ...req.body };
+    if (updateData.delivery && buyer.delivery) {
+      updateData.delivery = { ...buyer.delivery, ...updateData.delivery };
+    }
+
+    const updated = await buyerService.update(req.params.id, req.tenantId, updateData);
+    return success(res, updated);
   } catch (err) {
     return error(res, err.message, 400);
   }
