@@ -119,7 +119,14 @@ router.post('/', ingestLimiter, async (req, res) => {
         }
 
         if (isDuplicate) {
-          results.push({ id: lead._id, status: 'duplicate', duplicateOf: duplicateOf.toString() });
+          logger.info('Duplicate lead detected via ingestion', { leadId: lead._id, duplicateOf });
+          results.push({
+            id: lead._id,
+            status: 'duplicate',
+            duplicate: true,
+            duplicateOf: duplicateOf?.toString(),
+            message: 'Duplicate lead detected. Lead stored but not processed.',
+          });
           continue;
         }
 

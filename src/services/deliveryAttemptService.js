@@ -8,6 +8,14 @@ const responseParsingService = require('./responseParsingService');
 const logger = require('../utils/logger');
 
 async function attemptDelivery({ leadAssignment, lead, buyer, campaign, supplier, triggeredBy = 'automatic', triggeredByUserId, tenantId }) {
+  // Layer 6: Final guard — absolutely never send an outbound request for a duplicate lead
+  if (lead.isDuplicate || lead.status === 'duplicate') {
+    logger.warn('attemptDelivery called with duplicate lead — blocked', {
+      leadId: lead._id, buyerId: buyer._id, triggeredBy,
+    });
+    return { success: false, statusCode: null, failureReason: 'Blocked: duplicate lead', durationMs: 0 };
+  }
+
   const attemptNumber = (await DeliveryAttempt.countDocuments({ leadAssignmentId: leadAssignment._id })) + 1;
 
   let payloadSent;

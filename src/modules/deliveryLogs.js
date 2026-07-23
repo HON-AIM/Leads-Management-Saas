@@ -108,6 +108,11 @@ router.post('/retry/:id', async (req, res) => {
     const buyerDoc = assignment.buyerId;
     if (!lead || !buyerDoc) return error(res, 'Lead or buyer not found');
 
+    // Block retry for duplicate leads
+    if (lead.isDuplicate || lead.status === 'duplicate') {
+      return error(res, 'Cannot retry delivery for a duplicate lead', 400);
+    }
+
     const buyer = typeof buyerDoc.toObject === 'function' ? buyerDoc.toObject() : buyerDoc;
     buyer.delivery = buyer.delivery || {};
 

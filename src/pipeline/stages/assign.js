@@ -5,6 +5,14 @@ const buyerService = require('../../services/buyerService')
 async function assign(ctx) {
   const { lead, campaign, tenantId } = ctx
 
+  // Layer 4: Defensive guard — reject duplicates that bypassed earlier stages
+  if (lead.isDuplicate || lead.status === 'duplicate') {
+    ctx.stop = true
+    ctx.stopReason = 'Duplicate lead rejected at assignment stage'
+    return
+  }
+
+
   const strategy = getStrategy(campaign.routingMode)
   await strategy.select(ctx)
 

@@ -107,6 +107,11 @@ router.delete('/:id', authorize('admin'), async (req, res) => {
 });
 
 async function canReassignOrAssign(lead, tenantId) {
+  // Duplicate leads must never be assigned or reassigned
+  if (lead.isDuplicate || lead.status === 'duplicate') {
+    return { allowed: false, reason: 'Cannot assign a duplicate lead' };
+  }
+
   if (['unassigned', 'new'].includes(lead.status)) return { allowed: true };
 
   if (lead.status === 'failed' || lead.status === 'assigned' || lead.status === 'delivered') {

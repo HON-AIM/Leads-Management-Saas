@@ -15,6 +15,12 @@ async function processLead(data) {
   if (!lead) throw new Error(`Lead ${leadId} not found`);
   if (!campaign) throw new Error(`Campaign ${campaignId} not found`);
 
+  // Layer 2: Hard stop — duplicate leads must never enter the pipeline
+  if (lead.isDuplicate || lead.status === 'duplicate') {
+    logger.info('Lead processor skipped duplicate lead', { leadId, duplicateOf: lead.duplicateOf });
+    return { leadId, status: 'duplicate', reason: 'Duplicate lead — processing skipped' };
+  }
+
   let supplier = null;
   if (lead.supplierId) {
     supplier = await Supplier.findById(lead.supplierId);

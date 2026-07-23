@@ -9,6 +9,14 @@ async function deliver(ctx) {
   const { assignment, lead, selectedBuyer } = ctx;
   if (!assignment || !selectedBuyer) return;
 
+  // Layer 5: Defensive guard — never deliver a duplicate lead
+  if (lead.isDuplicate || lead.status === 'duplicate') {
+    ctx.stop = true;
+    ctx.stopReason = 'Duplicate lead rejected at delivery stage';
+    return;
+  }
+
+
   const buyer = selectedBuyer.buyer;
 
   if (!buyer.delivery || buyer.delivery.provider === 'none' || !buyer.delivery.url) {
