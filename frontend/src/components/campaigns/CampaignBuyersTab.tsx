@@ -18,15 +18,18 @@ export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
   const { addNotification } = useNotifications()
 
   const { data: buyersData } = useQuery({
-    queryKey: QUERY_KEYS.BUYERS,
+    queryKey: ['campaign-buyers-list'],
     queryFn: async () => {
-      const { data } = await api.get('/buyers')
-      return data.data ?? data.buyers ?? data ?? []
+      const { data } = await api.get('/buyers', { params: { limit: 200 } })
+      return data.data ?? []
     },
   })
   const allBuyers: Buyer[] = Array.isArray(buyersData) ? buyersData : []
 
-  const assignedBuyerIds = (campaign.assignedBuyers || []).map((b: any) => typeof b.buyerId === 'object' ? b.buyerId._id : b.buyerId)
+  const assignedBuyerIds = (campaign.assignedBuyers || []).map((b: any) => {
+    if (!b || !b.buyerId) return null
+    return typeof b.buyerId === 'object' ? b.buyerId._id : b.buyerId
+  }).filter(Boolean)
   const availableBuyers = allBuyers.filter((b) => b.status === 'active' && !assignedBuyerIds.includes(b._id))
 
   const addBuyerMutation = useMutation({
@@ -130,10 +133,11 @@ export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
       ) : (
         <div className="space-y-2">
           {campaign.assignedBuyers.map((b: any, i: number) => {
+            if (!b || !b.buyerId) return null
             const buyer = typeof b.buyerId === 'object' ? b.buyerId : allBuyers.find((ab) => ab._id === b.buyerId)
-            const buyerId = typeof b.buyerId === 'object' ? b.buyerId._id : b.buyerId
+            const buyerId = typeof b.buyerId === 'object' ? b.buyerId?._id : b.buyerId
             return (
-              <div key={i} className="rounded-lg border border-white/[0.08] p-4">
+              <div key={buyerId || i} className="rounded-lg border border-white/[0.08] p-4">
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-[13px] font-semibold text-white">{buyer?.name || 'Unknown Buyer'}</p>
                   <div className="flex items-center gap-2">

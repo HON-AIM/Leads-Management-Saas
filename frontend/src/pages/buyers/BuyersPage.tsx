@@ -109,11 +109,15 @@ export function BuyersPage() {
     },
   })
 
-  const filtered = buyers.filter((b) =>
-    b.name.toLowerCase().includes(search.toLowerCase()) ||
-    b.email.toLowerCase().includes(search.toLowerCase()) ||
-    b.allowedStates.some((s) => s.toLowerCase().includes(search.toLowerCase()))
-  )
+  const filtered = buyers.filter((b) => {
+    if (!b || !b._id) return false
+    const q = search.toLowerCase()
+    return (
+      b.name?.toLowerCase().includes(q) ||
+      b.email?.toLowerCase().includes(q) ||
+      b.allowedStates?.some((s) => s.toLowerCase().includes(q))
+    )
+  })
 
   const isPending = createMutation.isPending || updateMutation.isPending
 
@@ -247,8 +251,8 @@ export function BuyersPage() {
                   <td className="px-6 py-3 text-white/75">{b.dailyCap || '—'}</td>
                   <td className="px-6 py-3 text-white/75">{b.dailyLeadsReceived}</td>
                   <td className="px-6 py-3">
-                    <p className="text-[12px] text-white/60 max-w-[140px] truncate" title={b.allowedStates.join(', ')}>
-                      {b.allowedStates.length > 0 ? b.allowedStates.join(', ') : '—'}
+                    <p className="text-[12px] text-white/60 max-w-[140px] truncate" title={(b.allowedStates || []).join(', ')}>
+                      {(b.allowedStates || []).length > 0 ? b.allowedStates.join(', ') : '—'}
                     </p>
                   </td>
                   <td className="px-6 py-3 text-white/75">{b.priority}</td>

@@ -412,7 +412,7 @@ export function LandingPage() {
                 <div className="h-32 rounded-lg border border-white/[0.08] bg-white/[0.01] p-3">
                   <div className="text-[10px] text-muted-foreground/30 mb-2">Top Buyers</div>
                   <div className="space-y-2 mt-2">
-                    {[].map((b) => (
+                    {([] as { n: string; p: number }[]).map((b) => (
                       <div key={b.n}>
                         <div className="flex justify-between text-[9px] text-muted-foreground/40 mb-0.5">
                           <span>{b.n}</span><span>{b.p}%</span>
