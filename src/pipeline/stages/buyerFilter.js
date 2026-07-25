@@ -1,7 +1,7 @@
 const Buyer = require('../../models/Buyer')
 
 async function buyerFilter(ctx) {
-  const { campaign, lead, tenantId } = ctx
+  const { campaign, lead, tenantId, excludeBuyerIds } = ctx
 
   const entries = campaign.assignedBuyers || []
   if (!entries.length) {
@@ -10,6 +10,7 @@ async function buyerFilter(ctx) {
     return
   }
 
+  const excludeSet = new Set((excludeBuyerIds || []).map((id) => id.toString()))
   const buyerIds = entries.map((e) => e.buyerId)
   const buyers = await Buyer.find({ _id: { $in: buyerIds }, tenantId }).lean()
 
@@ -23,6 +24,11 @@ async function buyerFilter(ctx) {
     const buyer = buyerMap.get(entry.buyerId.toString())
     if (!buyer) {
       rejected.push({ id: entry.buyerId, reason: 'buyer not found or deleted' })
+      continue
+    }
+
+    if (excludeSet.has(buyer._id.toString())) {
+      rejected.push({ buyer: buyer.name, reason: 'excluded from reassignment' })
       continue
     }
 

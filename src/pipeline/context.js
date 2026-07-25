@@ -1,9 +1,10 @@
-function createContext({ lead, campaign, supplier, tenantId }) {
+function createContext({ lead, campaign, supplier, tenantId, excludeBuyerIds }) {
   return {
     lead,
     campaign: campaign || null,
     supplier: supplier || null,
     tenantId,
+    excludeBuyerIds: excludeBuyerIds || [],
     startTime: Date.now(),
     buyerPool: [],
     selectedBuyer: null,

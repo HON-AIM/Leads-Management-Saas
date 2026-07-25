@@ -367,6 +367,25 @@ router.post('/:id/duplicate-action', authorize('admin', 'member'), async (req, r
       const campaign = await Campaign.findOne({ _id: lead.campaignId, tenantId: req.tenantId, status: 'active' });
       if (!campaign) return badRequest(res, 'Lead has no active campaign');
 
+      const excludeBuyerIds = [];
+      if (lead.duplicateOf) {
+        const originalAssignment = await leadAssignmentRepo.findByLead(lead.duplicateOf, req.tenantId);
+        if (originalAssignment?.buyerId) {
+          const id = originalAssignment.buyerId._id || originalAssignment.buyerId;
+          excludeBuyerIds.push(id.toString());
+        }
+      }
+      const selfAssignment = await leadAssignmentRepo.findByLead(lead._id, req.tenantId);
+      if (selfAssignment?.buyerId) {
+        const id = (selfAssignment.buyerId._id || selfAssignment.buyerId).toString();
+        if (!excludeBuyerIds.includes(id)) excludeBuyerIds.push(id);
+      }
+
+      const eligibleBuyerCount = (campaign.assignedBuyers || []).length - excludeBuyerIds.length;
+      if (eligibleBuyerCount <= 0) {
+        return badRequest(res, 'No other eligible buyer available to reassign this duplicate to');
+      }
+
       lead.isDuplicate = false;
       lead.status = 'new';
       lead.reviewedAt = new Date();
@@ -379,7 +398,7 @@ router.post('/:id/duplicate-action', authorize('admin', 'member'), async (req, r
       }
 
       const ctx = await runPartialPipeline(
-        { lead, campaign, supplier, tenantId: req.tenantId },
+        { lead, campaign, supplier, tenantId: req.tenantId, excludeBuyerIds },
         ['buyerFilter', 'capFilter', 'stateFilter', 'assign', 'deliver', 'log']
       );
 
@@ -390,12 +409,12 @@ router.post('/:id/duplicate-action', authorize('admin', 'member'), async (req, r
         routingMode: 'manual',
         eligibleBuyerIds: ctx.buyerPool?.map((e) => e.buyer._id) || [],
         selectedBuyerId: ctx.selectedBuyer?.buyer?._id || null,
-        reason: `Manual duplicate reassignment by admin — override of campaign default`,
+        reason: `Manual duplicate reassignment by admin — exclude buyer(s): ${excludeBuyerIds.join(', ') || 'none'}`,
         durationMs: Date.now() - ctx.startTime,
       });
 
       if (!ctx.assignment) {
-        return badRequest(res, ctx.stopReason || 'No eligible buyer found');
+        return badRequest(res, ctx.stopReason || 'No other eligible buyer available to reassign this duplicate to');
       }
 
       const updated = await Lead.findOne({ _id: lead._id, tenantId: req.tenantId }).populate('campaignId', 'name');
