@@ -40,6 +40,7 @@ export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEYS.CAMPAIGNS })
       qc.invalidateQueries({ queryKey: ['campaign-detail', campaign._id] })
+      qc.invalidateQueries({ queryKey: ['campaign-next-buyer', campaign._id] })
       addNotification({ type: 'success', title: 'Buyer added', description: 'Buyer has been assigned to this campaign.' })
     },
     onError: (err: any) => {
@@ -54,6 +55,7 @@ export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEYS.CAMPAIGNS })
       qc.invalidateQueries({ queryKey: ['campaign-detail', campaign._id] })
+      qc.invalidateQueries({ queryKey: ['campaign-next-buyer', campaign._id] })
       addNotification({ type: 'success', title: 'Buyer removed', description: 'Buyer has been unassigned from this campaign.' })
     },
     onError: (err: any) => {
@@ -82,6 +84,7 @@ export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
       addNotification({ type: 'success', title: 'Caps reset', description: 'Buyer counters reset to 0' })
       qc.invalidateQueries({ queryKey: QUERY_KEYS.BUYERS })
       qc.invalidateQueries({ queryKey: ['campaign-detail', campaign._id] })
+      qc.invalidateQueries({ queryKey: ['campaign-next-buyer', campaign._id] })
     },
     onError: (err: any) => addNotification({ type: 'error', title: 'Error', description: err?.response?.data?.error || 'Failed to reset caps' }),
   })

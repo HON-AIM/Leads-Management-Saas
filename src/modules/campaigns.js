@@ -51,7 +51,7 @@ router.get('/:id/next-buyer', async (req, res) => {
     // Only applies buyer-status and cap-based checks — NO state filtering since there is no
     // specific incoming lead to match against. This is "who's eligible right now in general",
     // not "who's eligible for one specific hypothetical lead."
-    const entries = campaign.assignedBuyers || [];
+    const entries = (campaign.assignedBuyers || []).filter((e) => e && e.buyerId);
     if (!entries.length) {
       return success(res, { nextBuyerId: null, reason: 'no_buyers' });
     }

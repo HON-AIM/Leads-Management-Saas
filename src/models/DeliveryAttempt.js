@@ -19,7 +19,7 @@ const deliveryAttemptSchema = new mongoose.Schema(
     failureReason: { type: String },
     durationMs: { type: Number },
 
-    triggeredBy: { type: String, enum: ['automatic', 'manual_retry'], default: 'automatic' },
+    triggeredBy: { type: String, enum: ['automatic', 'manual', 'manual_retry'], default: 'automatic' },
     triggeredByUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true },

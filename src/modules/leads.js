@@ -171,7 +171,7 @@ router.post('/:id/reassign', authorize('admin', 'member'), async (req, res) => {
     let supplier = null;
     if (lead.supplierId) {
       const Supplier = require('../models/Supplier');
-      supplier = await Supplier.findById(lead.supplierId);
+      supplier = await Supplier.findOne({ _id: lead.supplierId, tenantId: req.tenantId });
     }
 
     const ctx = await runPartialPipeline(
@@ -271,7 +271,7 @@ router.post('/:id/assign', authorize('admin', 'member'), async (req, res) => {
       let supplier = null;
       if (lead.supplierId) {
         const Supplier = require('../models/Supplier');
-        supplier = await Supplier.findById(lead.supplierId);
+        supplier = await Supplier.findOne({ _id: lead.supplierId, tenantId: req.tenantId });
       }
       const maxRetries = config.delivery.maxRetries;
       let attempt = 0;
@@ -425,7 +425,7 @@ router.post('/:id/duplicate-action', authorize('admin', 'member'), async (req, r
     if (action === 'update_original') {
       if (!lead.duplicateOf) return badRequest(res, 'No original lead found to update');
 
-      const originalLead = await Lead.findById(lead.duplicateOf);
+      const originalLead = await Lead.findOne({ _id: lead.duplicateOf, tenantId: req.tenantId });
       if (!originalLead) return notFound(res, 'Original lead not found');
 
       const source = lead.rawPayload || {};
@@ -438,7 +438,7 @@ router.post('/:id/duplicate-action', authorize('admin', 'member'), async (req, r
         }
       }
       if (Object.keys(updates).length > 0) {
-        await Lead.findByIdAndUpdate(lead.duplicateOf, { $set: updates });
+        await Lead.findOneAndUpdate({ _id: lead.duplicateOf, tenantId: req.tenantId }, { $set: updates });
       }
 
       lead.reviewedAt = new Date();
@@ -448,8 +448,8 @@ router.post('/:id/duplicate-action', authorize('admin', 'member'), async (req, r
       const originalAssignment = await leadAssignmentRepo.findByLead(lead.duplicateOf, req.tenantId);
       if (originalAssignment && originalAssignment.buyerId) {
         const Buyer = require('../models/Buyer');
-        const buyer = await Buyer.findById(originalAssignment.buyerId._id || originalAssignment.buyerId);
-        const campaign = await Campaign.findById(lead.campaignId);
+        const buyer = await Buyer.findOne({ _id: originalAssignment.buyerId._id || originalAssignment.buyerId, tenantId: req.tenantId });
+        const campaign = await Campaign.findOne({ _id: lead.campaignId, tenantId: req.tenantId });
 
         if (buyer && campaign) {
           const newAssignment = await leadAssignmentRepo.create({
@@ -463,7 +463,7 @@ router.post('/:id/duplicate-action', authorize('admin', 'member'), async (req, r
             status: 'pending',
           });
 
-          const updatedOriginal = await Lead.findById(lead.duplicateOf).lean();
+          const updatedOriginal = await Lead.findOne({ _id: lead.duplicateOf, tenantId: req.tenantId }).lean();
 
           try {
             await attemptDelivery({

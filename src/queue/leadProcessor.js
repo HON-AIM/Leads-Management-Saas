@@ -15,8 +15,10 @@ async function processLead(data) {
   if (!lead) throw new Error(`Lead ${leadId} not found`);
   if (!campaign) throw new Error(`Campaign ${campaignId} not found`);
 
-  // Layer 2: Hard stop — duplicate leads must never enter the pipeline
-  if (lead.isDuplicate || lead.status === 'duplicate') {
+  // Layer 2: Hard stop — rejected duplicate leads must never enter the pipeline.
+  // Only block when status is 'duplicate' (reject mode). Leads with isDuplicate=true but
+  // status='new' come from assign_anyway/update_existing handling and must proceed to the pipeline.
+  if (lead.status === 'duplicate') {
     logger.info('Lead processor skipped duplicate lead', { leadId, duplicateOf: lead.duplicateOf });
     return { leadId, status: 'duplicate', reason: 'Duplicate lead — processing skipped' };
   }

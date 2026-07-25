@@ -19,6 +19,9 @@ const ROUTE_NAMES: Record<string, string> = {
   '/buyers': 'Buyers',
   '/delivery': 'Delivery',
   '/settings': 'Settings',
+  '/suppliers': 'Suppliers',
+  '/reports': 'Reports',
+  '/team': 'Team',
 }
 
 export function Header({ onMenuToggle }: { onMenuToggle: () => void }) {

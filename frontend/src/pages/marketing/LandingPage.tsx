@@ -5,6 +5,7 @@ import {
   ArrowRight,
   Check,
   ChevronDown,
+  Copy,
   Menu,
   X,
   Zap,

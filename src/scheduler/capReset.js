@@ -1,7 +1,5 @@
 const cron = require('node-cron');
-const mongoose = require('mongoose');
 const Buyer = require('../models/Buyer');
-const ActivityLog = require('../models/ActivityLog');
 const logger = require('../utils/logger');
 
 function startCapResetScheduler() {
@@ -10,13 +8,7 @@ function startCapResetScheduler() {
     logger.info('[CapReset] Daily cap reset triggered');
     try {
       const result = await Buyer.updateMany({}, { $set: { dailyLeadsReceived: 0 } });
-      const logEntry = await ActivityLog.create({
-        action: 'daily_caps_reset',
-        category: 'cap_reset',
-        details: { buyerCount: result.modifiedCount, triggeredBy: 'scheduler' },
-        tenantId: null,
-      });
-      logger.info(`[CapReset] Daily reset complete — ${result.modifiedCount} buyers reset`, { logId: logEntry._id, durationMs: Date.now() - startedAt.getTime() });
+      logger.info(`[CapReset] Daily reset complete — ${result.modifiedCount} buyers reset`, { durationMs: Date.now() - startedAt.getTime() });
     } catch (err) {
       logger.error('[CapReset] Daily reset failed', { error: err.message });
     }
@@ -27,13 +19,7 @@ function startCapResetScheduler() {
     logger.info('[CapReset] Monthly cap reset triggered');
     try {
       const result = await Buyer.updateMany({}, { $set: { monthlyLeadsReceived: 0 } });
-      const logEntry = await ActivityLog.create({
-        action: 'monthly_caps_reset',
-        category: 'cap_reset',
-        details: { buyerCount: result.modifiedCount, triggeredBy: 'scheduler' },
-        tenantId: null,
-      });
-      logger.info(`[CapReset] Monthly reset complete — ${result.modifiedCount} buyers reset`, { logId: logEntry._id, durationMs: Date.now() - startedAt.getTime() });
+      logger.info(`[CapReset] Monthly reset complete — ${result.modifiedCount} buyers reset`, { durationMs: Date.now() - startedAt.getTime() });
     } catch (err) {
       logger.error('[CapReset] Monthly reset failed', { error: err.message });
     }

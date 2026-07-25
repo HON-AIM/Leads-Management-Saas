@@ -266,6 +266,7 @@ describe('Duplicate Lead Guards', () => {
       const dedup = require('../src/pipeline/stages/dedup');
       const ctx = {
         lead: makeDuplicateLead(),
+        campaign: { _id: 'campaign-1', duplicateHandling: 'reject' },
         tenantId: 'tenant-1',
         stop: false,
         stopReason: null,
