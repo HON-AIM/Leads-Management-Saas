@@ -28,3 +28,9 @@ services:
         sync: false
       - key: EMAIL_PASS
         sync: false
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: "465"
+      - key: FROM_EMAIL
+        sync: false

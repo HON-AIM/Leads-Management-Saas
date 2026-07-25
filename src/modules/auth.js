@@ -126,6 +126,14 @@ router.post('/invite', authenticate, authorize('admin'), validate(inviteUserSche
       status: 'active',
     });
 
+    const { sendInviteEmail } = require('../services/emailService');
+    sendInviteEmail({
+      name,
+      email: normalizedEmail,
+      password,
+      loginUrl: `${require('../config').frontendUrl}/login`,
+    }).catch(() => {});
+
     return created(res, {
       user: {
         id: user._id,

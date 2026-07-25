@@ -56,6 +56,15 @@ const config = {
     maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS, 10) || 5,
     lockTimeMinutes: parseInt(process.env.ACCOUNT_LOCK_TIME_MINUTES, 10) || 120,
   },
+
+  email: {
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.EMAIL_PORT, 10) || 465,
+    secure: true,
+    user: process.env.EMAIL_USER || '',
+    pass: process.env.EMAIL_PASS || '',
+    from: process.env.FROM_EMAIL || process.env.EMAIL_USER || '',
+  },
 };
 
 if (config.isProduction) {
