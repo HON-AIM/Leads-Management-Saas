@@ -6,7 +6,7 @@ import { QUERY_KEYS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useNotifications } from '@/hooks/useNotifications'
-import { getStatusStyle, CAMPAIGN_STATUS_COLOR, LEAD_STATUS_COLOR, type SemanticKey } from '@/lib/statusColors'
+import { getStatusStyle, CAMPAIGN_STATUS_COLOR, LEAD_STATUS_COLOR, getScoreColor, type SemanticKey } from '@/lib/statusColors'
 import { formatDate } from '@/lib/utils'
 import { CampaignBuyersTab } from '@/components/campaigns/CampaignBuyersTab'
 import { FieldMappingTab } from '@/components/campaigns/FieldMappingTab'
@@ -37,7 +37,7 @@ export function CampaignWorkspacePage() {
   const [tab, setTab] = useState<TabKey>('overview')
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [editingOverview, setEditingOverview] = useState(false)
-  const [overviewForm, setOverviewForm] = useState({ name: '', description: '', routingMode: '', costPerLead: 0, dedupWindowHours: 720 })
+  const [overviewForm, setOverviewForm] = useState({ name: '', description: '', routingMode: '', costPerLead: 0, dedupWindowHours: 720, duplicateHandling: 'reject' })
 
   const { data: campaign, isLoading } = useQuery<Campaign>({
     queryKey: ['campaign-detail', id],
@@ -120,6 +120,10 @@ export function CampaignWorkspacePage() {
     round_robin: 'Round Robin', weighted: 'Weighted', priority: 'Priority', exclusive: 'Exclusive',
   }
 
+  const duplicateHandlingLabel: Record<string, string> = {
+    reject: 'Reject', assign_anyway: 'Assign Anyway', update_existing: 'Update Original',
+  }
+
   function copyValue(key: string, value: string) {
     navigator.clipboard.writeText(value)
     setCopiedField(key)
@@ -134,6 +138,7 @@ export function CampaignWorkspacePage() {
       routingMode: campaign.routingMode,
       costPerLead: campaign.costPerLead || 0,
       dedupWindowHours: campaign.dedupWindowHours || 720,
+      duplicateHandling: campaign.duplicateHandling || 'reject',
     })
     setEditingOverview(true)
   }
@@ -266,6 +271,15 @@ export function CampaignWorkspacePage() {
                     <input type="number" value={overviewForm.dedupWindowHours} onChange={(e) => setOverviewForm({ ...overviewForm, dedupWindowHours: parseInt(e.target.value) || 720 })}
                       className="w-full rounded-lg border border-white/[0.08] bg-[#0a0f1e] px-3 py-2 text-[13px] text-white placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30" />
                   </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Duplicate Handling</label>
+                    <select value={overviewForm.duplicateHandling} onChange={(e) => setOverviewForm({ ...overviewForm, duplicateHandling: e.target.value })}
+                      className="w-full rounded-lg border border-white/[0.08] bg-[#0a0f1e] px-3 py-2 text-[13px] text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30">
+                      <option value="reject">Reject (block duplicates)</option>
+                      <option value="assign_anyway">Assign Anyway (route duplicates normally)</option>
+                      <option value="update_existing">Update Original (merge into first lead)</option>
+                    </select>
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Description</label>
@@ -294,6 +308,7 @@ export function CampaignWorkspacePage() {
                   <InfoRow label="Source" value={campaign.source || 'webhook'} />
                   <InfoRow label="Cost Per Lead" value={`$${campaign.costPerLead ?? 0}`} />
                   <InfoRow label="Dedup Window" value={`${campaign.dedupWindowHours ?? 720}h`} />
+                  <InfoRow label="Duplicate Handling" value={duplicateHandlingLabel[campaign.duplicateHandling] || 'Reject'} />
                   <InfoRow label="Buyers Assigned" value={`${campaign.assignedBuyers?.length ?? 0}`} />
                   <InfoRow label="Created" value={formatDate(campaign.createdAt)} />
                   {campaign.lastActivityAt && <InfoRow label="Last Activity" value={formatDate(campaign.lastActivityAt)} />}
@@ -340,6 +355,7 @@ export function CampaignWorkspacePage() {
                     <th className="text-left font-medium px-6 py-2.5">Source</th>
                     <th className="text-left font-medium px-6 py-2.5">State</th>
                     <th className="text-left font-medium px-6 py-2.5">Status</th>
+                    <th className="text-left font-medium px-6 py-2.5">Score</th>
                     <th className="text-left font-medium px-6 py-2.5">Created</th>
                   </tr>
                 </thead>
@@ -347,14 +363,14 @@ export function CampaignWorkspacePage() {
                   {leadsLoading ? (
                     [...Array(5)].map((_, i) => (
                       <tr key={i} className="border-b border-white/[0.06]">
-                        {[...Array(6)].map((_, j) => (
+                        {[...Array(7)].map((_, j) => (
                           <td key={j} className="px-6 py-3"><div className="h-4 w-20 skeleton bg-white/[0.05] rounded" /></td>
                         ))}
                       </tr>
                     ))
                   ) : (leadsData?.data || []).length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-16 text-center">
+                      <td colSpan={7} className="py-16 text-center">
                         <div className="flex flex-col items-center gap-2">
                           <Users size={24} className="text-white/20" />
                           <p className="text-[13px] text-muted-foreground">No leads in this campaign yet</p>
@@ -374,6 +390,15 @@ export function CampaignWorkspacePage() {
                         <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(LEAD_STATUS_COLOR[l.status] ?? 'neutral')}`}>
                           {l.status}
                         </span>
+                      </td>
+                      <td className="px-6 py-3">
+                        {l.score != null ? (
+                          <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getScoreColor(l.score)}`}>
+                            {l.score}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-muted-foreground/50">Not scored</span>
+                        )}
                       </td>
                       <td className="px-6 py-3 text-[12px] text-white/55">{formatDate(l.createdAt)}</td>
                     </tr>

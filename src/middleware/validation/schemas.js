@@ -7,6 +7,7 @@ const createCampaign = z.object({
   costPerLead: z.number().min(0).optional(),
   routingMode: z.enum(['round_robin', 'weighted', 'priority', 'exclusive']).optional(),
   dedupWindowHours: z.number().int().min(1).optional(),
+  duplicateHandling: z.enum(['reject', 'assign_anyway', 'update_existing']).optional(),
 });
 
 const updateCampaign = z.object({
@@ -16,6 +17,7 @@ const updateCampaign = z.object({
   costPerLead: z.number().min(0).optional(),
   routingMode: z.enum(['round_robin', 'weighted', 'priority', 'exclusive']).optional(),
   dedupWindowHours: z.number().int().min(1).optional(),
+  duplicateHandling: z.enum(['reject', 'assign_anyway', 'update_existing']).optional(),
 });
 
 const createBuyer = z.object({
@@ -26,6 +28,7 @@ const createBuyer = z.object({
   leadCap: z.number().int().min(0).optional(),
   dailyCap: z.number().int().min(0).optional(),
   monthlyCap: z.number().int().min(0).optional(),
+  minimumScore: z.number().min(0).max(100).optional().nullable(),
   pricePerLead: z.number().min(0).optional(),
   weight: z.number().int().min(1).optional(),
   priority: z.number().int().optional(),
@@ -55,6 +58,7 @@ const updateBuyer = z.object({
   leadCap: z.number().int().min(0).optional(),
   dailyCap: z.number().int().min(0).optional(),
   monthlyCap: z.number().int().min(0).optional(),
+  minimumScore: z.number().min(0).max(100).optional().nullable(),
   pricePerLead: z.number().min(0).optional(),
   weight: z.number().int().min(1).optional(),
   priority: z.number().int().optional(),
@@ -90,7 +94,7 @@ const updateLead = z.object({
   email: z.string().email().optional(),
   phone: z.string().max(20).optional(),
   state: z.string().max(2).optional(),
-  status: z.enum(['new', 'assigned', 'delivered', 'failed', 'duplicate', 'unassigned']).optional(),
+  status: z.enum(['new', 'assigned', 'delivered', 'failed', 'duplicate', 'unassigned', 'merged']).optional(),
   customFields: z.record(z.any()).optional(),
 }).strict();
 

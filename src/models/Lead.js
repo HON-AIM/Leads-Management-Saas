@@ -15,15 +15,20 @@ const leadSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ['new', 'assigned', 'delivered', 'failed', 'duplicate', 'unassigned'],
+      enum: ['new', 'assigned', 'delivered', 'failed', 'duplicate', 'unassigned', 'merged'],
       default: 'new',
     },
 
     isDuplicate: { type: Boolean, default: false },
     duplicateOf: { type: mongoose.Schema.Types.ObjectId, ref: 'Lead' },
+    reviewedAt: { type: Date },
 
     revenue: { type: Number, default: 0 },
     cost: { type: Number, default: 0 },
+
+    score: { type: Number, default: null },
+    scoreReasoning: { type: String, default: '' },
+    scoredAt: { type: Date },
 
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

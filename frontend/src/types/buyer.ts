@@ -12,6 +12,7 @@ export interface Buyer {
   dailyLeadsReceived: number
   monthlyLeadsReceived: number
   lastAssignedAt?: string
+  minimumScore?: number | null
   pricePerLead: number
   weight: number
   priority: number
@@ -54,6 +55,7 @@ export interface BuyerFormData {
   leadCap: number
   dailyCap: number
   monthlyCap: number
+  minimumScore?: number | null
   delivery: {
     provider: 'none' | 'webhook' | 'ghl'
     url: string

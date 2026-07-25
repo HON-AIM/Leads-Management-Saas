@@ -5,6 +5,7 @@ const validate = require('./stages/validate')
 const normalize = require('./stages/normalize')
 const dedup = require('./stages/dedup')
 const campaignLookup = require('./stages/campaign')
+const scoring = require('./stages/scoring')
 const buyerFilter = require('./stages/buyerFilter')
 const capFilter = require('./stages/capFilter')
 const stateFilter = require('./stages/stateFilter')
@@ -17,6 +18,7 @@ const STAGES = [
   { name: 'normalize', fn: normalize },
   { name: 'dedup', fn: dedup },
   { name: 'campaign', fn: campaignLookup },
+  { name: 'scoring', fn: scoring },
   { name: 'buyerFilter', fn: buyerFilter },
   { name: 'capFilter', fn: capFilter },
   { name: 'stateFilter', fn: stateFilter },
@@ -57,7 +59,7 @@ async function runPipeline(input) {
     try {
       await stage.fn(ctx)
     } catch (err) {
-      const isNonBlocking = stage.name === 'log'
+      const isNonBlocking = stage.name === 'log' || stage.name === 'scoring'
       if (isNonBlocking) {
         trackNonBlockingFailure(stage.name, err)
         logger.error(`Pipeline non-blocking stage "${stage.name}" failed`, {
@@ -92,7 +94,7 @@ async function runPartialPipeline(input, stageNames) {
     try {
       await fn(ctx)
     } catch (err) {
-      const isNonBlocking = name === 'log'
+      const isNonBlocking = name === 'log' || name === 'scoring'
       if (isNonBlocking) {
         trackNonBlockingFailure(name, err)
         logger.error(`Pipeline non-blocking stage "${name}" failed`, {

@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const { connectDatabase: connectDB } = require('./src/config/database');
 const { initializeQueue, closeQueue, isQueueAvailable } = require('./src/queue');
+const { startCapResetScheduler } = require('./src/scheduler/capReset');
 const logger = require('./src/utils/logger');
 const { apiLimiter } = require('./src/middleware/rateLimit');
 
@@ -59,6 +60,7 @@ app.get('/api/health', async (req, res) => {
     timestamp: new Date().toISOString(),
     mongodb: states[mongoState] || 'unknown',
     queue: isQueueAvailable() ? 'redis-connected' : 'inline-fallback',
+    scheduler: 'active',
     nodeEnv: process.env.NODE_ENV || 'development',
   };
 
@@ -101,6 +103,8 @@ async function start() {
     } else {
       logger.info('Running in inline mode — leads will be processed synchronously (no Redis)');
     }
+
+    startCapResetScheduler();
 
     if (config.isProduction) {
       try {

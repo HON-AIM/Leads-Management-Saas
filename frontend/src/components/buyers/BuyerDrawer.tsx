@@ -14,6 +14,7 @@ interface BuyerDrawerProps {
   onClose: () => void
   onSave: (form: BuyerFormData) => void
   onDelete?: () => void
+  onActivate?: () => void
   isPending: boolean
 }
 
@@ -29,6 +30,7 @@ function toForm(buyer: Buyer | null): BuyerFormData {
     leadCap: buyer?.leadCap ?? 0,
     dailyCap: buyer?.dailyCap ?? 0,
     monthlyCap: buyer?.monthlyCap ?? 0,
+    minimumScore: buyer?.minimumScore ?? null,
     delivery: {
       provider: buyer?.delivery?.provider || 'none',
       url: buyer?.delivery?.url || '',
@@ -38,7 +40,7 @@ function toForm(buyer: Buyer | null): BuyerFormData {
   }
 }
 
-export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, isPending }: BuyerDrawerProps) {
+export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, onActivate, isPending }: BuyerDrawerProps) {
   const [form, setForm] = useState<BuyerFormData>(toForm(buyer))
   const [stateSearch, setStateSearch] = useState('')
   const [showStates, setShowStates] = useState(false)
@@ -251,6 +253,12 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, isPending
                 </Field>
               </div>
               <p className="text-[10px] text-muted-foreground/70">0 = unlimited</p>
+              <div className="mt-3 space-y-1.5">
+                <Field label="Min Score">
+                  <Input type="number" min={0} max={100} value={form.minimumScore ?? ''} onChange={(e) => update({ minimumScore: e.target.value === '' ? null : Number(e.target.value) })} placeholder="No minimum" className="text-white" />
+                </Field>
+                <p className="text-[10px] text-muted-foreground/70">Only leads scoring at or above this value will be eligible for this buyer. Leave blank to accept all leads regardless of score.</p>
+              </div>
             </Section>
 
             <Section title="Routing">
@@ -273,13 +281,25 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, isPending
 
           <div className="border-t border-white/[0.08] px-6 py-4 flex items-center justify-between">
             <Button variant="secondary" size="sm" onClick={onClose}>Cancel</Button>
-            <Button
-              size="sm"
-              onClick={() => onSave(form)}
-              disabled={isPending || !form.name.trim() || !form.email.trim()}
-            >
-              {isPending ? 'Saving...' : isNew ? 'Create Buyer' : 'Save Changes'}
-            </Button>
+            {onActivate ? (
+              <Button
+                size="sm"
+                onClick={onActivate}
+                disabled={isPending}
+                variant="cta"
+                className="min-w-[120px]"
+              >
+                {isPending ? 'Activating...' : 'Activate Buyer'}
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => onSave(form)}
+                disabled={isPending || !form.name.trim() || !form.email.trim()}
+              >
+                {isPending ? 'Saving...' : isNew ? 'Create Buyer' : 'Save Changes'}
+              </Button>
+            )}
           </div>
         </div>
       </div>

@@ -7,6 +7,7 @@ export interface CampaignFormData {
   assignedBuyers: { buyerId: string; weight: number; priority: number }[]
   costPerLead: number
   dedupWindowHours: number
+  duplicateHandling: 'reject' | 'assign_anyway' | 'update_existing'
 }
 
 export interface Campaign {
@@ -19,6 +20,7 @@ export interface Campaign {
   routingMode: 'round_robin' | 'weighted' | 'priority' | 'exclusive'
   costPerLead?: number
   dedupWindowHours?: number
+  duplicateHandling: 'reject' | 'assign_anyway' | 'update_existing'
   assignedBuyers: {
     buyerId: { _id: string; name: string; email: string; status: string }
     weight: number

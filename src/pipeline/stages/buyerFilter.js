@@ -38,6 +38,11 @@ async function buyerFilter(ctx) {
       }
     }
 
+    if (lead.score != null && buyer.minimumScore != null && lead.score < buyer.minimumScore) {
+      rejected.push({ buyer: buyer.name, reason: `lead score ${lead.score} below minimum ${buyer.minimumScore}` })
+      continue
+    }
+
     ctx.buyerPool.push({ buyer, config: entry })
   }
 

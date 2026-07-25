@@ -7,7 +7,7 @@ import { useNotifications } from '@/hooks/useNotifications'
 import { getStatusStyle, BUYER_STATUS_COLOR, type SemanticKey } from '@/lib/statusColors'
 import type { Campaign } from '@/types/campaign'
 import type { Buyer } from '@/types/buyer'
-import { UserPlus, X } from 'lucide-react'
+import { UserPlus, X, RotateCcw } from 'lucide-react'
 
 interface CampaignBuyersTabProps {
   campaign: Campaign
@@ -68,6 +68,19 @@ export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
       qc.invalidateQueries({ queryKey: ['campaign-next-buyer', campaign._id] })
     },
     onError: () => addNotification({ type: 'error', title: 'Error', description: 'Failed to update buyer status' }),
+  })
+
+  const resetCapMutation = useMutation({
+    mutationFn: async (buyerId: string) => {
+      const { data } = await api.post(`/buyers/${buyerId}/reset-cap`)
+      return data
+    },
+    onSuccess: () => {
+      addNotification({ type: 'success', title: 'Caps reset', description: 'Buyer counters reset to 0' })
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.BUYERS })
+      qc.invalidateQueries({ queryKey: ['campaign-detail', campaign._id] })
+    },
+    onError: (err: any) => addNotification({ type: 'error', title: 'Error', description: err?.response?.data?.error || 'Failed to reset caps' }),
   })
 
   const { data: nextBuyerData } = useQuery({
@@ -189,6 +202,19 @@ export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
                       className="text-[10px] px-2 py-1 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
                     >
                       Deactivate
+                    </button>
+                  )}
+                  {buyer && (buyer.leadsReceived > 0 || buyer.dailyLeadsReceived > 0 || buyer.monthlyLeadsReceived > 0) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (confirm(`Reset all counters for "${buyer.name}" to 0?`)) resetCapMutation.mutate(buyerId)
+                      }}
+                      disabled={resetCapMutation.isPending}
+                      className="text-[10px] px-2 py-1 rounded-md bg-white/[0.05] text-muted-foreground hover:text-amber-400 hover:bg-amber-500/10 transition-colors disabled:opacity-50"
+                    >
+                      <RotateCcw size={10} className="inline mr-1" />
+                      Reset
                     </button>
                   )}
                 </div>

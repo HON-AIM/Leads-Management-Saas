@@ -11,9 +11,12 @@ async function deliver(ctx) {
 
   // Layer 5: Defensive guard — never deliver a duplicate lead
   if (lead.isDuplicate || lead.status === 'duplicate') {
-    ctx.stop = true;
-    ctx.stopReason = 'Duplicate lead rejected at delivery stage';
-    return;
+    const handling = ctx.campaign?.duplicateHandling || 'reject'
+    if (handling !== 'assign_anyway') {
+      ctx.stop = true;
+      ctx.stopReason = 'Duplicate lead rejected at delivery stage';
+      return;
+    }
   }
 
 

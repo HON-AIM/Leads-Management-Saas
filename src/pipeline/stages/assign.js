@@ -7,9 +7,12 @@ async function assign(ctx) {
 
   // Layer 4: Defensive guard — reject duplicates that bypassed earlier stages
   if (lead.isDuplicate || lead.status === 'duplicate') {
-    ctx.stop = true
-    ctx.stopReason = 'Duplicate lead rejected at assignment stage'
-    return
+    const handling = campaign?.duplicateHandling || 'reject'
+    if (handling !== 'assign_anyway') {
+      ctx.stop = true
+      ctx.stopReason = 'Duplicate lead rejected at assignment stage'
+      return
+    }
   }
 
 

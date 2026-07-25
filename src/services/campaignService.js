@@ -40,6 +40,7 @@ class CampaignService {
   async addBuyer(campaignId, tenantId, buyerId, config = {}) {
     const campaign = await campaignRepo.findById(campaignId, tenantId);
     if (!campaign) throw new Error('Campaign not found');
+    campaign.assignedBuyers = campaign.assignedBuyers.filter((b) => b.buyerId);
     if (campaign.assignedBuyers.some((b) => b.buyerId.toString() === buyerId)) {
       throw new Error('Buyer already assigned to campaign');
     }
@@ -51,7 +52,7 @@ class CampaignService {
   async removeBuyer(campaignId, tenantId, buyerId) {
     const campaign = await campaignRepo.findById(campaignId, tenantId);
     if (!campaign) throw new Error('Campaign not found');
-    campaign.assignedBuyers = campaign.assignedBuyers.filter((b) => b.buyerId.toString() !== buyerId);
+    campaign.assignedBuyers = campaign.assignedBuyers.filter((b) => b.buyerId && b.buyerId.toString() !== buyerId);
     await campaignRepo.save(campaign);
     return campaign;
   }

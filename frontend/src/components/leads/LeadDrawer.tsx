@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { formatDate } from '@/lib/utils'
-import { getStatusStyle, LEAD_STATUS_COLOR, DELIVERY_STATUS_COLOR, type SemanticKey } from '@/lib/statusColors'
+import { getStatusStyle, LEAD_STATUS_COLOR, DELIVERY_STATUS_COLOR, getScoreColor, type SemanticKey } from '@/lib/statusColors'
 import { useNotifications } from '@/hooks/useNotifications'
 import type { LeadDetail, DeliveryAttempt } from '@/types/lead'
 import type { Buyer } from '@/types/buyer'
@@ -143,6 +143,21 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
                     <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getStatusStyle(LEAD_STATUS_COLOR[lead.status] ?? 'neutral')}`}>
                       {lead.status}
                     </span>
+                  </div>
+                  <div className="flex items-center gap-2.5 py-1">
+                    <span className="text-[11px] text-muted-foreground w-[72px] shrink-0">Score</span>
+                    {lead.score != null ? (
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium ${getScoreColor(lead.score)}`}>
+                          {lead.score}/100
+                        </span>
+                        {lead.scoreReasoning && (
+                          <span className="text-[11px] text-muted-foreground italic">{lead.scoreReasoning}</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-[12px] text-muted-foreground/60">Not scored</span>
+                    )}
                   </div>
                   <InfoRow label="Created" value={formatDate(lead.createdAt)} />
                 </Section>

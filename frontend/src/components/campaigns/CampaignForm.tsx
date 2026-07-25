@@ -36,6 +36,7 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
     })) || [],
     costPerLead: campaign?.costPerLead ?? 0,
     dedupWindowHours: campaign?.dedupWindowHours ?? 720,
+    duplicateHandling: campaign?.duplicateHandling || 'reject',
   })
 
   const update = (patch: Partial<CampaignFormData>) => setForm((prev) => ({ ...prev, ...patch }))

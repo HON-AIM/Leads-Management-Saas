@@ -35,6 +35,10 @@ class BuyerService {
     return buyerRepo.resetMonthlyCaps(tenantId);
   }
 
+  async resetCaps(buyerId, tenantId) {
+    return buyerRepo.resetCaps(buyerId, tenantId);
+  }
+
   async getActiveInTenant(tenantId) {
     return buyerRepo.findActiveInTenant(tenantId);
   }

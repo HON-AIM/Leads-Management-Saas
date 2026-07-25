@@ -18,6 +18,8 @@ const buyerSchema = new mongoose.Schema(
     monthlyLeadsReceived: { type: Number, default: 0 },
     lastAssignedAt: { type: Date },
 
+    minimumScore: { type: Number, default: null },
+
     pricePerLead: { type: Number, default: 0, min: 0 },
     weight: { type: Number, default: 1, min: 1 },
     priority: { type: Number, default: 0 },

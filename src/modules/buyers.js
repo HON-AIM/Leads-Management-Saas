@@ -3,6 +3,7 @@ const { authenticate, authorize } = require('../middleware/auth');
 const buyerService = require('../services/buyerService');
 const payloadTemplateService = require('../services/payloadTemplateService');
 const deliveryService = require('../services/deliveryService');
+const activityLogRepository = require('../repositories/activityLogRepository');
 const Lead = require('../models/Lead');
 const Campaign = require('../models/Campaign');
 const { success, created, error, notFound, paginated } = require('../utils/response');
@@ -44,6 +45,34 @@ router.post('/', authorize('admin', 'member', 'manager'), validate(createBuyer),
   }
 });
 
+router.post('/reset-all-caps', authorize('admin'), async (req, res) => {
+  try {
+    const buyers = await buyerService.getActiveInTenant(req.tenantId);
+
+    for (const buyer of buyers) {
+      await buyerService.resetCaps(buyer._id, req.tenantId);
+    }
+
+    await activityLogRepository.create({
+      action: 'bulk_caps_reset',
+      category: 'cap_reset',
+      targetType: 'buyers',
+      details: {
+        triggeredBy: 'manual',
+        buyerCount: buyers.length,
+        buyerIds: buyers.map((b) => b._id.toString()),
+      },
+      userId: req.userId,
+      userName: req.user?.name || req.user?.email || 'Unknown',
+      tenantId: req.tenantId,
+    });
+
+    return success(res, { message: `Caps reset for ${buyers.length} buyers`, count: buyers.length });
+  } catch (err) {
+    return error(res, err.message);
+  }
+});
+
 router.put('/:id', authorize('admin', 'member', 'manager'), validate(updateBuyer), async (req, res) => {
   try {
     const buyer = await buyerService.getById(req.params.id, req.tenantId);
@@ -81,6 +110,90 @@ router.delete('/:id', authorize('admin'), async (req, res) => {
     const result = await buyerService.delete(req.params.id, req.tenantId);
     if (!result) return notFound(res, 'Buyer not found');
     return success(res, { message: 'Buyer deleted' });
+  } catch (err) {
+    return error(res, err.message);
+  }
+});
+
+router.post('/:id/duplicate', authorize('admin', 'member', 'manager'), async (req, res) => {
+  try {
+    const source = await buyerService.getById(req.params.id, req.tenantId);
+    if (!source) return notFound(res, 'Source buyer not found');
+
+    const cloneData = {
+      name: req.body.name || `${source.name} (Copy)`,
+      email: req.body.email || source.email,
+      phone: req.body.phone || '',
+      ghlUserId: '',
+      status: 'inactive',
+      leadCap: 0,
+      dailyCap: source.dailyCap || 0,
+      monthlyCap: source.monthlyCap || 0,
+      leadsReceived: 0,
+      dailyLeadsReceived: 0,
+      monthlyLeadsReceived: 0,
+      minimumScore: source.minimumScore ?? null,
+      pricePerLead: source.pricePerLead || 0,
+      weight: source.weight || 1,
+      priority: source.priority || 0,
+      allowedStates: [...(source.allowedStates || [])],
+      delivery: {
+        provider: source.delivery?.provider || 'none',
+        url: req.body.url || '',
+        apiKey: '',
+        locationId: '',
+        secret: '',
+        payloadTemplate: source.delivery?.payloadTemplate || null,
+        acceptanceRule: source.delivery?.acceptanceRule
+          ? { ...source.delivery.acceptanceRule }
+          : { enabled: false, responseFieldPath: '', operator: 'exists', expectedValue: '' },
+      },
+      schedule: source.schedule
+        ? { ...source.schedule, days: [...(source.schedule.days || [])] }
+        : { enabled: false, timezone: 'America/New_York', days: [], startTime: '09:00', endTime: '17:00' },
+      createdBy: req.userId,
+    };
+
+    const newBuyer = await buyerService.create(cloneData, req.tenantId);
+
+    await activityLogRepository.create({
+      action: 'buyer_duplicated',
+      category: 'buyer',
+      targetType: 'buyer',
+      targetId: newBuyer._id,
+      targetName: newBuyer.name,
+      details: { sourceBuyerId: source._id.toString(), sourceBuyerName: source.name },
+      userId: req.userId,
+      userName: req.user?.name || req.user?.email || 'Unknown',
+      tenantId: req.tenantId,
+    });
+
+    return created(res, newBuyer);
+  } catch (err) {
+    return error(res, err.message, 400);
+  }
+});
+
+router.post('/:id/reset-cap', authorize('admin'), async (req, res) => {
+  try {
+    const buyer = await buyerService.getById(req.params.id, req.tenantId);
+    if (!buyer) return notFound(res, 'Buyer not found');
+
+    const updated = await buyerService.resetCaps(req.params.id, req.tenantId);
+
+    await activityLogRepository.create({
+      action: 'manual_caps_reset',
+      category: 'cap_reset',
+      targetType: 'buyer',
+      targetId: buyer._id,
+      targetName: buyer.name,
+      details: { triggeredBy: 'manual', buyerId: buyer._id.toString() },
+      userId: req.userId,
+      userName: req.user?.name || req.user?.email || 'Unknown',
+      tenantId: req.tenantId,
+    });
+
+    return success(res, updated);
   } catch (err) {
     return error(res, err.message);
   }
@@ -197,15 +310,17 @@ router.post('/:id/acceptance-rule/preview', authorize('admin', 'manager'), async
 
 router.post('/:id/payload-template/test-send', authorize('admin', 'manager'), async (req, res) => {
   try {
-    const { template, sampleLeadId } = req.body;
-    if (!template || typeof template !== 'string') {
-      return error(res, 'Template string is required', 400);
+    const { template: requestTemplate, sampleLeadId } = req.body;
+    if (requestTemplate !== undefined && typeof requestTemplate !== 'string') {
+      return error(res, 'Template must be a string', 400);
     }
     const buyer = await buyerService.getById(req.params.id, req.tenantId);
     if (!buyer) return notFound(res, 'Buyer not found');
     if (!buyer.delivery?.url) {
       return error(res, 'Buyer has no delivery URL configured', 400);
     }
+
+    const template = requestTemplate || buyer.delivery?.payloadTemplate || payloadTemplateService.DEFAULT_PAYLOAD_TEMPLATE;
 
     let lead = null;
     if (sampleLeadId) {

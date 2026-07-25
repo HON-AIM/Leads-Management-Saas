@@ -18,6 +18,37 @@ const { createLead, updateLead } = require('../middleware/validation/schemas');
 
 router.use(authenticate);
 
+router.get('/duplicates', async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 25;
+    const showReviewed = req.query.showReviewed === 'true';
+
+    const query = {
+      tenantId: req.tenantId,
+      isDuplicate: true,
+    };
+    if (!showReviewed) {
+      query.reviewedAt = { $exists: false };
+    }
+
+    const [leads, total] = await Promise.all([
+      Lead.find(query)
+        .populate('duplicateOf', 'name email phone state status source createdAt')
+        .populate('campaignId', 'name')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Lead.countDocuments(query),
+    ]);
+
+    return paginated(res, { data: leads, total, page, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    return error(res, err.message);
+  }
+});
+
 router.get('/', async (req, res) => {
   try {
     const { page, limit, status, state, source, campaignId, search, startDate, endDate, buyerId } = req.query;
@@ -282,6 +313,172 @@ router.post('/:id/assign', authorize('admin', 'member'), async (req, res) => {
     return success(res, { ...updated.toObject(), assignment: updatedAssignment });
   } catch (err) {
     logger.error('Manual assign failed', { leadId: req.params.id, error: err.message });
+    return error(res, err.message, 400);
+  }
+});
+
+router.post('/:id/duplicate-action', authorize('admin', 'member'), async (req, res) => {
+  try {
+    const { action } = req.body;
+    if (!action || !['ignore', 'reassign', 'update_original', 'delete_permanently'].includes(action)) {
+      return badRequest(res, 'action must be one of: ignore, reassign, update_original, delete_permanently');
+    }
+
+    const lead = await Lead.findOne({ _id: req.params.id, tenantId: req.tenantId });
+    if (!lead) return notFound(res, 'Lead not found');
+    if (!lead.isDuplicate) return badRequest(res, 'Lead is not marked as a duplicate');
+
+    if (action === 'ignore') {
+      lead.reviewedAt = new Date();
+      await lead.save();
+
+      await routingLogRepository.create({
+        leadId: lead._id,
+        campaignId: lead.campaignId || null,
+        tenantId: req.tenantId,
+        routingMode: 'manual',
+        eligibleBuyerIds: [],
+        selectedBuyerId: null,
+        reason: `Duplicate ignored by admin`,
+        durationMs: 0,
+      });
+
+      return success(res, { message: 'Duplicate reviewed and dismissed', lead });
+    }
+
+    if (action === 'delete_permanently') {
+      await Lead.findByIdAndDelete(lead._id);
+
+      await routingLogRepository.create({
+        leadId: lead._id,
+        campaignId: lead.campaignId || null,
+        tenantId: req.tenantId,
+        routingMode: 'manual',
+        eligibleBuyerIds: [],
+        selectedBuyerId: null,
+        reason: `Duplicate permanently deleted by admin`,
+        durationMs: 0,
+      });
+
+      return success(res, { message: 'Duplicate permanently deleted' });
+    }
+
+    if (action === 'reassign') {
+      const campaign = await Campaign.findOne({ _id: lead.campaignId, tenantId: req.tenantId, status: 'active' });
+      if (!campaign) return badRequest(res, 'Lead has no active campaign');
+
+      lead.isDuplicate = false;
+      lead.status = 'new';
+      lead.reviewedAt = new Date();
+      await lead.save();
+
+      let supplier = null;
+      if (lead.supplierId) {
+        const Supplier = require('../models/Supplier');
+        supplier = await Supplier.findById(lead.supplierId);
+      }
+
+      const ctx = await runPartialPipeline(
+        { lead, campaign, supplier, tenantId: req.tenantId },
+        ['buyerFilter', 'capFilter', 'stateFilter', 'assign', 'deliver', 'log']
+      );
+
+      await routingLogRepository.create({
+        leadId: lead._id,
+        campaignId: campaign._id,
+        tenantId: req.tenantId,
+        routingMode: 'manual',
+        eligibleBuyerIds: ctx.buyerPool?.map((e) => e.buyer._id) || [],
+        selectedBuyerId: ctx.selectedBuyer?.buyer?._id || null,
+        reason: `Manual duplicate reassignment by admin — override of campaign default`,
+        durationMs: Date.now() - ctx.startTime,
+      });
+
+      if (!ctx.assignment) {
+        return badRequest(res, ctx.stopReason || 'No eligible buyer found');
+      }
+
+      const updated = await Lead.findOne({ _id: lead._id, tenantId: req.tenantId }).populate('campaignId', 'name');
+      const assignment = await leadAssignmentRepo.findByLead(lead._id, req.tenantId);
+      return success(res, { ...updated.toObject(), assignment });
+    }
+
+    if (action === 'update_original') {
+      if (!lead.duplicateOf) return badRequest(res, 'No original lead found to update');
+
+      const originalLead = await Lead.findById(lead.duplicateOf);
+      if (!originalLead) return notFound(res, 'Original lead not found');
+
+      const source = lead.rawPayload || {};
+      const updates = {};
+      const mergeFields = ['name', 'email', 'phone', 'state'];
+      for (const field of mergeFields) {
+        const newVal = lead[field] || source[field];
+        if (newVal && newVal !== originalLead[field]) {
+          updates[field] = newVal;
+        }
+      }
+      if (Object.keys(updates).length > 0) {
+        await Lead.findByIdAndUpdate(lead.duplicateOf, { $set: updates });
+      }
+
+      lead.reviewedAt = new Date();
+      lead.status = 'merged';
+      await lead.save();
+
+      const originalAssignment = await leadAssignmentRepo.findByLead(lead.duplicateOf, req.tenantId);
+      if (originalAssignment && originalAssignment.buyerId) {
+        const Buyer = require('../models/Buyer');
+        const buyer = await Buyer.findById(originalAssignment.buyerId._id || originalAssignment.buyerId);
+        const campaign = await Campaign.findById(lead.campaignId);
+
+        if (buyer && campaign) {
+          const newAssignment = await leadAssignmentRepo.create({
+            leadId: lead._id,
+            buyerId: buyer._id,
+            tenantId: req.tenantId,
+            campaignId: campaign._id,
+            routingMode: 'update_original',
+            cost: campaign.costPerLead || 0,
+            revenue: buyer.pricePerLead || 0,
+            status: 'pending',
+          });
+
+          const updatedOriginal = await Lead.findById(lead.duplicateOf).lean();
+
+          try {
+            await attemptDelivery({
+              leadAssignment: newAssignment,
+              lead: updatedOriginal,
+              buyer,
+              campaign,
+              supplier: null,
+              triggeredBy: 'manual',
+              triggeredByUserId: req.userId,
+              tenantId: req.tenantId,
+            });
+          } catch (err) {
+            logger.error('Update original delivery failed', { leadId: lead._id, error: err.message });
+          }
+        }
+      }
+
+      await routingLogRepository.create({
+        leadId: lead._id,
+        campaignId: lead.campaignId || null,
+        tenantId: req.tenantId,
+        routingMode: 'manual',
+        eligibleBuyerIds: [],
+        selectedBuyerId: originalAssignment?.buyerId?._id || originalAssignment?.buyerId || null,
+        reason: `Duplicate merged into original by admin`,
+        durationMs: 0,
+      });
+
+      const updatedLead = await Lead.findOne({ _id: lead._id, tenantId: req.tenantId }).populate('duplicateOf', 'name email');
+      return success(res, { message: 'Updated original and triggered re-delivery', lead: updatedLead });
+    }
+  } catch (err) {
+    logger.error('Duplicate action failed', { leadId: req.params.id, error: err.message });
     return error(res, err.message, 400);
   }
 });

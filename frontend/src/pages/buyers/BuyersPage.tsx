@@ -5,15 +5,17 @@ import { QUERY_KEYS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { useNotifications } from '@/hooks/useNotifications'
 import { BuyerDrawer } from '@/components/buyers/BuyerDrawer'
+import { BuyerOnboardWizard } from '@/components/buyers/BuyerOnboardWizard'
 import { getStatusStyle, BUYER_STATUS_COLOR, type SemanticKey } from '@/lib/statusColors'
 import type { Buyer, BuyerFormData } from '@/types/buyer'
-import { Search, Plus, Pencil, Trash2, Building2 } from 'lucide-react'
+import { Search, Plus, Pencil, Trash2, Building2, RotateCcw, Zap } from 'lucide-react'
 
 export function BuyersPage() {
   const qc = useQueryClient()
   const { addNotification } = useNotifications()
   const [search, setSearch] = useState('')
   const [drawerBuyer, setDrawerBuyer] = useState<Buyer | 'new' | null>(null)
+  const [showWizard, setShowWizard] = useState(false)
 
   const { data, isLoading } = useQuery<{ success: boolean; data: Buyer[] }>({
     queryKey: QUERY_KEYS.BUYERS,
@@ -68,6 +70,45 @@ export function BuyersPage() {
     onError: () => addNotification({ type: 'error', title: 'Error', description: 'Failed to delete buyer' }),
   })
 
+  const resetCapMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post(`/buyers/${id}/reset-cap`)
+      return data
+    },
+    onSuccess: () => {
+      addNotification({ type: 'success', title: 'Caps reset', description: 'Buyer counters reset to 0' })
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.BUYERS })
+    },
+    onError: (err: any) => addNotification({ type: 'error', title: 'Error', description: err?.response?.data?.error || 'Failed to reset caps' }),
+  })
+
+  const resetAllCapsMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post('/buyers/reset-all-caps')
+      return data
+    },
+    onSuccess: (data: any) => {
+      addNotification({ type: 'success', title: 'All caps reset', description: data?.message || 'All buyer caps reset' })
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.BUYERS })
+    },
+    onError: (err: any) => addNotification({ type: 'error', title: 'Error', description: err?.response?.data?.error || 'Failed to reset caps' }),
+  })
+
+  const activateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.patch(`/buyers/${id}/status`, { status: 'active' })
+      return data.data
+    },
+    onSuccess: () => {
+      addNotification({ type: 'success', title: 'Activated', description: 'Buyer is now active and receiving leads' })
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.BUYERS })
+      setDrawerBuyer(null)
+    },
+    onError: (err: any) => {
+      addNotification({ type: 'error', title: 'Error', description: err?.response?.data?.error || 'Failed to activate buyer' })
+    },
+  })
+
   const filtered = buyers.filter((b) =>
     b.name.toLowerCase().includes(search.toLowerCase()) ||
     b.email.toLowerCase().includes(search.toLowerCase()) ||
@@ -76,6 +117,25 @@ export function BuyersPage() {
 
   const isPending = createMutation.isPending || updateMutation.isPending
 
+  const handleWizardComplete = (buyerId: string) => {
+    setShowWizard(false)
+    qc.invalidateQueries({ queryKey: QUERY_KEYS.BUYERS }).then(() => {
+      const buyer = buyers.find((b) => b._id === buyerId)
+      if (buyer) {
+        setDrawerBuyer({ ...buyer, status: 'active' })
+      }
+    })
+  }
+
+  if (showWizard) {
+    return (
+      <BuyerOnboardWizard
+        onComplete={handleWizardComplete}
+        onCancel={() => setShowWizard(false)}
+      />
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -83,11 +143,33 @@ export function BuyersPage() {
           <h1 className="text-[18px] font-semibold text-white tracking-tight">Buyers</h1>
           <p className="text-[13px] text-muted-foreground mt-0.5">{buyers.length} total</p>
         </div>
-        <Button onClick={() => setDrawerBuyer('new')} size="sm" variant="cta">
-          <Plus size={14} className="mr-1.5" />
-          Add Buyer
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setShowWizard(true)} size="sm" variant="cta">
+            <Zap size={14} className="mr-1.5" />
+            Onboard Buyer
+          </Button>
+          <Button onClick={() => setDrawerBuyer('new')} size="sm" variant="outline">
+            <Plus size={14} className="mr-1.5" />
+            Add Buyer
+          </Button>
+        </div>
       </div>
+
+      {buyers.length > 0 && (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (confirm('Reset all buyer counters (daily, monthly, and total) to 0?')) resetAllCapsMutation.mutate()
+            }}
+            disabled={resetAllCapsMutation.isPending}
+          >
+            <RotateCcw size={13} className="mr-1.5" />
+            {resetAllCapsMutation.isPending ? 'Resetting...' : 'Reset All Caps'}
+          </Button>
+        </div>
+      )}
 
       <div className="relative">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -139,8 +221,8 @@ export function BuyersPage() {
                         {search ? 'No buyers match your search' : 'No buyers yet'}
                       </p>
                       {!search && (
-                        <Button variant="cta" size="sm" className="mt-1" onClick={() => setDrawerBuyer('new')}>
-                          Add your first buyer
+                        <Button variant="cta" size="sm" className="mt-1" onClick={() => setShowWizard(true)}>
+                          Onboard your first buyer
                         </Button>
                       )}
                     </div>
@@ -172,6 +254,18 @@ export function BuyersPage() {
                   <td className="px-6 py-3 text-white/75">{b.priority}</td>
                   <td className="px-6 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-0.5">
+                      {(b.dailyLeadsReceived > 0 || b.monthlyLeadsReceived > 0 || b.leadsReceived > 0) && (
+                        <button
+                          onClick={() => {
+                            if (confirm(`Reset all counters for "${b.name}" to 0?`)) resetCapMutation.mutate(b._id)
+                          }}
+                          disabled={resetCapMutation.isPending}
+                          title="Reset caps"
+                          className="rounded-md p-1.5 text-muted-foreground hover:text-amber-400 hover:bg-amber-500/10 transition-colors disabled:opacity-50"
+                        >
+                          <RotateCcw size={13} />
+                        </button>
+                      )}
                       <button
                         onClick={() => setDrawerBuyer(b)}
                         className="rounded-md p-1.5 text-muted-foreground hover:text-white hover:bg-white/[0.04] transition-colors"
@@ -209,7 +303,10 @@ export function BuyersPage() {
         onDelete={drawerBuyer && drawerBuyer !== 'new' ? () => {
           if (confirm(`Delete "${drawerBuyer.name}"?`)) deleteMutation.mutate(drawerBuyer._id)
         } : undefined}
-        isPending={isPending}
+        onActivate={drawerBuyer && drawerBuyer !== 'new' && drawerBuyer.status === 'inactive' ? () => {
+          activateMutation.mutate(drawerBuyer._id)
+        } : undefined}
+        isPending={isPending || activateMutation.isPending}
       />
     </div>
   )

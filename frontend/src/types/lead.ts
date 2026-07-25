@@ -6,9 +6,13 @@ export interface Lead {
   state: string
   source: string
   campaignId?: { _id: string; name: string } | null
-  status: 'new' | 'assigned' | 'delivered' | 'failed' | 'duplicate' | 'unassigned'
+  status: 'new' | 'assigned' | 'delivered' | 'failed' | 'duplicate' | 'unassigned' | 'merged'
   isDuplicate: boolean
-  duplicateOf?: string | null
+  duplicateOf?: string | { _id: string; name: string; email: string; phone?: string; state?: string; status: string; source?: string; createdAt: string } | null
+  reviewedAt?: string | null
+  score?: number | null
+  scoreReasoning?: string
+  scoredAt?: string | null
   rawPayload?: Record<string, any>
   tenantId: string
   createdAt: string
@@ -77,6 +81,7 @@ export const STATUS_OPTIONS = [
   { label: 'Failed', value: 'failed' },
   { label: 'Duplicate', value: 'duplicate' },
   { label: 'Unassigned', value: 'unassigned' },
+  { label: 'Merged', value: 'merged' },
 ] as const
 
 

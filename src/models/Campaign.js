@@ -16,6 +16,11 @@ const campaignSchema = new mongoose.Schema(
     },
     costPerLead: { type: Number, default: 0, min: 0 },
     dedupWindowHours: { type: Number, default: 720, min: 1 },
+    duplicateHandling: {
+      type: String,
+      enum: ['reject', 'assign_anyway', 'update_existing'],
+      default: 'reject',
+    },
 
     assignedBuyers: [
       {

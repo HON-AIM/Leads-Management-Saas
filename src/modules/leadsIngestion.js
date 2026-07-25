@@ -119,14 +119,60 @@ router.post('/', ingestLimiter, async (req, res) => {
         }
 
         if (isDuplicate) {
-          logger.info('Duplicate lead detected via ingestion', { leadId: lead._id, duplicateOf });
-          results.push({
-            id: lead._id,
-            status: 'duplicate',
-            duplicate: true,
-            duplicateOf: duplicateOf?.toString(),
-            message: 'Duplicate lead detected. Lead stored but not processed.',
-          });
+          const handling = campaign.duplicateHandling || 'reject';
+          logger.info('Duplicate lead detected via ingestion', { leadId: lead._id, duplicateOf, handling });
+
+          if (handling === 'assign_anyway') {
+            lead.status = 'new';
+            await lead.save();
+
+            if (useQueue) {
+              await addLeadJob({
+                leadId: lead._id.toString(),
+                campaignId: campaign._id.toString(),
+                tenantId: tenantId.toString(),
+              });
+              results.push({ id: lead._id, status: 'queued', duplicate: true, handling: 'assign_anyway' });
+            } else {
+              processLead({
+                leadId: lead._id.toString(),
+                campaignId: campaign._id.toString(),
+                tenantId: tenantId.toString(),
+              }).catch((err) => {
+                logger.error('Inline lead processing error', { leadId: lead._id, error: err.message });
+              });
+              results.push({ id: lead._id, status: 'processing', duplicate: true, handling: 'assign_anyway' });
+            }
+          } else if (handling === 'update_existing') {
+            lead.status = 'new';
+            await lead.save();
+
+            if (useQueue) {
+              await addLeadJob({
+                leadId: lead._id.toString(),
+                campaignId: campaign._id.toString(),
+                tenantId: tenantId.toString(),
+              });
+              results.push({ id: lead._id, status: 'queued', duplicate: true, handling: 'update_existing' });
+            } else {
+              processLead({
+                leadId: lead._id.toString(),
+                campaignId: campaign._id.toString(),
+                tenantId: tenantId.toString(),
+              }).catch((err) => {
+                logger.error('Inline lead processing error', { leadId: lead._id, error: err.message });
+              });
+              results.push({ id: lead._id, status: 'processing', duplicate: true, handling: 'update_existing' });
+            }
+          } else {
+            results.push({
+              id: lead._id,
+              status: 'duplicate',
+              duplicate: true,
+              duplicateOf: duplicateOf?.toString(),
+              message: 'Duplicate lead detected. Lead stored but not processed.',
+            });
+          }
           continue;
         }
 

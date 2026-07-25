@@ -40,6 +40,7 @@ export const LEAD_STATUS_COLOR: Record<string, SemanticKey> = {
   failed: 'negative',
   duplicate: 'neutral',
   unassigned: 'caution',
+  merged: 'info',
 }
 
 export const DELIVERY_STATUS_COLOR: Record<string, SemanticKey> = {
@@ -76,4 +77,11 @@ export function getStatusStyle(key: SemanticKey): string {
 
 export function getTextColor(key: SemanticKey): string {
   return SEMANTIC_COLORS[key].text
+}
+
+export function getScoreColor(score: number | null | undefined): string {
+  if (score == null) return ''
+  if (score >= 70) return `${SEMANTIC_COLORS.positive.bg} ${SEMANTIC_COLORS.positive.text} ${SEMANTIC_COLORS.positive.ring}`
+  if (score >= 40) return `${SEMANTIC_COLORS.caution.bg} ${SEMANTIC_COLORS.caution.text} ${SEMANTIC_COLORS.caution.ring}`
+  return `${SEMANTIC_COLORS.negative.bg} ${SEMANTIC_COLORS.negative.text} ${SEMANTIC_COLORS.negative.ring}`
 }
