@@ -12,7 +12,8 @@
     "test": "npx jest --passWithNoTests",
     "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch",
     "typecheck": "echo 'TypeScript not configured yet'",
-    "lint": "echo 'Linting not configured yet'"
+    "lint": "echo 'Linting not configured yet'",
+    "seed": "node seed.js"
   },
   "keywords": [
     "leads",
