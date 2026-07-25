@@ -142,13 +142,13 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, onActivat
               <>
             <Section title="Basic Info">
               <Field label="Name">
-                <Input value={form.name} onChange={(e) => update({ name: e.target.value })} placeholder="Buyer name" className="text-white" />
+                <Input value={form.name} onChange={(e) => update({ name: e.target.value })} placeholder="Buyer name" />
               </Field>
               <Field label="Email">
-                <Input type="email" value={form.email} onChange={(e) => update({ email: e.target.value })} placeholder="buyer@example.com" className="text-white" />
+                <Input type="email" value={form.email} onChange={(e) => update({ email: e.target.value })} placeholder="buyer@example.com" />
               </Field>
               <Field label="Phone">
-                <Input value={form.phone} onChange={(e) => update({ phone: e.target.value })} placeholder="Optional" className="text-white" />
+                <Input value={form.phone} onChange={(e) => update({ phone: e.target.value })} placeholder="Optional" />
               </Field>
               <Field label="GHL User ID">
                 <Input value={form.ghlUserId} onChange={(e) => update({ ghlUserId: e.target.value })} placeholder="GHL User ID for lead assignment" className="font-mono text-[12px] text-white" />
@@ -183,10 +183,10 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, onActivat
               {form.delivery.provider === 'ghl' && (
                 <>
                   <Field label="Location ID">
-                    <Input value={form.delivery.locationId} onChange={(e) => updateDelivery({ locationId: e.target.value })} placeholder="GHL location ID" className="text-white" />
+                    <Input value={form.delivery.locationId} onChange={(e) => updateDelivery({ locationId: e.target.value })} placeholder="GHL location ID" />
                   </Field>
                   <Field label="API Key">
-                    <Input value={form.delivery.apiKey} onChange={(e) => updateDelivery({ apiKey: e.target.value })} placeholder="GHL API key" type="password" className="text-white" />
+                    <Input value={form.delivery.apiKey} onChange={(e) => updateDelivery({ apiKey: e.target.value })} placeholder="GHL API key" type="password" />
                   </Field>
                 </>
               )}
@@ -243,19 +243,19 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, onActivat
             <Section title="Caps">
               <div className="grid grid-cols-3 gap-3">
                 <Field label="Total Cap">
-                  <Input type="number" min={0} value={form.leadCap} onChange={(e) => update({ leadCap: Number(e.target.value) })} className="text-white" />
+                  <Input type="number" min={0} value={form.leadCap} onChange={(e) => update({ leadCap: Number(e.target.value) })} />
                 </Field>
                 <Field label="Daily Cap">
-                  <Input type="number" min={0} value={form.dailyCap} onChange={(e) => update({ dailyCap: Number(e.target.value) })} className="text-white" />
+                  <Input type="number" min={0} value={form.dailyCap} onChange={(e) => update({ dailyCap: Number(e.target.value) })} />
                 </Field>
                 <Field label="Monthly Cap">
-                  <Input type="number" min={0} value={form.monthlyCap} onChange={(e) => update({ monthlyCap: Number(e.target.value) })} className="text-white" />
+                  <Input type="number" min={0} value={form.monthlyCap} onChange={(e) => update({ monthlyCap: Number(e.target.value) })} />
                 </Field>
               </div>
               <p className="text-[10px] text-muted-foreground/70">0 = unlimited</p>
               <div className="mt-3 space-y-1.5">
                 <Field label="Min Score">
-                  <Input type="number" min={0} max={100} value={form.minimumScore ?? ''} onChange={(e) => update({ minimumScore: e.target.value === '' ? null : Number(e.target.value) })} placeholder="No minimum" className="text-white" />
+                  <Input type="number" min={0} max={100} value={form.minimumScore ?? ''} onChange={(e) => update({ minimumScore: e.target.value === '' ? null : Number(e.target.value) })} placeholder="No minimum" />
                 </Field>
                 <p className="text-[10px] text-muted-foreground/70">Only leads scoring at or above this value will be eligible for this buyer. Leave blank to accept all leads regardless of score.</p>
               </div>
@@ -264,10 +264,10 @@ export function BuyerDrawer({ buyer, isNew, onClose, onSave, onDelete, onActivat
             <Section title="Routing">
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Weight">
-                  <Input type="number" min={1} value={form.weight} onChange={(e) => update({ weight: Number(e.target.value) })} className="text-white" />
+                  <Input type="number" min={1} value={form.weight} onChange={(e) => update({ weight: Number(e.target.value) })} />
                 </Field>
                 <Field label="Priority">
-                  <Input type="number" min={0} value={form.priority} onChange={(e) => update({ priority: Number(e.target.value) })} className="text-white" />
+                  <Input type="number" min={0} value={form.priority} onChange={(e) => update({ priority: Number(e.target.value) })} />
                 </Field>
               </div>
             </Section>

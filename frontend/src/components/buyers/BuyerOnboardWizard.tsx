@@ -378,7 +378,7 @@ export function BuyerOnboardWizard({ onComplete, onCancel }: BuyerOnboardWizardP
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. John's Insurance Leads"
-                className="text-white"
+               
               />
               <p className="text-[10px] text-muted-foreground/60">Internal display name</p>
             </div>
@@ -390,7 +390,7 @@ export function BuyerOnboardWizard({ onComplete, onCancel }: BuyerOnboardWizardP
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="buyer@example.com"
-                className="text-white"
+               
               />
               <p className="text-[10px] text-muted-foreground/60">Contact email for this buyer</p>
             </div>

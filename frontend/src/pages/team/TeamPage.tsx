@@ -125,7 +125,6 @@ export function TeamPage() {
                 value={inviteName}
                 onChange={(e) => setInviteName(e.target.value)}
                 placeholder="Full name"
-                className="text-white"
               />
             </div>
             <div className="space-y-1.5">
@@ -135,7 +134,6 @@ export function TeamPage() {
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="email@example.com"
-                className="text-white"
               />
             </div>
             <div className="space-y-1.5">
@@ -145,7 +143,6 @@ export function TeamPage() {
                 value={invitePassword}
                 onChange={(e) => setInvitePassword(e.target.value)}
                 placeholder="Min 8 characters"
-                className="text-white"
               />
             </div>
             <div className="space-y-1.5">

@@ -114,7 +114,7 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
               value={form.name}
               onChange={(e) => update({ name: e.target.value })}
               placeholder="e.g. Texas Insurance Leads"
-              className="text-white"
+             
             />
           </div>
           <div className="space-y-1.5">
@@ -199,7 +199,7 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
                 step={0.01}
                 value={form.costPerLead}
                 onChange={(e) => update({ costPerLead: Number(e.target.value) })}
-                className="text-white"
+               
               />
             </div>
             <div className="space-y-1.5">
@@ -209,7 +209,7 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
                 min={1}
                 value={form.dedupWindowHours}
                 onChange={(e) => update({ dedupWindowHours: Number(e.target.value) })}
-                className="text-white"
+               
               />
             </div>
           </div>
