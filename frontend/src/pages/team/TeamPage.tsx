@@ -87,7 +87,7 @@ export function TeamPage() {
 
   const resendInviteMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const { data } = await api.post(`/auth/users/${userId}/resend-invite`)
+      const { data } = await api.post(`/auth/invite/${userId}/resend`)
       return data
     },
     onSuccess: (data) => {

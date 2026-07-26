@@ -16,7 +16,8 @@ const userSchema = new mongoose.Schema(
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true },
     status: { type: String, enum: ['active', 'inactive', 'pending'], default: 'active' },
     inviteToken: { type: String, select: false },
-    inviteTokenExpires: { type: Date, select: false },
+    inviteTokenExpiresAt: { type: Date, select: false },
+    invitedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     refreshTokens: [
       {
         token: { type: String },

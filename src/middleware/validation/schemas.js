@@ -117,6 +117,7 @@ const inviteUser = z.object({
 
 const acceptInvite = z.object({
   token: z.string().min(1, 'Invite token is required'),
+  email: z.string().email('Invalid email format'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 }).strict();
 

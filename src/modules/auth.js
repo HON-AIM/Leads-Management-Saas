@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const authService = require('../services/authService');
 const { authenticate, authorize, generateAccessToken, generateRefreshToken } = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimit');
@@ -113,15 +114,16 @@ router.post('/invite', authenticate, authorize('admin'), validate(inviteUserSche
   try {
     const User = require('../models/User');
     const Tenant = require('../models/Tenant');
-    const { sendEmail, buildInviteEmail } = require('../services/emailService');
+    const { sendTeamInviteEmail } = require('../services/emailService');
     const { email, name, role } = req.body;
 
     const normalizedEmail = email.toLowerCase().trim();
     const existing = await User.findOne({ email: normalizedEmail, tenantId: req.tenantId });
     if (existing) return error(res, 'A user with this email already exists in your workspace', 400);
 
-    const inviteToken = crypto.randomBytes(32).toString('hex');
-    const inviteTokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = await bcrypt.hash(rawToken, 10);
+    const inviteTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     const user = await User.create({
       email: normalizedEmail,
@@ -129,28 +131,29 @@ router.post('/invite', authenticate, authorize('admin'), validate(inviteUserSche
       role: role || 'member',
       tenantId: req.tenantId,
       status: 'pending',
-      inviteToken,
-      inviteTokenExpires,
+      inviteToken: hashedToken,
+      inviteTokenExpiresAt,
+      invitedBy: req.user._id,
     });
 
     const tenant = await Tenant.findById(req.tenantId);
-    const acceptUrl = `${require('../config').frontendUrl}/accept-invite?token=${inviteToken}`;
+    const tenantName = tenant?.name || 'LeadFlowX';
+    const inviteLink = `${require('../config').frontendUrl}/accept-invite?token=${rawToken}&email=${encodeURIComponent(normalizedEmail)}`;
 
     let emailSent = false;
     try {
-      await sendEmail({
-        to: normalizedEmail,
-        subject: `You've been invited to join ${tenant?.name || 'LeadFlowX'}`,
-        html: buildInviteEmail({
-          tenantName: tenant?.name || 'LeadFlowX',
-          invitedByName: req.user?.name || 'An admin',
-          role: role || 'member',
-          acceptUrl,
-        }),
-      });
+      await sendTeamInviteEmail(
+        normalizedEmail,
+        name,
+        req.user?.name || 'An admin',
+        tenantName,
+        inviteLink,
+        role || 'member',
+      );
       emailSent = true;
     } catch (emailErr) {
       console.error('Failed to send invite email:', emailErr.message);
+      return error(res, `Account created for ${normalizedEmail} but the invite email failed to send. Share this link manually: ${inviteLink}`, 201);
     }
 
     return created(res, {
@@ -161,7 +164,6 @@ router.post('/invite', authenticate, authorize('admin'), validate(inviteUserSche
         role: user.role,
         status: user.status,
       },
-      ...(emailSent ? {} : { note: 'Account created but the invite email could not be sent. Please share the invite link manually if needed.' }),
     });
   } catch (err) {
     return error(res, err.message, 400);
@@ -171,99 +173,80 @@ router.post('/invite', authenticate, authorize('admin'), validate(inviteUserSche
 router.post('/accept-invite', validate(acceptInviteSchema), async (req, res) => {
   try {
     const User = require('../models/User');
-    const { token, password } = req.body;
+    const { token, email, password } = req.body;
 
-    const user = await User.findOne({ inviteToken: token }).select('+inviteToken +inviteTokenExpires');
-    if (!user) return error(res, 'Invalid invite link', 400);
-
-    if (!user.inviteTokenExpires || user.inviteTokenExpires < new Date()) {
-      return error(res, 'This invite link has expired. Please ask your admin to resend the invite.', 400);
-    }
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail }).select('+inviteToken +inviteTokenExpiresAt');
+    if (!user) return error(res, 'No pending invite found for this email', 400);
 
     if (user.status !== 'pending') {
       return error(res, 'This invite has already been accepted. Please log in instead.', 400);
     }
 
+    if (!user.inviteToken || !user.inviteTokenExpiresAt) {
+      return error(res, 'No valid invite found. Please ask your admin to resend the invite.', 400);
+    }
+
+    if (user.inviteTokenExpiresAt < new Date()) {
+      return error(res, 'This invite link has expired. Please ask your admin to resend the invite.', 400);
+    }
+
+    const tokenValid = await bcrypt.compare(token, user.inviteToken);
+    if (!tokenValid) {
+      return error(res, 'Invalid invite link. Please check your email and use the original link.', 400);
+    }
+
     user.password = password;
     user.status = 'active';
     user.inviteToken = undefined;
-    user.inviteTokenExpires = undefined;
+    user.inviteTokenExpiresAt = undefined;
     await user.save();
 
-    const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
-    user.refreshTokens = user.refreshTokens || [];
-    user.refreshTokens.push({ token: refreshToken, createdAt: new Date() });
-    await user.save();
-
-    res.cookie('accessToken', accessToken, { ...COOKIE_OPTS, maxAge: 60 * 60 * 1000 });
-    res.cookie('refreshToken', refreshToken, { ...COOKIE_OPTS, maxAge: 7 * 24 * 60 * 60 * 1000 });
-
-    const populatedUser = await User.findById(user._id).populate('tenantId', 'name slug');
-
-    return success(res, {
-      user: {
-        id: user._id,
-        firstName: (user.name || '').split(' ')[0] || '',
-        lastName: (user.name || '').split(' ').slice(1).join(' ') || '',
-        email: user.email,
-        role: user.role,
-        tenantId: populatedUser?.tenantId?._id,
-        tenantName: populatedUser?.tenantId?.name || '',
-        tenantSlug: populatedUser?.tenantId?.slug || '',
-      },
-      accessToken,
-      refreshToken,
-    });
+    return success(res, { message: 'Account activated successfully. You can now log in.' });
   } catch (err) {
     return error(res, err.message, 400);
   }
 });
 
-router.post('/users/:id/resend-invite', authenticate, authorize('admin'), async (req, res) => {
+router.post('/invite/:userId/resend', authenticate, authorize('admin'), async (req, res) => {
   try {
     const User = require('../models/User');
     const Tenant = require('../models/Tenant');
-    const { sendEmail, buildInviteEmail } = require('../services/emailService');
+    const { sendTeamInviteEmail } = require('../services/emailService');
 
-    const user = await User.findOne({ _id: req.params.id, tenantId: req.tenantId });
+    const user = await User.findOne({ _id: req.params.userId, tenantId: req.tenantId });
     if (!user) return error(res, 'User not found', 404);
 
     if (user.status !== 'pending') {
       return error(res, 'Can only resend invites for pending users', 400);
     }
 
-    const inviteToken = crypto.randomBytes(32).toString('hex');
-    const inviteTokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = await bcrypt.hash(rawToken, 10);
+    const inviteTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    user.inviteToken = inviteToken;
-    user.inviteTokenExpires = inviteTokenExpires;
+    user.inviteToken = hashedToken;
+    user.inviteTokenExpiresAt = inviteTokenExpiresAt;
     await user.save();
 
     const tenant = await Tenant.findById(req.tenantId);
-    const acceptUrl = `${require('../config').frontendUrl}/accept-invite?token=${inviteToken}`;
+    const tenantName = tenant?.name || 'LeadFlowX';
+    const inviteLink = `${require('../config').frontendUrl}/accept-invite?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
 
-    let emailSent = false;
     try {
-      await sendEmail({
-        to: user.email,
-        subject: `You've been invited to join ${tenant?.name || 'LeadFlowX'}`,
-        html: buildInviteEmail({
-          tenantName: tenant?.name || 'LeadFlowX',
-          invitedByName: req.user?.name || 'An admin',
-          role: user.role,
-          acceptUrl,
-        }),
-      });
-      emailSent = true;
+      await sendTeamInviteEmail(
+        user.email,
+        user.name,
+        req.user?.name || 'An admin',
+        tenantName,
+        inviteLink,
+        user.role,
+      );
+      return success(res, { message: 'Invite resent successfully' });
     } catch (emailErr) {
       console.error('Failed to resend invite email:', emailErr.message);
+      return error(res, `Invite link refreshed but the email failed to send. Share this link manually: ${inviteLink}`, 500);
     }
-
-    return success(res, {
-      message: emailSent ? 'Invite resent successfully' : 'Invite link refreshed but the email could not be sent',
-      ...(emailSent ? {} : { acceptUrl }),
-    });
   } catch (err) {
     return error(res, err.message, 500);
   }
@@ -312,7 +295,6 @@ router.get('/api-key', authenticate, async (req, res) => {
 
 router.post('/api-key/generate', authenticate, async (req, res) => {
   try {
-    const crypto = require('crypto');
     const User = require('../models/User');
     const user = await User.findById(req.userId).select('+apiKey');
     if (!user) return error(res, 'User not found', 404);
