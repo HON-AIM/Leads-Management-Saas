@@ -58,9 +58,11 @@ const config = {
   },
 
   email: {
-    user: process.env.EMAIL_USER || '',
-    pass: process.env.EMAIL_PASS || '',
-    from: process.env.FROM_EMAIL || process.env.EMAIL_USER || '',
+    emailjsServiceId: process.env.EMAILJS_SERVICE_ID || '',
+    emailjsTemplateId: process.env.EMAILJS_TEMPLATE_ID || '',
+    emailjsPublicKey: process.env.EMAILJS_PUBLIC_KEY || '',
+    emailjsPrivateKey: process.env.EMAILJS_PRIVATE_KEY || '',
+    from: process.env.FROM_EMAIL || '',
   },
 };
 

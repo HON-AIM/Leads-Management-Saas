@@ -26,6 +26,7 @@
   "type": "commonjs",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
+    "@emailjs/nodejs": "^5.0.2",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.76.6",
     "cookie-parser": "^1.4.6",
@@ -39,6 +40,7 @@
     "mongoose": "^7.0.3",
     "node-cron": "^4.6.0",
     "nodemailer": "^9.0.3",
+    "resend": "^6.18.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

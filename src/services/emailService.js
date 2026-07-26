@@ -1,68 +1,35 @@
-const nodemailer = require('nodemailer');
-const dns = require('dns');
+const emailjs = require('@emailjs/nodejs');
 const config = require('../config');
 const logger = require('../utils/logger');
 
-dns.setDefaultResultOrder('ipv4first');
-
-let transporter = null;
-
-function getTransporter() {
-  if (transporter) return transporter;
-  if (!config.email.user || !config.email.pass) return null;
-
-  transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    requireTLS: true,
-    family: 4,
-    connectionTimeout: 30000,
-    greetingTimeout: 15000,
-    socketTimeout: 30000,
-    auth: {
-      user: config.email.user,
-      pass: config.email.pass,
-    },
-    tls: {
-      rejectUnauthorized: true,
-      minVersion: 'TLSv1.2',
-    },
-  });
-
-  return transporter;
-}
-
 function isEmailConfigured() {
-  return !!(config.email.user && config.email.pass);
+  return !!(config.email.emailjsServiceId && config.email.emailjsTemplateId && config.email.emailjsPublicKey);
 }
 
 if (!isEmailConfigured()) {
-  logger.warn('EMAIL_USER and/or EMAIL_PASS not set — team invite emails will fail until configured.');
+  logger.warn('EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, or EMAILJS_PUBLIC_KEY not set — team invite emails will fail until configured.');
 }
 
-async function sendEmail({ to, subject, html, text }) {
-  const transport = getTransporter();
-  if (!transport) {
-    throw new Error('Email is not configured. Set EMAIL_USER and EMAIL_PASS in your environment.');
+async function sendEmail({ to, templateParams }) {
+  if (!isEmailConfigured()) {
+    throw new Error('Email is not configured. Set EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, and EMAILJS_PUBLIC_KEY in your environment.');
   }
 
-  await transport.sendMail({
-    from: `"LeadFlowX" <${config.email.from}>`,
-    to,
-    subject,
-    html,
-    ...(text ? { text } : {}),
-  });
+  await emailjs.send(
+    config.email.emailjsServiceId,
+    config.email.emailjsTemplateId,
+    { ...templateParams, to_email: to },
+    { publicKey: config.email.emailjsPublicKey, privateKey: config.email.emailjsPrivateKey },
+  );
 
-  logger.info('Email sent', { to, subject });
+  logger.info('Email sent', { to, subject: templateParams.subject || '' });
 }
 
 async function sendTeamInviteEmail(toEmail, toName, inviterName, tenantName, inviteLink, role) {
   const roleLabel = role === 'admin' ? 'Admin' : role === 'super_admin' ? 'Owner' : 'Member';
   const platformName = 'LeadFlowX';
 
-  const html = `
+  const inviteHtml = `
     <!DOCTYPE html>
     <html>
     <head>
@@ -137,22 +104,18 @@ async function sendTeamInviteEmail(toEmail, toName, inviterName, tenantName, inv
     </html>
   `;
 
-  const plainText = [
-    `You've been invited to join ${tenantName}`,
-    '',
-    `${inviterName} has invited you to join ${tenantName} on ${platformName} as a ${roleLabel}.`,
-    '',
-    'Click the link below to set your password and activate your account:',
-    inviteLink,
-    '',
-    'This link expires in 7 days.',
-  ].join('\n');
-
   await sendEmail({
     to: toEmail,
-    subject: `${inviterName} invited you to join ${tenantName} on ${platformName}`,
-    html,
-    text: plainText,
+    templateParams: {
+      subject: `${inviterName} invited you to join ${tenantName} on ${platformName}`,
+      invite_link: inviteLink,
+      invitee_name: toName,
+      inviter_name: inviterName,
+      tenant_name: tenantName,
+      role: roleLabel,
+      platform_name: platformName,
+      message_html: inviteHtml,
+    },
   });
 }
 
