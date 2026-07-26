@@ -12,6 +12,7 @@ function getTransporter() {
     host: 'smtp.gmail.com',
     port: 465,
     secure: true,
+    connectionTimeout: 10000,
     auth: {
       user: config.email.user,
       pass: config.email.pass,
