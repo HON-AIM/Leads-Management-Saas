@@ -58,17 +58,9 @@ const config = {
   },
 
   email: {
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT, 10) || 465,
-    secure: true,
     user: process.env.EMAIL_USER || '',
     pass: process.env.EMAIL_PASS || '',
     from: process.env.FROM_EMAIL || process.env.EMAIL_USER || '',
-  },
-
-  resend: {
-    apiKey: process.env.RESEND_API_KEY || '',
-    from: process.env.RESEND_FROM || 'onboarding@resend.dev',
   },
 };
 
