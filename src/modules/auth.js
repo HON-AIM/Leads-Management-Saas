@@ -121,8 +121,36 @@ router.post('/invite', authenticate, authorize('admin'), validate(inviteUserSche
     const normalizedEmail = email.toLowerCase().trim();
     const existing = await User.findOne({ email: normalizedEmail, tenantId: req.tenantId });
     if (existing) {
-      logger.warn('Invite blocked: duplicate user', { email: normalizedEmail, tenantId: req.tenantId?.toString(), existingUserId: existing._id?.toString(), existingStatus: existing.status });
-      return error(res, 'A user with this email already exists in your workspace', 400);
+      if (existing.status === 'active') {
+        return error(res, 'A user with this email already exists in your workspace', 400);
+      }
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const hashedToken = await bcrypt.hash(rawToken, 10);
+      existing.inviteToken = hashedToken;
+      existing.inviteTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      existing.name = name || existing.name;
+      if (role) existing.role = role;
+      await existing.save();
+
+      const tenant = await Tenant.findById(req.tenantId);
+      const tenantName = tenant?.name || 'LeadFlowX';
+      const inviteLink = `${require('../config').frontendUrl}/accept-invite?token=${rawToken}&email=${encodeURIComponent(normalizedEmail)}`;
+
+      try {
+        await sendTeamInviteEmail(
+          normalizedEmail,
+          existing.name,
+          req.user?.name || 'An admin',
+          tenantName,
+          inviteLink,
+          existing.role,
+        );
+        logger.info('Invite resent to pending user', { email: normalizedEmail, userId: existing._id?.toString(), tenantId: req.tenantId?.toString() });
+        return success(res, { message: 'A pending invite already exists for this email. A new invite has been sent.', user: { id: existing._id, name: existing.name, email: existing.email, role: existing.role, status: existing.status } });
+      } catch (emailErr) {
+        logger.error('Failed to send invite email', { email: normalizedEmail, tenantId: req.tenantId?.toString(), error: emailErr.message });
+        return error(res, `A pending invite exists but the email failed to send. Share this link manually: ${inviteLink}`, 500);
+      }
     }
 
     const rawToken = crypto.randomBytes(32).toString('hex');

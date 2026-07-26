@@ -127,11 +127,12 @@ async function start() {
     const shutdown = async (signal) => {
       logger.info(`${signal} received — shutting down`);
       server.close(async () => {
-        await closeQueue();
-        mongoose.connection.close(false, () => {
-          logger.info('Shutdown complete');
-          process.exit(0);
-        });
+        try { await closeQueue(); } catch (_) {}
+        try {
+          await mongoose.connection.close();
+        } catch (_) {}
+        logger.info('Shutdown complete');
+        process.exit(0);
       });
       setTimeout(() => process.exit(1), 10000);
     };
