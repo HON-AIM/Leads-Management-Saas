@@ -7,6 +7,7 @@ const { loginLimiter } = require('../middleware/rateLimit');
 const { success, error, created } = require('../utils/response');
 const { validate } = require('../middleware/validate');
 const { login: loginSchema, inviteUser: inviteUserSchema, acceptInvite: acceptInviteSchema } = require('../middleware/validation/schemas');
+const logger = require('../utils/logger');
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -119,7 +120,10 @@ router.post('/invite', authenticate, authorize('admin'), validate(inviteUserSche
 
     const normalizedEmail = email.toLowerCase().trim();
     const existing = await User.findOne({ email: normalizedEmail, tenantId: req.tenantId });
-    if (existing) return error(res, 'A user with this email already exists in your workspace', 400);
+    if (existing) {
+      logger.warn('Invite blocked: duplicate user', { email: normalizedEmail, tenantId: req.tenantId?.toString(), existingUserId: existing._id?.toString(), existingStatus: existing.status });
+      return error(res, 'A user with this email already exists in your workspace', 400);
+    }
 
     const rawToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = await bcrypt.hash(rawToken, 10);
@@ -152,10 +156,16 @@ router.post('/invite', authenticate, authorize('admin'), validate(inviteUserSche
       );
       emailSent = true;
     } catch (emailErr) {
-      console.error('Failed to send invite email:', emailErr.message);
-      return error(res, `Account created for ${normalizedEmail} but the invite email failed to send. Share this link manually: ${inviteLink}`, 201);
+      logger.error('Failed to send invite email', {
+        email: normalizedEmail,
+        tenantId: req.tenantId?.toString(),
+        error: emailErr.message,
+        stack: emailErr.stack,
+      });
+      return error(res, `Account created for ${normalizedEmail} but the invite email failed to send. Share this link manually: ${inviteLink}`, 500);
     }
 
+    logger.info('Invite sent successfully', { email: normalizedEmail, role: role || 'member', tenantId: req.tenantId?.toString() });
     return created(res, {
       user: {
         id: user._id,
@@ -166,6 +176,7 @@ router.post('/invite', authenticate, authorize('admin'), validate(inviteUserSche
       },
     });
   } catch (err) {
+    logger.error('Invite endpoint error', { message: err.message, code: err.code, stack: err.stack });
     return error(res, err.message, 400);
   }
 });
@@ -244,7 +255,7 @@ router.post('/invite/:userId/resend', authenticate, authorize('admin'), async (r
       );
       return success(res, { message: 'Invite resent successfully' });
     } catch (emailErr) {
-      console.error('Failed to resend invite email:', emailErr.message);
+      logger.error('Failed to resend invite email', { email: user.email, userId: user._id?.toString(), error: emailErr.message });
       return error(res, `Invite link refreshed but the email failed to send. Share this link manually: ${inviteLink}`, 500);
     }
   } catch (err) {
@@ -261,15 +272,20 @@ router.delete('/users/:id', authenticate, authorize('admin'), async (req, res) =
     }
 
     const user = await User.findOne({ _id: req.params.id, tenantId: req.tenantId });
-    if (!user) return error(res, 'User not found', 404);
+    if (!user) {
+      logger.warn('Delete failed: user not found', { userId: req.params.id, tenantId: req.tenantId?.toString() });
+      return error(res, 'User not found', 404);
+    }
 
     if (user.role === 'super_admin') {
       return error(res, 'Cannot remove a super admin', 400);
     }
 
     await User.findByIdAndDelete(req.params.id);
+    logger.info('User removed', { userId: req.params.id, email: user.email, tenantId: req.tenantId?.toString() });
     return success(res, { message: 'User removed' });
   } catch (err) {
+    logger.error('Delete user error', { userId: req.params.id, error: err.message, stack: err.stack });
     return error(res, err.message, 500);
   }
 });

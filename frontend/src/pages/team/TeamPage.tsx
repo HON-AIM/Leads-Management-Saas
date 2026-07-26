@@ -56,19 +56,28 @@ export function TeamPage() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['team-users'] })
-      const note = data?.data?.note
-      addNotification({
-        type: note ? 'warning' : 'success',
-        title: note ? 'User added (email issue)' : 'Invite sent',
-        description: note || `${inviteName} has been invited to your team.`,
-      })
+      const errorMsg = data?.error
+      if (errorMsg) {
+        addNotification({
+          type: 'warning',
+          title: 'Invite issue',
+          description: errorMsg,
+        })
+      } else {
+        addNotification({
+          type: 'success',
+          title: 'Invite sent',
+          description: `${inviteName} has been invited to your team.`,
+        })
+      }
       setInviteName('')
       setInviteEmail('')
       setInviteRole('member')
       setShowInvite(false)
     },
     onError: (err: any) => {
-      addNotification({ type: 'error', title: 'Failed', description: err?.response?.data?.error || 'Could not send invite.' })
+      const msg = err?.response?.data?.error || err?.message || 'Could not send invite.'
+      addNotification({ type: 'error', title: 'Failed', description: msg })
     },
   })
 
