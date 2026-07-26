@@ -65,6 +65,11 @@ const config = {
     pass: process.env.EMAIL_PASS || '',
     from: process.env.FROM_EMAIL || process.env.EMAIL_USER || '',
   },
+
+  resend: {
+    apiKey: process.env.RESEND_API_KEY || '',
+    from: process.env.RESEND_FROM || 'onboarding@resend.dev',
+  },
 };
 
 if (config.isProduction) {

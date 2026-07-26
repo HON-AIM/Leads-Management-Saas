@@ -1,42 +1,32 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const config = require('../config');
 const logger = require('../utils/logger');
 
-let transporter = null;
+let resend = null;
 
-function getTransporter() {
-  if (transporter) return transporter;
-  if (!config.email.user || !config.email.pass) return null;
-
-  transporter = nodemailer.createTransport({
-    host: config.email.host,
-    port: config.email.port,
-    secure: config.email.secure,
-    auth: {
-      user: config.email.user,
-      pass: config.email.pass,
-    },
-  });
-
-  return transporter;
+function getClient() {
+  if (resend) return resend;
+  if (!config.resend.apiKey) return null;
+  resend = new Resend(config.resend.apiKey);
+  return resend;
 }
 
 function isEmailConfigured() {
-  return !!(config.email.user && config.email.pass);
+  return !!config.resend.apiKey;
 }
 
 if (!isEmailConfigured()) {
-  logger.warn('EMAIL_USER and/or EMAIL_PASS not set — team invite emails will fail until configured.');
+  logger.warn('RESEND_API_KEY not set — team invite emails will fail until configured.');
 }
 
 async function sendEmail({ to, subject, html, text }) {
-  const transport = getTransporter();
-  if (!transport) {
-    throw new Error('Email is not configured. Set EMAIL_USER and EMAIL_PASS in your environment to enable invite emails.');
+  const client = getClient();
+  if (!client) {
+    throw new Error('Email is not configured. Set RESEND_API_KEY in your environment.');
   }
 
-  await transport.sendMail({
-    from: `"LeadFlowX" <${config.email.from}>`,
+  await client.emails.send({
+    from: config.resend.from,
     to,
     subject,
     html,
