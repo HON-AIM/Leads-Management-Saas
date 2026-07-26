@@ -9,10 +9,15 @@ function getTransporter() {
   if (!config.email.user || !config.email.pass) return null;
 
   transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
       user: config.email.user,
       pass: config.email.pass,
+    },
+    tls: {
+      family: 4,
     },
   });
 
