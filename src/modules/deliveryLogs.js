@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { authenticate } = require('../middleware/auth');
+const { authenticate, authorize } = require('../middleware/auth');
 const leadAssignmentRepo = require('../repositories/leadAssignmentRepository');
 const routingLogRepo = require('../repositories/routingLogRepository');
 const DeliveryAttempt = require('../models/DeliveryAttempt');
@@ -95,7 +95,7 @@ router.get('/lead/:leadId/attempts', async (req, res) => {
   }
 });
 
-router.post('/retry/:id', async (req, res) => {
+router.post('/retry/:id', authorize('admin', 'member'), async (req, res) => {
   try {
     const assignment = await require('../models/LeadAssignment').findOne({ _id: req.params.id, tenantId: req.tenantId })
       .populate('leadId', 'name email phone state source tenantId')

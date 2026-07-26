@@ -4,6 +4,7 @@ import { QUERY_KEYS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useNotifications } from '@/hooks/useNotifications'
+import { useAuth } from '@/hooks/useAuth'
 import { getStatusStyle, BUYER_STATUS_COLOR, type SemanticKey } from '@/lib/statusColors'
 import type { Campaign } from '@/types/campaign'
 import type { Buyer } from '@/types/buyer'
@@ -16,6 +17,7 @@ interface CampaignBuyersTabProps {
 export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
   const qc = useQueryClient()
   const { addNotification } = useNotifications()
+  const { isAdmin } = useAuth()
 
   const { data: buyersData } = useQuery({
     queryKey: ['campaign-buyers-list'],
@@ -107,7 +109,7 @@ export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
         </p>
       )}
 
-      {availableBuyers.length > 0 && (
+      {isAdmin && availableBuyers.length > 0 && (
         <div className="flex items-center gap-2">
           <UserPlus size={14} className="text-muted-foreground shrink-0" />
           <select
@@ -153,13 +155,15 @@ export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
                     {buyer?.status && (
                       <Badge className={`text-[10px] px-2 py-0.5 ${getStatusStyle(BUYER_STATUS_COLOR[buyer.status] ?? 'neutral')}`}>{buyer.status}</Badge>
                     )}
-                    <button
-                      onClick={() => removeBuyerMutation.mutate(buyerId)}
-                      disabled={removeBuyerMutation.isPending}
-                      className="text-muted-foreground hover:text-red-400 transition-colors p-0.5"
-                    >
-                      <X size={14} />
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => removeBuyerMutation.mutate(buyerId)}
+                        disabled={removeBuyerMutation.isPending}
+                        className="text-muted-foreground hover:text-red-400 transition-colors p-0.5"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
                 {buyer?.email && <p className="text-[11px] text-muted-foreground mb-0.5">{buyer.email}</p>}
@@ -184,7 +188,7 @@ export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
                   {campaign.routingMode === 'priority' && <span>Priority: {b.priority}</span>}
                 </div>
                 <div className="flex items-center gap-1.5 mt-2">
-                  {buyer?.status !== 'active' && (
+                  {isAdmin && buyer?.status !== 'active' && (
                     <button
                       onClick={(e) => { e.stopPropagation(); updateBuyerStatusMutation.mutate({ buyerId, status: 'active' }) }}
                       disabled={updateBuyerStatusMutation.isPending}
@@ -193,7 +197,7 @@ export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
                       Activate
                     </button>
                   )}
-                  {buyer?.status !== 'paused' && (
+                  {isAdmin && buyer?.status !== 'paused' && (
                     <button
                       onClick={(e) => { e.stopPropagation(); updateBuyerStatusMutation.mutate({ buyerId, status: 'paused' }) }}
                       disabled={updateBuyerStatusMutation.isPending}
@@ -202,7 +206,7 @@ export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
                       Pause
                     </button>
                   )}
-                  {buyer?.status !== 'inactive' && (
+                  {isAdmin && buyer?.status !== 'inactive' && (
                     <button
                       onClick={(e) => { e.stopPropagation(); updateBuyerStatusMutation.mutate({ buyerId, status: 'inactive' }) }}
                       disabled={updateBuyerStatusMutation.isPending}
@@ -211,7 +215,7 @@ export function CampaignBuyersTab({ campaign }: CampaignBuyersTabProps) {
                       Deactivate
                     </button>
                   )}
-                  {buyer && (buyer.leadsReceived > 0 || buyer.dailyLeadsReceived > 0 || buyer.monthlyLeadsReceived > 0) && (
+                  {isAdmin && buyer && (buyer.leadsReceived > 0 || buyer.dailyLeadsReceived > 0 || buyer.monthlyLeadsReceived > 0) && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation()

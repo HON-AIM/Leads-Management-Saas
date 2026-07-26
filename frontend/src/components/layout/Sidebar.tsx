@@ -28,7 +28,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: <Package size={16} />, label: 'Suppliers', href: '/suppliers' },
   { icon: <FileText size={16} />, label: 'Delivery', href: '/delivery' },
   { icon: <BarChart3 size={16} />, label: 'Reports', href: '/reports' },
-  { icon: <Settings size={16} />, label: 'Settings', href: '/settings' },
+  { icon: <Settings size={16} />, label: 'Settings', href: '/settings', adminOnly: true },
   { icon: <Shield size={16} />, label: 'Team', href: '/team', adminOnly: true },
 ]
 

@@ -347,6 +347,9 @@ router.post('/:id/duplicate-action', authorize('admin', 'member'), async (req, r
     }
 
     if (action === 'delete_permanently') {
+      if (req.user.role !== 'admin' && req.user.role !== 'super_admin') {
+        return res.status(403).json({ success: false, error: 'Only admins can permanently delete leads' });
+      }
       await Lead.findByIdAndDelete(lead._id);
 
       await routingLogRepository.create({

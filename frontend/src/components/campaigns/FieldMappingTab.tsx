@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { useNotifications } from '@/hooks/useNotifications'
+import { useAuth } from '@/hooks/useAuth'
 import type { FieldDefinition, FieldDefinitionFormData } from '@/types/fieldDefinition'
 import type { Campaign } from '@/types/campaign'
 import { Plus, Trash2, Eye, EyeOff, Check, X, Download, Lock, Search } from 'lucide-react'
@@ -26,6 +27,7 @@ const EMPTY_FORM: FieldDefinitionFormData = {
 export function FieldMappingTab({ campaignId, campaign }: FieldMappingTabProps) {
   const qc = useQueryClient()
   const { addNotification } = useNotifications()
+  const { isAdmin } = useAuth()
   const [showAddForm, setShowAddForm] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [form, setForm] = useState<FieldDefinitionFormData>(EMPTY_FORM)
@@ -154,14 +156,16 @@ export function FieldMappingTab({ campaignId, campaign }: FieldMappingTabProps) 
   return (
     <div className="space-y-5">
       {/* Action bar */}
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" onClick={() => setShowImport(!showImport)}>
-          <Download size={12} className="mr-1" /> Import from Campaign
-        </Button>
-        <Button variant="cta" size="sm" onClick={() => { setShowAddForm(!showAddForm); setForm(EMPTY_FORM); setFormError('') }}>
-          <Plus size={12} className="mr-1" /> Add Field
-        </Button>
-      </div>
+      {isAdmin && (
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowImport(!showImport)}>
+            <Download size={12} className="mr-1" /> Import from Campaign
+          </Button>
+          <Button variant="cta" size="sm" onClick={() => { setShowAddForm(!showAddForm); setForm(EMPTY_FORM); setFormError('') }}>
+            <Plus size={12} className="mr-1" /> Add Field
+          </Button>
+        </div>
+      )}
 
       {/* Import picker */}
       {showImport && (
@@ -294,7 +298,7 @@ export function FieldMappingTab({ campaignId, campaign }: FieldMappingTabProps) 
                   <FieldRow key={f._id} field={f} editingField={editingField} setEditingField={setEditingField}
                     editDesc={editDesc} setEditDesc={setEditDesc} saveDescription={saveDescription}
                     togglePortal={togglePortal} toggleRequired={toggleRequired} deleteMutation={deleteMutation}
-                    updateMutation={updateMutation} />
+                    updateMutation={updateMutation} isAdmin={isAdmin} />
                 ))}
               </>
             )}
@@ -309,7 +313,7 @@ export function FieldMappingTab({ campaignId, campaign }: FieldMappingTabProps) 
                   <FieldRow key={f._id} field={f} editingField={editingField} setEditingField={setEditingField}
                     editDesc={editDesc} setEditDesc={setEditDesc} saveDescription={saveDescription}
                     togglePortal={togglePortal} toggleRequired={toggleRequired} deleteMutation={deleteMutation}
-                    updateMutation={updateMutation} />
+                    updateMutation={updateMutation} isAdmin={isAdmin} />
                 ))}
               </>
             )}
@@ -327,7 +331,7 @@ export function FieldMappingTab({ campaignId, campaign }: FieldMappingTabProps) 
   )
 }
 
-function FieldRow({ field, editingField, setEditingField, editDesc, setEditDesc, saveDescription, togglePortal, toggleRequired, deleteMutation, updateMutation }: {
+function FieldRow({ field, editingField, setEditingField, editDesc, setEditDesc, saveDescription, togglePortal, toggleRequired, deleteMutation, updateMutation, isAdmin }: {
   field: FieldDefinition
   editingField: string | null
   setEditingField: (id: string | null) => void
@@ -338,6 +342,7 @@ function FieldRow({ field, editingField, setEditingField, editDesc, setEditDesc,
   toggleRequired: (f: FieldDefinition) => void
   deleteMutation: any
   updateMutation: any
+  isAdmin: boolean
 }) {
   const [showApiDoc, setShowApiDoc] = useState(false)
   const isEditing = editingField === field._id
@@ -364,10 +369,10 @@ function FieldRow({ field, editingField, setEditingField, editDesc, setEditDesc,
             <button onClick={() => setEditingField(null)} className="text-muted-foreground hover:text-white"><X size={13} /></button>
           </div>
         ) : (
-          <p className="text-[12px] text-white/60 cursor-pointer hover:text-white/80 max-w-[240px] truncate"
-            onClick={() => { setEditingField(field._id); setEditDesc(field.description) }}
-            title={field.description || 'Click to edit'}>
-            {field.description || <span className="italic text-muted-foreground/40">Click to add description</span>}
+          <p className={`text-[12px] text-white/60 max-w-[240px] truncate ${isAdmin ? 'cursor-pointer hover:text-white/80' : ''}`}
+            onClick={() => { if (isAdmin) { setEditingField(field._id); setEditDesc(field.description) } }}
+            title={isAdmin ? (field.description || 'Click to edit') : field.description}>
+            {field.description || <span className="italic text-muted-foreground/40">{isAdmin ? 'Click to add description' : 'No description'}</span>}
           </p>
         )}
       </td>
@@ -375,9 +380,9 @@ function FieldRow({ field, editingField, setEditingField, editDesc, setEditDesc,
         <span className="text-[11px] text-white/50">{field.type}</span>
       </td>
       <td className="px-3 py-3 text-center">
-        <button onClick={() => !field.isStandard && toggleRequired(field)}
-          className={`inline-flex items-center justify-center ${field.isStandard ? 'cursor-default' : 'cursor-pointer hover:opacity-80'}`}
-          disabled={field.isStandard}>
+        <button onClick={() => isAdmin && !field.isStandard && toggleRequired(field)}
+          className={`inline-flex items-center justify-center ${field.isStandard || !isAdmin ? 'cursor-default' : 'cursor-pointer hover:opacity-80'}`}
+          disabled={field.isStandard || !isAdmin}>
           {field.isRequired
             ? <Check size={14} className="text-emerald-400" />
             : <span className="text-muted-foreground/30">—</span>}
@@ -403,13 +408,14 @@ function FieldRow({ field, editingField, setEditingField, editDesc, setEditDesc,
         </div>
       </td>
       <td className="px-3 py-3 text-center">
-        <button onClick={() => togglePortal(field)}
-          className={`transition-colors ${field.visibleInPortal ? 'text-emerald-400 hover:text-emerald-300' : 'text-muted-foreground/30 hover:text-muted-foreground/60'}`}>
+        <button onClick={() => isAdmin && togglePortal(field)}
+          className={`transition-colors ${!isAdmin ? 'cursor-default opacity-50' : ''} ${field.visibleInPortal ? 'text-emerald-400 hover:text-emerald-300' : 'text-muted-foreground/30 hover:text-muted-foreground/60'}`}
+          disabled={!isAdmin}>
           {field.visibleInPortal ? <Eye size={14} /> : <EyeOff size={14} />}
         </button>
       </td>
       <td className="px-6 py-3 text-right">
-        {!field.isStandard && (
+        {isAdmin && !field.isStandard && (
           <button onClick={() => {
             if (confirm(`Delete field "${field.fieldName}"?`)) deleteMutation.mutate(field._id)
           }} className="text-muted-foreground hover:text-red-400 transition-colors p-1">

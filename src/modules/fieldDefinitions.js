@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', authorize('admin', 'member'), async (req, res) => {
+router.post('/', authorize('admin'), async (req, res) => {
   try {
     const { fieldName, description, type, isRequired, visibleInPortal, listOptions } = req.body;
     if (!fieldName || typeof fieldName !== 'string') return error(res, 'fieldName is required', 400);
@@ -40,7 +40,7 @@ router.post('/', authorize('admin', 'member'), async (req, res) => {
   }
 });
 
-router.put('/:fieldId', authorize('admin', 'member'), async (req, res) => {
+router.put('/:fieldId', authorize('admin'), async (req, res) => {
   try {
     const field = await fieldDefinitionService.getById(req.params.fieldId);
     if (!field) return notFound(res, 'Field not found');
@@ -58,7 +58,7 @@ router.put('/:fieldId', authorize('admin', 'member'), async (req, res) => {
   }
 });
 
-router.delete('/:fieldId', authorize('admin', 'member'), async (req, res) => {
+router.delete('/:fieldId', authorize('admin'), async (req, res) => {
   try {
     const field = await fieldDefinitionService.getById(req.params.fieldId);
     if (!field) return notFound(res, 'Field not found');
@@ -70,7 +70,7 @@ router.delete('/:fieldId', authorize('admin', 'member'), async (req, res) => {
   }
 });
 
-router.post('/import', authorize('admin', 'member'), async (req, res) => {
+router.post('/import', authorize('admin'), async (req, res) => {
   try {
     const { fromCampaignId } = req.body;
     if (!fromCampaignId) return error(res, 'fromCampaignId is required', 400);

@@ -29,7 +29,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', authorize('admin', 'member'), async (req, res) => {
+router.post('/', authorize('admin'), async (req, res) => {
   try {
     const { name, description, type, status, allowedCampaignIds } = req.body;
     if (!name) return error(res, 'Name is required', 400);
@@ -42,7 +42,7 @@ router.post('/', authorize('admin', 'member'), async (req, res) => {
   }
 });
 
-router.put('/:id', authorize('admin', 'member'), async (req, res) => {
+router.put('/:id', authorize('admin'), async (req, res) => {
   try {
     const supplier = await supplierService.update(req.params.id, req.tenantId, req.body);
     if (!supplier) return notFound(res, 'Supplier not found');
@@ -52,7 +52,7 @@ router.put('/:id', authorize('admin', 'member'), async (req, res) => {
   }
 });
 
-router.patch('/:id/status', authorize('admin', 'manager'), async (req, res) => {
+router.patch('/:id/status', authorize('admin'), async (req, res) => {
   try {
     const { status } = req.body;
     const allowed = ['active', 'paused', 'inactive'];

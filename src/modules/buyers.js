@@ -36,7 +36,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', authorize('admin', 'member', 'manager'), validate(createBuyer), async (req, res) => {
+router.post('/', authorize('admin'), validate(createBuyer), async (req, res) => {
   try {
     const buyer = await buyerService.create({ ...req.body, createdBy: req.userId }, req.tenantId);
     return created(res, buyer);
@@ -73,7 +73,7 @@ router.post('/reset-all-caps', authorize('admin'), async (req, res) => {
   }
 });
 
-router.put('/:id', authorize('admin', 'member', 'manager'), validate(updateBuyer), async (req, res) => {
+router.put('/:id', authorize('admin'), validate(updateBuyer), async (req, res) => {
   try {
     const buyer = await buyerService.getById(req.params.id, req.tenantId);
     if (!buyer) return notFound(res, 'Buyer not found');
@@ -90,7 +90,7 @@ router.put('/:id', authorize('admin', 'member', 'manager'), validate(updateBuyer
   }
 });
 
-router.patch('/:id/status', authorize('admin', 'manager'), async (req, res) => {
+router.patch('/:id/status', authorize('admin'), async (req, res) => {
   try {
     const { status } = req.body;
     const allowed = ['active', 'paused', 'inactive'];
@@ -115,7 +115,7 @@ router.delete('/:id', authorize('admin'), async (req, res) => {
   }
 });
 
-router.post('/:id/duplicate', authorize('admin', 'member', 'manager'), async (req, res) => {
+router.post('/:id/duplicate', authorize('admin'), async (req, res) => {
   try {
     const source = await buyerService.getById(req.params.id, req.tenantId);
     if (!source) return notFound(res, 'Source buyer not found');
@@ -216,7 +216,7 @@ router.get('/:id/payload-template', async (req, res) => {
   }
 });
 
-router.put('/:id/payload-template', authorize('admin', 'manager'), async (req, res) => {
+router.put('/:id/payload-template', authorize('admin'), async (req, res) => {
   try {
     const { template } = req.body;
     if (!template || typeof template !== 'string') {
@@ -236,7 +236,7 @@ router.put('/:id/payload-template', authorize('admin', 'manager'), async (req, r
   }
 });
 
-router.post('/:id/payload-template/preview', authorize('admin', 'manager'), async (req, res) => {
+router.post('/:id/payload-template/preview', authorize('admin'), async (req, res) => {
   try {
     const { template, sampleLeadId } = req.body;
     if (!template || typeof template !== 'string') {
@@ -266,7 +266,7 @@ router.post('/:id/payload-template/preview', authorize('admin', 'manager'), asyn
   }
 });
 
-router.put('/:id/acceptance-rule', authorize('admin', 'manager'), async (req, res) => {
+router.put('/:id/acceptance-rule', authorize('admin'), async (req, res) => {
   try {
     const { enabled, responseFieldPath, operator, expectedValue } = req.body;
     const allowedOps = ['equals', 'not_equals', 'contains', 'exists'];
@@ -288,7 +288,7 @@ router.put('/:id/acceptance-rule', authorize('admin', 'manager'), async (req, re
   }
 });
 
-router.post('/:id/acceptance-rule/preview', authorize('admin', 'manager'), async (req, res) => {
+router.post('/:id/acceptance-rule/preview', authorize('admin'), async (req, res) => {
   try {
     const { rule, sampleResponseJson } = req.body;
     if (!sampleResponseJson) {
@@ -308,7 +308,7 @@ router.post('/:id/acceptance-rule/preview', authorize('admin', 'manager'), async
   }
 });
 
-router.post('/:id/payload-template/test-send', authorize('admin', 'manager'), async (req, res) => {
+router.post('/:id/payload-template/test-send', authorize('admin'), async (req, res) => {
   try {
     const { template: requestTemplate, sampleLeadId } = req.body;
     if (requestTemplate !== undefined && typeof requestTemplate !== 'string') {

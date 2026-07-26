@@ -4,6 +4,7 @@ import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { useNotifications } from '@/hooks/useNotifications'
+import { useAuth } from '@/hooks/useAuth'
 import { CampaignCard } from '@/components/campaigns/CampaignCard'
 import { CampaignForm } from '@/components/campaigns/CampaignForm'
 import type { Campaign, CampaignFormData } from '@/types/campaign'
@@ -12,6 +13,7 @@ import { Search, Plus, MessageSquare } from 'lucide-react'
 export function CampaignsPage() {
   const qc = useQueryClient()
   const { addNotification } = useNotifications()
+  const { isAdmin } = useAuth()
   const [showCreate, setShowCreate] = useState(false)
   const [editCampaign, setEditCampaign] = useState<Campaign | null>(null)
   const [search, setSearch] = useState('')
@@ -92,10 +94,12 @@ export function CampaignsPage() {
           <h1 className="text-[18px] font-semibold text-white tracking-tight">Campaigns</h1>
           <p className="text-[13px] text-muted-foreground mt-0.5">Manage routing, buyer assignments, and lead flow</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} size="sm" variant="cta">
-          <Plus size={14} className="mr-1.5" />
-          New Campaign
-        </Button>
+        {isAdmin && (
+          <Button onClick={() => setShowCreate(true)} size="sm" variant="cta">
+            <Plus size={14} className="mr-1.5" />
+            New Campaign
+          </Button>
+        )}
       </div>
 
       <div className="relative">
@@ -122,7 +126,7 @@ export function CampaignsPage() {
           <p className="text-[13px] text-muted-foreground">
             {search ? 'No campaigns match your search' : 'No campaigns yet'}
           </p>
-          {!search && (
+          {!search && isAdmin && (
             <Button variant="cta" size="sm" className="mt-3" onClick={() => setShowCreate(true)}>
               Create your first campaign
             </Button>
@@ -134,12 +138,12 @@ export function CampaignsPage() {
             <CampaignCard
               key={c._id}
               campaign={c}
-              onToggle={(c) => toggleMutation.mutate(c)}
-              onDelete={(c) => {
+              onToggle={isAdmin ? (c) => toggleMutation.mutate(c) : undefined}
+              onDelete={isAdmin ? (c) => {
                 if (confirm(`Delete "${c.name}"? This will also remove all associated leads, assignments, logs, and field mappings. This cannot be undone.`)) {
                   deleteMutation.mutate(c._id)
                 }
-              }}
+              } : undefined}
             />
           ))}
         </div>

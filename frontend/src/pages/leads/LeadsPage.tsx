@@ -7,6 +7,7 @@ import { LeadDrawer } from '@/components/leads/LeadDrawer'
 import { CreateLeadDrawer } from '@/components/leads/CreateLeadDrawer'
 import { LeadLogsTable } from '@/components/leads/LeadLogsTable'
 import { useNotifications } from '@/hooks/useNotifications'
+import { useAuth } from '@/hooks/useAuth'
 import { getStatusStyle, LEAD_STATUS_COLOR, type SemanticKey } from '@/lib/statusColors'
 import { getScoreColor } from '@/lib/statusColors'
 import { formatDate } from '@/lib/utils'
@@ -27,6 +28,7 @@ export function LeadsPage() {
   const [showReviewed, setShowReviewed] = useState(false)
   const qc = useQueryClient()
   const { addNotification } = useNotifications()
+  const { isAdmin } = useAuth()
 
   const hasFilters = Object.values(filters).some(Boolean)
 
@@ -341,6 +343,7 @@ export function LeadsPage() {
           setShowReviewed={setShowReviewed}
           onAction={(leadId, action) => dupActionMutation.mutate({ leadId, action })}
           isPending={dupActionMutation.isPending}
+          isAdmin={isAdmin}
         />
       )}
 
@@ -382,7 +385,7 @@ function FilterInput({ label, value, onChange, placeholder, type = 'text' }: { l
   )
 }
 
-function DuplicatesTab({ duplicates, isLoading, pagination, page, setDupPage, showReviewed, setShowReviewed, onAction, isPending }: {
+function DuplicatesTab({ duplicates, isLoading, pagination, page, setDupPage, showReviewed, setShowReviewed, onAction, isPending, isAdmin }: {
   duplicates: any[]
   isLoading: boolean
   pagination?: { total: number; page: number; pages: number }
@@ -392,6 +395,7 @@ function DuplicatesTab({ duplicates, isLoading, pagination, page, setDupPage, sh
   setShowReviewed: (v: boolean) => void
   onAction: (leadId: string, action: string) => void
   isPending: boolean
+  isAdmin: boolean
 }) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
@@ -507,18 +511,20 @@ function DuplicatesTab({ duplicates, isLoading, pagination, page, setDupPage, sh
                       <Copy size={12} />
                       Update Original
                     </button>
-                    <button
-                      onClick={() => handleDelete(dup._id)}
-                      disabled={isPending || dup.status === 'merged'}
-                      className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-medium transition-colors disabled:opacity-40 ${
-                        confirmDeleteId === dup._id
-                          ? 'border-red-500/40 bg-red-500/20 text-red-300 hover:bg-red-500/30'
-                          : 'border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20'
-                      }`}
-                    >
-                      <Trash2 size={12} />
-                      {confirmDeleteId === dup._id ? 'Confirm Delete' : 'Delete'}
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleDelete(dup._id)}
+                        disabled={isPending || dup.status === 'merged'}
+                        className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-medium transition-colors disabled:opacity-40 ${
+                          confirmDeleteId === dup._id
+                            ? 'border-red-500/40 bg-red-500/20 text-red-300 hover:bg-red-500/30'
+                            : 'border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                        }`}
+                      >
+                        <Trash2 size={12} />
+                        {confirmDeleteId === dup._id ? 'Confirm Delete' : 'Delete'}
+                      </button>
+                    )}
                   </div>
                 </div>
                 {confirmDeleteId === dup._id && (

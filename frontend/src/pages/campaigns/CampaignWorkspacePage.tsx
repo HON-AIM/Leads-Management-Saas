@@ -6,6 +6,7 @@ import { QUERY_KEYS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useNotifications } from '@/hooks/useNotifications'
+import { useAuth } from '@/hooks/useAuth'
 import { getStatusStyle, CAMPAIGN_STATUS_COLOR, LEAD_STATUS_COLOR, getScoreColor, type SemanticKey } from '@/lib/statusColors'
 import { formatDate } from '@/lib/utils'
 import { CampaignBuyersTab } from '@/components/campaigns/CampaignBuyersTab'
@@ -34,6 +35,7 @@ export function CampaignWorkspacePage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const { addNotification } = useNotifications()
+  const { isAdmin } = useAuth()
   const [tab, setTab] = useState<TabKey>('overview')
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [editingOverview, setEditingOverview] = useState(false)
@@ -186,30 +188,34 @@ export function CampaignWorkspacePage() {
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => toggleMutation.mutate()}
-            disabled={toggleMutation.isPending}
-          >
-            {campaign.status === 'active' ? 'Pause' : 'Activate'}
-          </Button>
-          <Button variant="outline" size="sm" onClick={startEditOverview}>
-            <Pencil size={12} className="mr-1" /> Edit
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-red-400 border-red-500/20 hover:bg-red-500/10 hover:text-red-400"
-            onClick={() => {
-              if (confirm(`Delete "${campaign.name}"? This will also remove all associated leads, assignments, logs, and field mappings. This cannot be undone.`)) {
-                deleteMutation.mutate()
-              }
-            }}
-            disabled={deleteMutation.isPending}
-          >
-            <Trash2 size={12} className="mr-1" /> {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-          </Button>
+          {isAdmin && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => toggleMutation.mutate()}
+                disabled={toggleMutation.isPending}
+              >
+                {campaign.status === 'active' ? 'Pause' : 'Activate'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={startEditOverview}>
+                <Pencil size={12} className="mr-1" /> Edit
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-red-400 border-red-500/20 hover:bg-red-500/10 hover:text-red-400"
+                onClick={() => {
+                  if (confirm(`Delete "${campaign.name}"? This will also remove all associated leads, assignments, logs, and field mappings. This cannot be undone.`)) {
+                    deleteMutation.mutate()
+                  }
+                }}
+                disabled={deleteMutation.isPending}
+              >
+                <Trash2 size={12} className="mr-1" /> {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              </Button>
+            </>
+          )}
         </div>
       </div>
 

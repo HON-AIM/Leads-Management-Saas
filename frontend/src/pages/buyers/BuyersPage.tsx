@@ -4,6 +4,7 @@ import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { useNotifications } from '@/hooks/useNotifications'
+import { useAuth } from '@/hooks/useAuth'
 import { BuyerDrawer } from '@/components/buyers/BuyerDrawer'
 import { BuyerOnboardWizard } from '@/components/buyers/BuyerOnboardWizard'
 import { getStatusStyle, BUYER_STATUS_COLOR, type SemanticKey } from '@/lib/statusColors'
@@ -13,6 +14,7 @@ import { Search, Plus, Pencil, Trash2, Building2, RotateCcw, Zap } from 'lucide-
 export function BuyersPage() {
   const qc = useQueryClient()
   const { addNotification } = useNotifications()
+  const { isAdmin } = useAuth()
   const [search, setSearch] = useState('')
   const [drawerBuyer, setDrawerBuyer] = useState<Buyer | 'new' | null>(null)
   const [showWizard, setShowWizard] = useState(false)
@@ -148,18 +150,22 @@ export function BuyersPage() {
           <p className="text-[13px] text-muted-foreground mt-0.5">{buyers.length} total</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => setShowWizard(true)} size="sm" variant="cta">
-            <Zap size={14} className="mr-1.5" />
-            Onboard Buyer
-          </Button>
-          <Button onClick={() => setDrawerBuyer('new')} size="sm" variant="outline">
-            <Plus size={14} className="mr-1.5" />
-            Add Buyer
-          </Button>
+          {isAdmin && (
+            <>
+              <Button onClick={() => setShowWizard(true)} size="sm" variant="cta">
+                <Zap size={14} className="mr-1.5" />
+                Onboard Buyer
+              </Button>
+              <Button onClick={() => setDrawerBuyer('new')} size="sm" variant="outline">
+                <Plus size={14} className="mr-1.5" />
+                Add Buyer
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
-      {buyers.length > 0 && (
+      {buyers.length > 0 && isAdmin && (
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -258,7 +264,7 @@ export function BuyersPage() {
                   <td className="px-6 py-3 text-white/75">{b.priority}</td>
                   <td className="px-6 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-0.5">
-                      {(b.dailyLeadsReceived > 0 || b.monthlyLeadsReceived > 0 || b.leadsReceived > 0) && (
+                      {isAdmin && (b.dailyLeadsReceived > 0 || b.monthlyLeadsReceived > 0 || b.leadsReceived > 0) && (
                         <button
                           onClick={() => {
                             if (confirm(`Reset all counters for "${b.name}" to 0?`)) resetCapMutation.mutate(b._id)
@@ -276,14 +282,16 @@ export function BuyersPage() {
                       >
                         <Pencil size={13} />
                       </button>
-                      <button
-                        onClick={() => {
-                          if (confirm(`Delete "${b.name}"?`)) deleteMutation.mutate(b._id)
-                        }}
-                        className="rounded-md p-1.5 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                      >
-                        <Trash2 size={13} />
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => {
+                            if (confirm(`Delete "${b.name}"?`)) deleteMutation.mutate(b._id)
+                          }}
+                          className="rounded-md p-1.5 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -299,15 +307,23 @@ export function BuyersPage() {
         onClose={() => setDrawerBuyer(null)}
         onSave={(form) => {
           if (drawerBuyer === 'new') {
+            if (!isAdmin) {
+              addNotification({ type: 'error', title: 'Unauthorized', description: 'Only admins can create buyers' })
+              return
+            }
             createMutation.mutate(form)
           } else if (drawerBuyer) {
+            if (!isAdmin) {
+              addNotification({ type: 'error', title: 'Unauthorized', description: 'Only admins can edit buyers' })
+              return
+            }
             updateMutation.mutate({ id: drawerBuyer._id, form })
           }
         }}
-        onDelete={drawerBuyer && drawerBuyer !== 'new' ? () => {
+        onDelete={isAdmin && drawerBuyer && drawerBuyer !== 'new' ? () => {
           if (confirm(`Delete "${drawerBuyer.name}"?`)) deleteMutation.mutate(drawerBuyer._id)
         } : undefined}
-        onActivate={drawerBuyer && drawerBuyer !== 'new' && drawerBuyer.status === 'inactive' ? () => {
+        onActivate={isAdmin && drawerBuyer && drawerBuyer !== 'new' && drawerBuyer.status === 'inactive' ? () => {
           activateMutation.mutate(drawerBuyer._id)
         } : undefined}
         isPending={isPending || activateMutation.isPending}
