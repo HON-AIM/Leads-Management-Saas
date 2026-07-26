@@ -1,5 +1,11 @@
 require('dotenv').config();
-require('dns').setDefaultResultOrder('ipv4first');
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
+const origLookup = dns.lookup;
+dns.lookup = function (hostname, options, callback) {
+  if (typeof options === 'function') { callback = options; options = {}; }
+  return origLookup.call(this, hostname, { ...options, family: 4 }, callback);
+};
 const config = require('./src/config');
 const express = require('express');
 const mongoose = require('mongoose');

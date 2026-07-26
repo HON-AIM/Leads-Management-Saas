@@ -16,8 +16,10 @@ function getTransporter() {
     port: 587,
     secure: false,
     requireTLS: true,
-    connectionTimeout: 15000,
-    greetingTimeout: 10000,
+    family: 4,
+    connectionTimeout: 30000,
+    greetingTimeout: 15000,
+    socketTimeout: 30000,
     auth: {
       user: config.email.user,
       pass: config.email.pass,
