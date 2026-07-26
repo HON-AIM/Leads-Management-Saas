@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { UserPlus, Trash2, Shield, User } from 'lucide-react'
+import { UserPlus, Trash2, Shield, User, Mail, Clock } from 'lucide-react'
+import { SEMANTIC_COLORS } from '@/lib/statusColors'
 
 interface TeamUser {
   _id: string
@@ -19,6 +20,12 @@ interface TeamUser {
   createdAt: string
 }
 
+const USER_STATUS_COLOR: Record<string, { bg: string; text: string; ring: string }> = {
+  active: SEMANTIC_COLORS.positive,
+  pending: SEMANTIC_COLORS.caution,
+  inactive: SEMANTIC_COLORS.neutral,
+}
+
 export function TeamPage() {
   const { user } = useAuth()
   const { addNotification } = useNotifications()
@@ -27,7 +34,6 @@ export function TeamPage() {
   const [showInvite, setShowInvite] = useState(false)
   const [inviteName, setInviteName] = useState('')
   const [inviteEmail, setInviteEmail] = useState('')
-  const [invitePassword, setInvitePassword] = useState('')
   const [inviteRole, setInviteRole] = useState<'admin' | 'member'>('member')
 
   const { data: usersData, isLoading } = useQuery({
@@ -44,22 +50,25 @@ export function TeamPage() {
       const { data } = await api.post('/auth/invite', {
         name: inviteName,
         email: inviteEmail,
-        password: invitePassword,
         role: inviteRole,
       })
       return data
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['team-users'] })
-      addNotification({ type: 'success', title: 'User added', description: `${inviteName} has been added to your team.` })
+      const note = data?.data?.note
+      addNotification({
+        type: note ? 'warning' : 'success',
+        title: note ? 'User added (email issue)' : 'Invite sent',
+        description: note || `${inviteName} has been invited to your team.`,
+      })
       setInviteName('')
       setInviteEmail('')
-      setInvitePassword('')
       setInviteRole('member')
       setShowInvite(false)
     },
     onError: (err: any) => {
-      addNotification({ type: 'error', title: 'Failed', description: err?.response?.data?.error || 'Could not add user.' })
+      addNotification({ type: 'error', title: 'Failed', description: err?.response?.data?.error || 'Could not send invite.' })
     },
   })
 
@@ -75,6 +84,34 @@ export function TeamPage() {
       addNotification({ type: 'error', title: 'Failed', description: err?.response?.data?.error || 'Could not remove user.' })
     },
   })
+
+  const resendInviteMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data } = await api.post(`/auth/users/${userId}/resend-invite`)
+      return data
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['team-users'] })
+      addNotification({
+        type: 'success',
+        title: 'Invite resent',
+        description: data?.data?.message || 'A fresh invite has been sent.',
+      })
+    },
+    onError: (err: any) => {
+      addNotification({ type: 'error', title: 'Failed', description: err?.response?.data?.error || 'Could not resend invite.' })
+    },
+  })
+
+  const getStatusBadge = (status: string) => {
+    const colors = USER_STATUS_COLOR[status] || USER_STATUS_COLOR.active
+    const label = status === 'pending' ? 'Pending' : status === 'active' ? 'Active' : 'Inactive'
+    return (
+      <Badge className={`text-[10px] px-2 py-0.5 ${colors.bg} ${colors.text} ${colors.ring}`}>
+        {label}
+      </Badge>
+    )
+  }
 
   const getRoleBadge = (role: string) => {
     switch (role) {
@@ -107,7 +144,7 @@ export function TeamPage() {
         {canManageUsers && (
           <Button variant="cta" size="sm" onClick={() => setShowInvite(!showInvite)}>
             <UserPlus size={14} className="mr-1.5" />
-            Add User
+            Invite User
           </Button>
         )}
       </div>
@@ -115,8 +152,8 @@ export function TeamPage() {
       {showInvite && (
         <Card className="border-blue-500/20">
           <CardHeader>
-            <CardTitle className="text-[14px]">Add New User</CardTitle>
-            <CardDescription>Create an account for a new team member</CardDescription>
+            <CardTitle className="text-[14px]">Invite New User</CardTitle>
+            <CardDescription>They'll receive an email to set their own password</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
@@ -134,15 +171,6 @@ export function TeamPage() {
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="email@example.com"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[12px] font-medium text-muted-foreground">Password</label>
-              <Input
-                type="password"
-                value={invitePassword}
-                onChange={(e) => setInvitePassword(e.target.value)}
-                placeholder="Min 8 characters"
               />
             </div>
             <div className="space-y-1.5">
@@ -184,10 +212,10 @@ export function TeamPage() {
               <Button
                 variant="cta"
                 size="sm"
-                disabled={!inviteName || !inviteEmail || !invitePassword || inviteMutation.isPending}
+                disabled={!inviteName || !inviteEmail || inviteMutation.isPending}
                 onClick={() => inviteMutation.mutate()}
               >
-                {inviteMutation.isPending ? 'Adding...' : 'Add User'}
+                {inviteMutation.isPending ? 'Sending...' : 'Send Invite'}
               </Button>
               <Button variant="secondary" size="sm" onClick={() => setShowInvite(false)}>
                 Cancel
@@ -216,6 +244,7 @@ export function TeamPage() {
             <div className="divide-y divide-white/[0.04]">
               {users.map((u) => {
                 const isCurrentUser = u._id === user?.id
+                const isPending = u.status === 'pending'
                 return (
                   <div key={u._id} className="flex items-center justify-between px-6 py-4">
                     <div className="flex items-center gap-3 min-w-0">
@@ -226,7 +255,7 @@ export function TeamPage() {
                       </Avatar>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-[13px] font-medium text-white truncate">{u.name}</p>
+                          <p className={`text-[13px] font-medium truncate ${isPending ? 'text-muted-foreground' : 'text-white'}`}>{u.name}</p>
                           {isCurrentUser && (
                             <span className="text-[10px] text-muted-foreground/60">(you)</span>
                           )}
@@ -235,21 +264,36 @@ export function TeamPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0 ml-4">
+                      {getStatusBadge(u.status)}
                       {getRoleBadge(u.role)}
                       {canManageUsers && !isCurrentUser && u.role !== 'super_admin' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-muted-foreground hover:text-red-400"
-                          onClick={() => {
-                            if (confirm(`Remove ${u.name} from the team?`)) {
-                              removeMutation.mutate(u._id)
-                            }
-                          }}
-                          disabled={removeMutation.isPending}
-                        >
-                          <Trash2 size={14} />
-                        </Button>
+                        <>
+                          {isPending && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-muted-foreground hover:text-blue-400"
+                              onClick={() => resendInviteMutation.mutate(u._id)}
+                              disabled={resendInviteMutation.isPending}
+                              title="Resend invite"
+                            >
+                              <Mail size={14} />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground hover:text-red-400"
+                            onClick={() => {
+                              if (confirm(`Remove ${u.name} from the team?`)) {
+                                removeMutation.mutate(u._id)
+                              }
+                            }}
+                            disabled={removeMutation.isPending}
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>

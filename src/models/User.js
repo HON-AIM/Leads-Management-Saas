@@ -6,7 +6,7 @@ const config = require('../config');
 const userSchema = new mongoose.Schema(
   {
     email: { type: String, required: true, lowercase: true, trim: true },
-    password: { type: String, required: true, select: false },
+    password: { type: String, required: false, select: false },
     name: { type: String, required: true, trim: true },
     role: {
       type: String,
@@ -14,7 +14,9 @@ const userSchema = new mongoose.Schema(
       default: 'member',
     },
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true },
-    status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+    status: { type: String, enum: ['active', 'inactive', 'pending'], default: 'active' },
+    inviteToken: { type: String, select: false },
+    inviteTokenExpires: { type: Date, select: false },
     refreshTokens: [
       {
         token: { type: String },

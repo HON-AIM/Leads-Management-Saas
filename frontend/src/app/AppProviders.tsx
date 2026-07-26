@@ -5,7 +5,7 @@ import { queryClient } from '@/lib/query-client'
 import { useThemeStore } from '@/stores/themeStore'
 import { useAuthStore } from '@/stores/authStore'
 
-const PUBLIC_PATHS = ['/', '/login', '/forgot-password', '/reset-password']
+const PUBLIC_PATHS = ['/', '/login', '/forgot-password', '/reset-password', '/accept-invite']
 
 function ThemeInitializer({ children }: { children: React.ReactNode }) {
   const theme = useThemeStore((s) => s.theme)

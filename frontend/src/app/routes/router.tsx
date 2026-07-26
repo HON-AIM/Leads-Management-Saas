@@ -7,6 +7,7 @@ import { LandingPage } from '@/pages/marketing/LandingPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
 import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage'
+import { AcceptInvitePage } from '@/pages/auth/AcceptInvitePage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { LeadsPage } from '@/pages/leads/LeadsPage'
 import { BuyersPage } from '@/pages/buyers/BuyersPage'
@@ -26,6 +27,7 @@ export function AppRouter() {
       <Route path={ROUTES.LOGIN} element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path={ROUTES.FORGOT_PASSWORD} element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
       <Route path={ROUTES.RESET_PASSWORD} element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
+      <Route path={ROUTES.ACCEPT_INVITE} element={<AcceptInvitePage />} />
 
       <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
         <Route path={ROUTES.DASHBOARD} element={<ErrorBoundary componentName="Dashboard"><DashboardPage /></ErrorBoundary>} />

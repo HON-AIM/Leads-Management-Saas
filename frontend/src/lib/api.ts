@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const PUBLIC_PATHS = ['/', '/login', '/forgot-password', '/reset-password']
+const PUBLIC_PATHS = ['/', '/login', '/forgot-password', '/reset-password', '/accept-invite']
 const LOGIN_URLS = ['/auth/login']
 
 const api = axios.create({

@@ -112,8 +112,12 @@ const changePassword = z.object({
 const inviteUser = z.object({
   email: z.string().email('Invalid email format'),
   name: z.string().min(1, 'Name is required').max(200),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
   role: z.enum(['admin', 'member']).default('member'),
+}).strict();
+
+const acceptInvite = z.object({
+  token: z.string().min(1, 'Invite token is required'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 }).strict();
 
 module.exports = {
@@ -126,4 +130,5 @@ module.exports = {
   login,
   changePassword,
   inviteUser,
+  acceptInvite,
 };

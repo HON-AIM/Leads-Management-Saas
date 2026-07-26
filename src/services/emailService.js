@@ -25,14 +25,28 @@ function isEmailConfigured() {
   return !!(config.email.user && config.email.pass);
 }
 
-async function sendInviteEmail({ name, email, password, loginUrl }) {
+async function sendEmail({ to, subject, html }) {
   const transport = getTransporter();
   if (!transport) {
-    logger.warn('Email not configured — skipping invite email', { email });
+    logger.warn('Email not configured — skipping email send', { to, subject });
     return false;
   }
 
-  const html = `
+  await transport.sendMail({
+    from: `"LeadFlowX" <${config.email.from}>`,
+    to,
+    subject,
+    html,
+  });
+
+  logger.info('Email sent', { to, subject });
+  return true;
+}
+
+function buildInviteEmail({ tenantName, invitedByName, role, acceptUrl }) {
+  const roleLabel = role === 'admin' ? 'Admin' : role === 'super_admin' ? 'Owner' : 'Member';
+
+  return `
     <!DOCTYPE html>
     <html>
     <head>
@@ -47,38 +61,49 @@ async function sendInviteEmail({ name, email, password, loginUrl }) {
               <tr>
                 <td style="background:linear-gradient(135deg,#3b82f6,#06b6d4);padding:32px 40px;text-align:center;">
                   <h1 style="color:#ffffff;font-size:22px;font-weight:700;margin:0;">LeadFlowX</h1>
-                  <p style="color:rgba(255,255,255,0.85);font-size:13px;margin:6px 0 0;">Lead Distribution Platform</p>
+                  <p style="color:rgba(255,255,255,0.85);font-size:13px;margin:6px 0 0;">${tenantName || 'LeadFlowX'}</p>
                 </td>
               </tr>
               <tr>
                 <td style="padding:36px 40px;">
-                  <h2 style="color:#1e293b;font-size:18px;font-weight:600;margin:0 0 8px;">Welcome to the team${name ? ', ' + name : ''}!</h2>
+                  <h2 style="color:#1e293b;font-size:18px;font-weight:600;margin:0 0 8px;">You've been invited to join ${tenantName || 'the team'}</h2>
                   <p style="color:#64748b;font-size:14px;line-height:1.6;margin:0 0 24px;">
-                    An account has been created for you. Here are your login details:
+                    ${invitedByName ? `<strong>${invitedByName}</strong> has invited you to join as <strong>${roleLabel}</strong>.` : `You have been invited to join as <strong>${roleLabel}</strong>.`}
+                    Click the button below to set your password and activate your account.
                   </p>
 
-                  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:24px;">
+                  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                     <tr>
-                      <td style="padding:16px 20px;">
-                        <p style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 4px;">Email</p>
-                        <p style="color:#1e293b;font-size:14px;font-weight:500;margin:0;">${email}</p>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style="padding:0 20px 16px;">
-                        <p style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 4px;">Password</p>
-                        <p style="color:#1e293b;font-size:14px;font-weight:500;margin:0;font-family:monospace;letter-spacing:0.5px;">${password}</p>
+                      <td align="center">
+                        <table cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td style="background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:8px;">
+                              <a href="${acceptUrl}" style="display:inline-block;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 32px;">
+                                Set Your Password
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
                       </td>
                     </tr>
                   </table>
 
-                  <a href="${loginUrl}" style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 32px;border-radius:8px;">
-                    Log In to Your Account
-                  </a>
-
-                  <p style="color:#94a3b8;font-size:12px;line-height:1.5;margin:28px 0 0;">
-                    For security, we recommend changing your password after your first login.
+                  <p style="color:#94a3b8;font-size:12px;line-height:1.5;margin:0 0 16px;">
+                    If the button doesn't work, copy and paste this link into your browser:
                   </p>
+                  <p style="color:#3b82f6;font-size:12px;word-break:break-all;margin:0 0 24px;">
+                    <a href="${acceptUrl}" style="color:#3b82f6;text-decoration:underline;">${acceptUrl}</a>
+                  </p>
+
+                  <table width="100%" cellpadding="0" cellspacing="0" style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;margin-bottom:0;">
+                    <tr>
+                      <td style="padding:12px 16px;">
+                        <p style="color:#92400e;font-size:12px;line-height:1.5;margin:0;">
+                          This link expires in <strong>7 days</strong>. If you didn't expect this invite, you can safely ignore this email.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
               <tr>
@@ -95,21 +120,6 @@ async function sendInviteEmail({ name, email, password, loginUrl }) {
     </body>
     </html>
   `;
-
-  try {
-    await transport.sendMail({
-      from: `"LeadFlowX" <${config.email.from}>`,
-      to: email,
-      subject: 'Your LeadFlowX Account — Login Details',
-      html,
-    });
-
-    logger.info('Invite email sent', { email, name });
-    return true;
-  } catch (err) {
-    logger.warn('Failed to send invite email', { email, error: err.message });
-    return false;
-  }
 }
 
-module.exports = { sendInviteEmail, isEmailConfigured };
+module.exports = { sendEmail, buildInviteEmail, isEmailConfigured };
