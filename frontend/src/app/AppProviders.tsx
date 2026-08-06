@@ -2,17 +2,14 @@ import { useEffect } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, useLocation } from 'react-router-dom'
 import { queryClient } from '@/lib/query-client'
-import { useThemeStore } from '@/stores/themeStore'
 import { useAuthStore } from '@/stores/authStore'
 
 const PUBLIC_PATHS = ['/', '/login', '/forgot-password', '/reset-password', '/accept-invite']
 
 function ThemeInitializer({ children }: { children: React.ReactNode }) {
-  const theme = useThemeStore((s) => s.theme)
-
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark')
-  }, [theme])
+    document.documentElement.classList.add('dark')
+  }, [])
 
   return <>{children}</>
 }
