@@ -167,18 +167,18 @@ export function LandingPage() {
 
           <div className="hidden items-center gap-7 md:flex">
             {NAV_LINKS.map((l) => (
-              <a key={l.href} href={l.href} className={`text-[12px] transition-colors ${activeSection === l.href.slice(1) ? 'text-white' : 'text-muted-foreground/70 hover:text-white/70'}`}>
+              <a key={l.href} href={l.href} className={`text-[12px] transition-colors ${activeSection === l.href.slice(1) ? 'text-white' : 'text-slate-300 hover:text-white'}`}>
                 {l.label}
               </a>
             ))}
           </div>
 
           <div className="hidden items-center gap-3 md:flex">
-            <Link to={ROUTES.LOGIN} className="text-[12px] text-muted-foreground/70 transition-colors hover:text-white/70">Log in</Link>
+            <Link to={ROUTES.LOGIN} className="text-[12px] text-slate-300 transition-colors hover:text-white">Log in</Link>
             <Link to={ROUTES.LOGIN} className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-[12px] font-medium text-white transition hover:bg-blue-700">Get Started</Link>
           </div>
 
-          <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden text-muted-foreground/70">
+          <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden text-slate-300">
             {mobileOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
         </div>
@@ -187,10 +187,10 @@ export function LandingPage() {
           <div className="border-t border-white/[0.08] bg-[#0a0f1e]/95 backdrop-blur-xl md:hidden">
             <div className="flex flex-col gap-1 px-5 py-4">
               {NAV_LINKS.map((l) => (
-                <a key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2 text-[13px] text-muted-foreground/70 transition hover:bg-white/[0.03] hover:text-white">{l.label}</a>
+                <a key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2 text-[13px] text-slate-300 transition hover:bg-white/[0.03] hover:text-white">{l.label}</a>
               ))}
               <div className="my-2 h-px bg-white/[0.05]" />
-              <Link to={ROUTES.LOGIN} onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2 text-[13px] text-muted-foreground/70 transition hover:bg-white/[0.03] hover:text-white">Log in</Link>
+              <Link to={ROUTES.LOGIN} onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2 text-[13px] text-slate-300 transition hover:bg-white/[0.03] hover:text-white">Log in</Link>
               <Link to={ROUTES.LOGIN} onClick={() => setMobileOpen(false)} className="mt-1 rounded-lg bg-blue-600 px-3 py-2 text-center text-[13px] font-medium text-white transition hover:bg-blue-700">Get Started</Link>
             </div>
           </div>
@@ -223,7 +223,7 @@ export function LandingPage() {
                   Request Demo
                   <ArrowRight size={14} />
                 </Link>
-                <a href="#how-it-works" className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-5 py-2.5 text-[13px] font-medium text-muted-foreground/70 transition hover:border-white/[0.12] hover:text-white/80">
+                <a href="#how-it-works" className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-5 py-2.5 text-[13px] font-medium text-slate-400 transition hover:border-white/[0.12] hover:text-white/80">
                   Watch Demo
                 </a>
               </div>
@@ -292,7 +292,7 @@ export function LandingPage() {
           <div className="mx-auto max-w-lg text-center mb-12">
             <p className="text-[11px] uppercase tracking-wider text-blue-400/70 mb-2">The Problem</p>
             <h2 className="text-[28px] font-bold tracking-tight">Manual lead routing is broken</h2>
-            <p className="mt-3 text-[14px] text-muted-foreground/70">Agencies lose revenue every day because their lead distribution can't keep up.</p>
+            <p className="mt-3 text-[14px] text-slate-400">Agencies lose revenue every day because their lead distribution can't keep up.</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {PAIN_POINTS.map((p) => (
@@ -301,7 +301,7 @@ export function LandingPage() {
                   <p.icon size={18} className="text-red-400/70" />
                 </div>
                 <h3 className="text-[14px] font-semibold text-white/90">{p.title}</h3>
-                <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground/70">{p.desc}</p>
+                <p className="mt-1.5 text-[12px] leading-relaxed text-slate-400">{p.desc}</p>
               </div>
             ))}
           </div>
@@ -314,7 +314,7 @@ export function LandingPage() {
           <div className="mx-auto max-w-lg text-center mb-12">
             <p className="text-[11px] uppercase tracking-wider text-emerald-400/70 mb-2">The Solution</p>
             <h2 className="text-[28px] font-bold tracking-tight">Everything you need to distribute leads</h2>
-            <p className="mt-3 text-[14px] text-muted-foreground/70">A complete routing engine with every feature agencies need.</p>
+            <p className="mt-3 text-[14px] text-slate-400">A complete routing engine with every feature agencies need.</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {SOLUTIONS.map((s) => (
@@ -323,7 +323,7 @@ export function LandingPage() {
                   <s.icon size={18} className="text-blue-400/70" />
                 </div>
                 <h3 className="text-[14px] font-semibold text-white/90">{s.title}</h3>
-                <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground/70">{s.desc}</p>
+                <p className="mt-1.5 text-[12px] leading-relaxed text-slate-400">{s.desc}</p>
               </div>
             ))}
           </div>
@@ -336,7 +336,7 @@ export function LandingPage() {
           <div className="mx-auto max-w-lg text-center mb-14">
             <p className="text-[11px] uppercase tracking-wider text-blue-400/70 mb-2">How It Works</p>
             <h2 className="text-[28px] font-bold tracking-tight">From lead to buyer in seconds</h2>
-            <p className="mt-3 text-[14px] text-muted-foreground/70">Five steps. Fully automated. Zero manual work.</p>
+            <p className="mt-3 text-[14px] text-slate-400">Five steps. Fully automated. Zero manual work.</p>
           </div>
           <div className="relative">
             <div className="absolute left-6 top-0 bottom-0 hidden w-px bg-gradient-to-b from-blue-500/20 via-blue-500/10 to-transparent lg:block" />
@@ -349,7 +349,7 @@ export function LandingPage() {
                   <div className="rounded-xl border border-white/[0.08] bg-[#0e1428]/60 p-5 flex-1">
                     <div className="text-[10px] font-mono text-blue-400/50 mb-1">Step {s.num}</div>
                     <h3 className="text-[14px] font-semibold text-white/90">{s.title}</h3>
-                    <p className="mt-1 text-[12px] text-muted-foreground/70">{s.desc}</p>
+                    <p className="mt-1 text-[12px] text-slate-400">{s.desc}</p>
                   </div>
                 </div>
               ))}
@@ -364,7 +364,7 @@ export function LandingPage() {
           <div className="mx-auto max-w-lg text-center mb-12">
             <p className="text-[11px] uppercase tracking-wider text-blue-400/70 mb-2">Features</p>
             <h2 className="text-[28px] font-bold tracking-tight">Built for performance</h2>
-            <p className="mt-3 text-[14px] text-muted-foreground/70">Every feature designed to help agencies route leads faster and smarter.</p>
+            <p className="mt-3 text-[14px] text-slate-400">Every feature designed to help agencies route leads faster and smarter.</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES_GRID.map((f) => (
@@ -384,7 +384,7 @@ export function LandingPage() {
           <div className="mx-auto max-w-lg text-center mb-12">
             <p className="text-[11px] uppercase tracking-wider text-emerald-400/70 mb-2">Dashboard</p>
             <h2 className="text-[28px] font-bold tracking-tight">See everything at a glance</h2>
-            <p className="mt-3 text-[14px] text-muted-foreground/70">Real-time metrics, delivery logs, and buyer performance — all in one view.</p>
+            <p className="mt-3 text-[14px] text-slate-400">Real-time metrics, delivery logs, and buyer performance — all in one view.</p>
           </div>
           <div className="rounded-2xl border border-white/[0.08] bg-[#0e1428] p-1 shadow-2xl shadow-blue-500/5">
             <div className="rounded-xl bg-[#0a0f1e] p-6">
@@ -474,12 +474,12 @@ export function LandingPage() {
           <div className="text-center mb-12">
             <p className="text-[11px] uppercase tracking-wider text-emerald-400/70 mb-2">Pricing</p>
             <h2 className="text-[28px] font-bold tracking-tight">Simple, transparent pricing</h2>
-            <p className="mt-3 text-[14px] text-muted-foreground/70">Start free. Scale when you're ready.</p>
+            <p className="mt-3 text-[14px] text-slate-400">Start free. Scale when you're ready.</p>
           </div>
           <div className="mx-auto grid max-w-3xl gap-4 md:grid-cols-2">
             <div className="rounded-xl border border-white/[0.08] bg-[#0e1428]/60 p-6">
               <h3 className="text-[16px] font-semibold text-white/90">Starter</h3>
-              <p className="mt-1 text-[12px] text-muted-foreground/70">For small agencies getting started.</p>
+              <p className="mt-1 text-[12px] text-slate-400">For small agencies getting started.</p>
               <div className="mt-4 text-[28px] font-bold text-white">$0<span className="text-[13px] font-normal text-muted-foreground/40">/mo</span></div>
               <ul className="mt-4 space-y-2">
                 {['1 Campaign', '5 Buyers', '1,000 leads/mo', 'Basic routing', 'Email support'].map((f) => (
@@ -491,7 +491,7 @@ export function LandingPage() {
             <div className="relative rounded-xl border border-blue-500/20 bg-[#0e1428]/80 p-6 shadow-lg shadow-blue-500/5">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-3 py-0.5 text-[10px] font-semibold text-white">Most Popular</div>
               <h3 className="text-[16px] font-semibold text-white/90">Pro</h3>
-              <p className="mt-1 text-[12px] text-muted-foreground/70">For agencies that need full power.</p>
+              <p className="mt-1 text-[12px] text-slate-400">For agencies that need full power.</p>
               <div className="mt-4 text-[28px] font-bold text-white">$49<span className="text-[13px] font-normal text-muted-foreground/40">/mo</span></div>
               <ul className="mt-4 space-y-2">
                 {['Unlimited Campaigns', 'Unlimited Buyers', '50,000 leads/mo', 'All routing strategies', 'Priority support', 'API access'].map((f) => (
@@ -508,7 +508,7 @@ export function LandingPage() {
       <section className="py-20">
         <div className="mx-auto max-w-2xl px-5 text-center">
           <h2 className="text-[28px] font-bold tracking-tight">Ready to Simplify Lead Distribution?</h2>
-          <p className="mt-3 text-[14px] text-muted-foreground/70">Join agencies that route leads in seconds, not minutes.</p>
+          <p className="mt-3 text-[14px] text-slate-400">Join agencies that route leads in seconds, not minutes.</p>
           <Link to={ROUTES.LOGIN} className="mt-8 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-[14px] font-semibold text-white transition hover:bg-blue-700 active:bg-blue-800">
             Book a Demo
             <ArrowRight size={15} />
