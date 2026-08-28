@@ -112,8 +112,8 @@ export function MarketingFooter() {
         </div>
 
         <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-white/[0.08] pt-6 sm:flex-row">
-          <p className="text-[11px] text-muted-foreground/35">
-            &copy; {new Date().getFullYear()} LeadFlowX. All rights reserved.
+          <p className="text-[11px] font-bold text-muted-foreground">
+            &copy; 2026 AIM Digital Labs. All rights reserved.
           </p>
           <p className="text-[11px] text-muted-foreground/35">SOC 2 readiness in progress · 99.9% uptime target</p>
         </div>
