@@ -1,45 +1,90 @@
+import { lazy, Suspense } from 'react'
+import type { ReactNode } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/guards/ProtectedRoute'
 import { PublicRoute } from '@/components/guards/PublicRoute'
 import { AppShell } from '@/components/layout/AppShell'
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
-import { LandingPage } from '@/pages/marketing/LandingPage'
-import { LoginPage } from '@/pages/auth/LoginPage'
-import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
-import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage'
-import { AcceptInvitePage } from '@/pages/auth/AcceptInvitePage'
-import { DashboardPage } from '@/pages/dashboard/DashboardPage'
-import { LeadsPage } from '@/pages/leads/LeadsPage'
-import { BuyersPage } from '@/pages/buyers/BuyersPage'
-import { CampaignsPage } from '@/pages/campaigns/CampaignsPage'
-import { CampaignWorkspacePage } from '@/pages/campaigns/CampaignWorkspacePage'
-import { DeliveryPage } from '@/pages/delivery/DeliveryPage'
-import { ReportsPage } from '@/pages/reports/ReportsPage'
-import { SettingsPage } from '@/pages/settings/SettingsPage'
-import { TeamPage } from '@/pages/team/TeamPage'
-import { SuppliersPage } from '@/pages/suppliers/SuppliersPage'
+import { Loader2 } from 'lucide-react'
 import { ROUTES } from '@/lib/constants'
+
+const LandingPage = lazy(() => import('@/pages/marketing/LandingPage'))
+const LoginPage = lazy(() => import('@/pages/auth/LoginPage').then((m) => ({ default: m.LoginPage })))
+const ForgotPasswordPage = lazy(() =>
+  import('@/pages/auth/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage }))
+)
+const ResetPasswordPage = lazy(() =>
+  import('@/pages/auth/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage }))
+)
+const AcceptInvitePage = lazy(() =>
+  import('@/pages/auth/AcceptInvitePage').then((m) => ({ default: m.AcceptInvitePage }))
+)
+const DashboardPage = lazy(() =>
+  import('@/pages/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage }))
+)
+const LeadsPage = lazy(() => import('@/pages/leads/LeadsPage').then((m) => ({ default: m.LeadsPage })))
+const BuyersPage = lazy(() => import('@/pages/buyers/BuyersPage').then((m) => ({ default: m.BuyersPage })))
+const CampaignsPage = lazy(() =>
+  import('@/pages/campaigns/CampaignsPage').then((m) => ({ default: m.CampaignsPage }))
+)
+const CampaignWorkspacePage = lazy(() =>
+  import('@/pages/campaigns/CampaignWorkspacePage').then((m) => ({ default: m.CampaignWorkspacePage }))
+)
+const DeliveryPage = lazy(() =>
+  import('@/pages/delivery/DeliveryPage').then((m) => ({ default: m.DeliveryPage }))
+)
+const ReportsPage = lazy(() =>
+  import('@/pages/reports/ReportsPage').then((m) => ({ default: m.ReportsPage }))
+)
+const SettingsPage = lazy(() =>
+  import('@/pages/settings/SettingsPage').then((m) => ({ default: m.SettingsPage }))
+)
+const TeamPage = lazy(() => import('@/pages/team/TeamPage').then((m) => ({ default: m.TeamPage })))
+const SuppliersPage = lazy(() =>
+  import('@/pages/suppliers/SuppliersPage').then((m) => ({ default: m.SuppliersPage }))
+)
+
+function Page({ children }: { children: ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-surface-dark">
+          <Loader2 size={28} className="animate-spin text-blue-500" />
+        </div>
+      }
+    >
+      {children}
+    </Suspense>
+  )
+}
 
 export function AppRouter() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path={ROUTES.LOGIN} element={<PublicRoute><LoginPage /></PublicRoute>} />
-      <Route path={ROUTES.FORGOT_PASSWORD} element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
-      <Route path={ROUTES.RESET_PASSWORD} element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
-      <Route path={ROUTES.ACCEPT_INVITE} element={<AcceptInvitePage />} />
+      <Route
+        path="/"
+        element={
+          <Page>
+            <LandingPage />
+          </Page>
+        }
+      />
+      <Route path={ROUTES.LOGIN} element={<Page><PublicRoute><LoginPage /></PublicRoute></Page>} />
+      <Route path={ROUTES.FORGOT_PASSWORD} element={<Page><PublicRoute><ForgotPasswordPage /></PublicRoute></Page>} />
+      <Route path={ROUTES.RESET_PASSWORD} element={<Page><PublicRoute><ResetPasswordPage /></PublicRoute></Page>} />
+      <Route path={ROUTES.ACCEPT_INVITE} element={<Page><AcceptInvitePage /></Page>} />
 
       <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
-        <Route path={ROUTES.DASHBOARD} element={<ErrorBoundary componentName="Dashboard"><DashboardPage /></ErrorBoundary>} />
-        <Route path={ROUTES.LEADS} element={<ErrorBoundary componentName="Leads"><LeadsPage /></ErrorBoundary>} />
-        <Route path={ROUTES.BUYERS} element={<ErrorBoundary componentName="Buyers"><BuyersPage /></ErrorBoundary>} />
-        <Route path={ROUTES.CAMPAIGNS} element={<ErrorBoundary componentName="Campaigns"><CampaignsPage /></ErrorBoundary>} />
-        <Route path="/campaigns/:id" element={<ErrorBoundary componentName="Campaign Workspace"><CampaignWorkspacePage /></ErrorBoundary>} />
-        <Route path={ROUTES.DELIVERY} element={<ErrorBoundary componentName="Delivery"><DeliveryPage /></ErrorBoundary>} />
-        <Route path={ROUTES.REPORTS} element={<ErrorBoundary componentName="Reports"><ReportsPage /></ErrorBoundary>} />
-        <Route path={ROUTES.SETTINGS} element={<ErrorBoundary componentName="Settings"><SettingsPage /></ErrorBoundary>} />
-        <Route path={ROUTES.TEAM} element={<ErrorBoundary componentName="Team"><TeamPage /></ErrorBoundary>} />
-        <Route path={ROUTES.SUPPLIERS} element={<ErrorBoundary componentName="Suppliers"><SuppliersPage /></ErrorBoundary>} />
+        <Route path={ROUTES.DASHBOARD} element={<Page><ErrorBoundary componentName="Dashboard"><DashboardPage /></ErrorBoundary></Page>} />
+        <Route path={ROUTES.LEADS} element={<Page><ErrorBoundary componentName="Leads"><LeadsPage /></ErrorBoundary></Page>} />
+        <Route path={ROUTES.BUYERS} element={<Page><ErrorBoundary componentName="Buyers"><BuyersPage /></ErrorBoundary></Page>} />
+        <Route path={ROUTES.CAMPAIGNS} element={<Page><ErrorBoundary componentName="Campaigns"><CampaignsPage /></ErrorBoundary></Page>} />
+        <Route path="/campaigns/:id" element={<Page><ErrorBoundary componentName="Campaign Workspace"><CampaignWorkspacePage /></ErrorBoundary></Page>} />
+        <Route path={ROUTES.DELIVERY} element={<Page><ErrorBoundary componentName="Delivery"><DeliveryPage /></ErrorBoundary></Page>} />
+        <Route path={ROUTES.REPORTS} element={<Page><ErrorBoundary componentName="Reports"><ReportsPage /></ErrorBoundary></Page>} />
+        <Route path={ROUTES.SETTINGS} element={<Page><ErrorBoundary componentName="Settings"><SettingsPage /></ErrorBoundary></Page>} />
+        <Route path={ROUTES.TEAM} element={<Page><ErrorBoundary componentName="Team"><TeamPage /></ErrorBoundary></Page>} />
+        <Route path={ROUTES.SUPPLIERS} element={<Page><ErrorBoundary componentName="Suppliers"><SuppliersPage /></ErrorBoundary></Page>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
