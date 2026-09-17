@@ -53,4 +53,8 @@ api.interceptors.response.use(
   }
 )
 
+export function unwrap<T>(res: { data: any }): T {
+  return (res.data?.data ?? res.data) as T
+}
+
 export default api

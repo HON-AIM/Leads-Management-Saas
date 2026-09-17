@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import api from '@/lib/api'
+import api, { unwrap } from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -47,7 +47,7 @@ export function DeliveryPage() {
     queryKey: QUERY_KEYS.DELIVERY_STATS,
     queryFn: async () => {
       const { data } = await api.get('/delivery-logs/stats')
-      return data
+      return unwrap<DeliveryStats>({ data })
     },
   })
 
@@ -55,7 +55,7 @@ export function DeliveryPage() {
     queryKey: QUERY_KEYS.DELIVERY_TRENDS,
     queryFn: async () => {
       const { data } = await api.get('/delivery-logs/trends?days=14')
-      return data
+      return unwrap<DeliveryTrendsResponse>({ data })
     },
   })
 

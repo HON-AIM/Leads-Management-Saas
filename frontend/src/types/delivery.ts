@@ -48,10 +48,8 @@ export interface DeliveryHourlyTrend {
 }
 
 export interface DeliveryTrendsResponse {
-  success: boolean
   trends: DeliveryTrend[]
   hourly: DeliveryHourlyTrend[]
-  days: number
 }
 
 export interface DeliveryFilters {
