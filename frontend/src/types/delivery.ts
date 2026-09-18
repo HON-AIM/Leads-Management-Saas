@@ -32,19 +32,19 @@ export interface DeliveryStats {
 }
 
 export interface DeliveryTrend {
-  _id: string
-  total: number
-  success: number
+  date: string
+  delivered: number
   failed: number
-  retrying: number
-  avgDuration: number
-  maxDuration: number
+  pending: number
+  total: number
 }
 
 export interface DeliveryHourlyTrend {
-  _id: string
-  count: number
-  avgDuration: number
+  hour: string
+  delivered: number
+  failed: number
+  pending: number
+  total: number
 }
 
 export interface DeliveryTrendsResponse {
@@ -61,14 +61,12 @@ export interface DeliveryFilters {
 }
 
 export const STATUS_OPTIONS = [
-  { label: 'All Statuses', value: '' },
   { label: 'Success', value: 'success' },
   { label: 'Failed', value: 'failed' },
   { label: 'Retrying', value: 'retrying' },
 ]
 
 export const PROVIDER_OPTIONS = [
-  { label: 'All Providers', value: '' },
   { label: 'Webhook', value: 'webhook' },
   { label: 'GHL', value: 'ghl' },
   { label: 'Email', value: 'email' },

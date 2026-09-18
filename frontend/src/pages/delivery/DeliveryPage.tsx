@@ -90,9 +90,13 @@ export function DeliveryPage() {
     setSkip(0)
   }, [])
 
-  const logs = logsData?.data || []
+  const logs = Array.isArray(logsData?.data) ? logsData.data : []
   const total = logsData?.pagination?.total || 0
-  const buyers = (buyersData || []).map((b: Buyer) => ({ _id: b._id, name: b.name }))
+  const buyers = Array.isArray(buyersData)
+    ? buyersData.map((b: Buyer) => ({ _id: b._id, name: b.name }))
+    : []
+  const chartTrends = Array.isArray(trendsData?.trends) ? trendsData.trends : []
+  const chartHourly = Array.isArray(trendsData?.hourly) ? trendsData.hourly : []
 
   const successRate = statsData && statsData.total > 0
     ? (statsData.success / statsData.total) * 100
@@ -132,8 +136,8 @@ export function DeliveryPage() {
           </CardHeader>
           <CardContent>
             <DeliveryCharts
-              trends={trendsData?.trends || []}
-              hourly={trendsData?.hourly || []}
+              trends={chartTrends}
+              hourly={chartHourly}
               isLoading={trendsLoading}
             />
           </CardContent>

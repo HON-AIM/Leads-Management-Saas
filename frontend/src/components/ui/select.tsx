@@ -13,7 +13,8 @@ interface SelectProps {
 }
 
 export function Select({ options, placeholder, value, onChange, className = '', disabled }: SelectProps) {
-  const selected = options.find((opt) => opt.value === value)
+  const items = options.filter((opt) => opt.value !== '' && opt.value != null)
+  const selected = items.find((opt) => opt.value === value)
   const current = selected?.label ?? placeholder ?? ''
 
   return (
@@ -56,15 +57,14 @@ export function Select({ options, placeholder, value, onChange, className = '', 
           )}
         >
           <SelectPrimitive.Viewport className="p-1">
-            {options.map((opt) => (
+            {items.map((opt) => (
               <SelectPrimitive.Item
                 key={opt.value}
                 value={opt.value}
                 className={cn(
                   'relative flex w-full cursor-default select-none items-center rounded-md py-1.5 pl-8 pr-2.5 text-[13px] outline-none transition-colors',
                   'focus:bg-white/[0.06] dark:focus:bg-white/[0.06]',
-                  'data-[disabled]:pointer-events-none data-[disabled]:opacity-40',
-                  opt.value === '' ? 'text-muted-foreground' : ''
+                  'data-[disabled]:pointer-events-none data-[disabled]:opacity-40'
                 )}
               >
                 <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">

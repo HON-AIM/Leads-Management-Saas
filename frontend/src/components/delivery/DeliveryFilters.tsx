@@ -34,10 +34,7 @@ export function DeliveryFilters({ filters, buyers, onChange, onReset }: Delivery
         placeholder="All Buyers"
         value={filters.buyerId}
         onChange={(e) => update({ buyerId: e.target.value })}
-        options={[
-          { label: 'All Buyers', value: '' },
-          ...buyers.map((b) => ({ label: b.name, value: b._id })),
-        ]}
+        options={buyers.map((b) => ({ label: b.name, value: b._id }))}
       />
       <input
         type="date"
