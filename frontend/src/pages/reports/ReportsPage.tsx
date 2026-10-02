@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { formatNumber, formatPercentage } from '@/lib/utils'
 import { SEMANTIC_COLORS, getStatusStyle, DELIVERY_STATUS_COLOR } from '@/lib/statusColors'
+import { useNotifications } from '@/hooks/useNotifications'
 import {
   BarChart3, Users, CheckCircle2, XCircle, TrendingUp,
-  Download, Clock, Copy, Building2, ArrowUpRight, Activity,
+  Download, Clock, Copy, Building2, ArrowUpRight, Activity, Loader2,
 } from 'lucide-react'
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
@@ -80,6 +81,20 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'top-buyers', label: 'Top Buyers' },
 ]
 
+/** Maps each tab key to the export view name accepted by GET /api/reports/export/:view */
+const EXPORT_VIEW: Record<Tab, string> = {
+  overview: 'overview',
+  volume: 'lead-volume',
+  buyers: 'buyer-distribution',
+  campaigns: 'campaign-performance',
+  'top-buyers': 'top-buyers',
+}
+
+function filenameFromDisposition(disposition: string | undefined, fallback: string) {
+  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition || '')
+  return match ? match[1] : fallback
+}
+
 const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4']
 
 function SkeletonBlock({ className }: { className?: string }) {
@@ -101,18 +116,60 @@ function KpiCard({ label, value, icon, color, sub }: {
   )
 }
 
-function CsvButton({ view, days }: { view: string; days?: number }) {
-  const url = `/api/reports/export/${view}${days ? `?days=${days}` : ''}`
+function CsvButton({ view, days }: { view: Tab; days?: number }) {
+  const { addNotification } = useNotifications()
+
+  const exportMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.get(
+        `/reports/export/${EXPORT_VIEW[view]}${days ? `?days=${days}` : ''}`,
+        { responseType: 'blob' },
+      )
+      const filename = filenameFromDisposition(
+        response.headers['content-disposition'],
+        `${view}-report.csv`,
+      )
+      const objectUrl = URL.createObjectURL(response.data as Blob)
+      const link = document.createElement('a')
+      link.href = objectUrl
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(objectUrl)
+    },
+    onSuccess: () => {
+      addNotification({ type: 'success', title: 'Export ready', description: 'CSV file downloaded' })
+    },
+    onError: async (err: unknown) => {
+      const data = (err as any)?.response?.data
+      let message = 'Failed to export CSV'
+      if (data instanceof Blob) {
+        try {
+          const parsed = JSON.parse(await data.text())
+          if (parsed?.error) message = parsed.error
+        } catch {
+          /* non-JSON error body, keep default message */
+        }
+      } else if (data?.error) {
+        message = data.error
+      }
+      addNotification({ type: 'error', title: 'Export failed', description: message })
+    },
+  })
+
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/70 hover:bg-white/[0.08] hover:text-white transition-colors"
+    <button
+      type="button"
+      onClick={() => exportMutation.mutate()}
+      disabled={exportMutation.isPending}
+      className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/70 hover:bg-white/[0.08] hover:text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-white/[0.04] disabled:hover:text-white/70"
     >
-      <Download size={13} />
-      Export CSV
-    </a>
+      {exportMutation.isPending
+        ? <Loader2 size={13} className="animate-spin" />
+        : <Download size={13} />}
+      {exportMutation.isPending ? 'Exporting…' : 'Export CSV'}
+    </button>
   )
 }
 
