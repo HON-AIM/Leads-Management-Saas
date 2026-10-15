@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import api, { unwrap } from '@/lib/api'
-import { QUERY_KEYS } from '@/lib/constants'
+import api from '@/lib/api'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
@@ -41,14 +40,15 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
 
   const update = (patch: Partial<CampaignFormData>) => setForm((prev) => ({ ...prev, ...patch }))
 
-  const { data: buyersResponse } = useQuery<{ success: boolean; data: Buyer[] }>({
-    queryKey: QUERY_KEYS.BUYERS,
+  const { data: buyersData } = useQuery({
+    queryKey: ['campaign-form-buyers'],
     queryFn: async () => {
       const { data } = await api.get('/buyers', { params: { limit: 200 } })
-      return data
+      return Array.isArray(data?.data) ? data.data : []
     },
+    refetchOnMount: 'always',
   })
-  const buyers: Buyer[] = unwrap<Buyer[] | undefined>({ data: buyersResponse }) ?? []
+  const buyers: Buyer[] = Array.isArray(buyersData) ? buyersData : []
 
   const addBuyer = (buyerId: string) => {
     if (!form.assignedBuyers.find((b) => b.buyerId === buyerId)) {
@@ -72,7 +72,7 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
     })
   }
 
-  const availableBuyers = buyers.filter((b) => b.status === 'active' && !form.assignedBuyers.find((ab) => ab.buyerId === b._id))
+  const availableBuyers = buyers.filter((b) => !form.assignedBuyers.find((ab) => ab.buyerId === b._id))
   const selectedMode = ROUTING_MODES.find((m) => m.value === form.routingMode)
 
   const canProceed = () => {
@@ -221,6 +221,9 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Assign Buyers *</Label>
+            {availableBuyers.length === 0 && buyers.length === 0 && (
+              <span className="text-[11px] text-amber-400">No buyers found. Create a buyer first.</span>
+            )}
             {availableBuyers.length > 0 && (
               <select
                 className="text-xs border border-white/[0.15] rounded-lg px-3 py-2 bg-[#151d33] text-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
@@ -230,7 +233,7 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
               >
                 <option value="" className="bg-[#151d33] text-white/60">Add buyer...</option>
                 {availableBuyers.map((b) => (
-                  <option key={b._id} value={b._id} className="bg-[#151d33] text-white">{b.name}</option>
+                  <option key={b._id} value={b._id} className="bg-[#151d33] text-white">{b.name}{b.status !== 'active' ? ` (${b.status})` : ''}</option>
                 ))}
               </select>
             )}
