@@ -1,5 +1,11 @@
 const { z } = require('zod');
 
+const campaignBuyerAssignment = z.object({
+  buyerId: z.string(),
+  weight: z.number().int().min(1).optional(),
+  priority: z.number().int().optional(),
+});
+
 const createCampaign = z.object({
   name: z.string().min(1, 'Campaign name is required').max(200),
   description: z.string().max(1000).optional(),
@@ -8,6 +14,7 @@ const createCampaign = z.object({
   routingMode: z.enum(['round_robin', 'weighted', 'priority', 'exclusive']).optional(),
   dedupWindowHours: z.number().int().min(1).optional(),
   duplicateHandling: z.enum(['reject', 'assign_anyway', 'update_existing']).optional(),
+  assignedBuyers: z.array(campaignBuyerAssignment).optional(),
 });
 
 const updateCampaign = z.object({
@@ -18,6 +25,7 @@ const updateCampaign = z.object({
   routingMode: z.enum(['round_robin', 'weighted', 'priority', 'exclusive']).optional(),
   dedupWindowHours: z.number().int().min(1).optional(),
   duplicateHandling: z.enum(['reject', 'assign_anyway', 'update_existing']).optional(),
+  assignedBuyers: z.array(campaignBuyerAssignment).optional(),
 });
 
 const createBuyer = z.object({

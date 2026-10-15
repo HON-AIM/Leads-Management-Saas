@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import api from '@/lib/api'
+import api, { unwrap } from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { formatDate } from '@/lib/utils'
 import { getStatusStyle, LEAD_STATUS_COLOR, DELIVERY_STATUS_COLOR, getScoreColor, type SemanticKey } from '@/lib/statusColors'
@@ -28,14 +28,14 @@ export function LeadDrawer({ leadId, onClose }: LeadDrawerProps) {
     enabled: !!leadId,
   })
 
-  const { data: buyersData } = useQuery({
-    queryKey: ['buyers'],
+  const { data: buyersResponse } = useQuery<{ success: boolean; data: Buyer[] }>({
+    queryKey: QUERY_KEYS.BUYERS,
     queryFn: async () => {
-      const { data } = await api.get('/buyers')
-      return data.data ?? data.buyers ?? data ?? []
+      const { data } = await api.get('/buyers', { params: { limit: 200 } })
+      return data
     },
   })
-  const allBuyers: Buyer[] = Array.isArray(buyersData) ? buyersData : []
+  const allBuyers: Buyer[] = unwrap<Buyer[] | undefined>({ data: buyersResponse }) ?? []
   const activeBuyers = allBuyers.filter((b) => b.status === 'active')
 
   const canReassign = lead && (

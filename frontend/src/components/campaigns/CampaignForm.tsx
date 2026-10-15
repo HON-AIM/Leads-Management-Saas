@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import api from '@/lib/api'
+import api, { unwrap } from '@/lib/api'
 import { QUERY_KEYS } from '@/lib/constants'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -41,14 +41,14 @@ export function CampaignForm({ campaign, onSave, onClose, isPending }: CampaignF
 
   const update = (patch: Partial<CampaignFormData>) => setForm((prev) => ({ ...prev, ...patch }))
 
-  const { data: buyersData } = useQuery({
+  const { data: buyersResponse } = useQuery<{ success: boolean; data: Buyer[] }>({
     queryKey: QUERY_KEYS.BUYERS,
     queryFn: async () => {
-      const { data } = await api.get('/buyers')
-      return data.data ?? data.buyers ?? data ?? []
+      const { data } = await api.get('/buyers', { params: { limit: 200 } })
+      return data
     },
   })
-  const buyers: Buyer[] = Array.isArray(buyersData) ? buyersData : []
+  const buyers: Buyer[] = unwrap<Buyer[] | undefined>({ data: buyersResponse }) ?? []
 
   const addBuyer = (buyerId: string) => {
     if (!form.assignedBuyers.find((b) => b.buyerId === buyerId)) {
