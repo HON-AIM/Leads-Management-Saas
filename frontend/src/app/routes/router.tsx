@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react'
+import type React from 'react'
 import type { ReactNode } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/guards/ProtectedRoute'
@@ -8,39 +9,56 @@ import { ErrorBoundary } from '@/components/feedback/ErrorBoundary'
 import { Loader2 } from 'lucide-react'
 import { ROUTES } from '@/lib/constants'
 
-const LandingPage = lazy(() => import('@/pages/marketing/LandingPage'))
-const LoginPage = lazy(() => import('@/pages/auth/LoginPage').then((m) => ({ default: m.LoginPage })))
-const ForgotPasswordPage = lazy(() =>
+function lazyRetry<T extends { default: React.ComponentType<any> }>(factory: () => Promise<T>) {
+  return lazy(async () => {
+    try {
+      return await factory()
+    } catch (err) {
+      const key = 'chunk-reload-at'
+      const last = Number(sessionStorage.getItem(key) || 0)
+      if (Date.now() - last > 10000) {
+        sessionStorage.setItem(key, String(Date.now()))
+        window.location.reload()
+        return new Promise<T>(() => {})
+      }
+      throw err
+    }
+  })
+}
+
+const LandingPage = lazyRetry(() => import('@/pages/marketing/LandingPage'))
+const LoginPage = lazyRetry(() => import('@/pages/auth/LoginPage').then((m) => ({ default: m.LoginPage })))
+const ForgotPasswordPage = lazyRetry(() =>
   import('@/pages/auth/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage }))
 )
-const ResetPasswordPage = lazy(() =>
+const ResetPasswordPage = lazyRetry(() =>
   import('@/pages/auth/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage }))
 )
-const AcceptInvitePage = lazy(() =>
+const AcceptInvitePage = lazyRetry(() =>
   import('@/pages/auth/AcceptInvitePage').then((m) => ({ default: m.AcceptInvitePage }))
 )
-const DashboardPage = lazy(() =>
+const DashboardPage = lazyRetry(() =>
   import('@/pages/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage }))
 )
-const LeadsPage = lazy(() => import('@/pages/leads/LeadsPage').then((m) => ({ default: m.LeadsPage })))
-const BuyersPage = lazy(() => import('@/pages/buyers/BuyersPage').then((m) => ({ default: m.BuyersPage })))
-const CampaignsPage = lazy(() =>
+const LeadsPage = lazyRetry(() => import('@/pages/leads/LeadsPage').then((m) => ({ default: m.LeadsPage })))
+const BuyersPage = lazyRetry(() => import('@/pages/buyers/BuyersPage').then((m) => ({ default: m.BuyersPage })))
+const CampaignsPage = lazyRetry(() =>
   import('@/pages/campaigns/CampaignsPage').then((m) => ({ default: m.CampaignsPage }))
 )
-const CampaignWorkspacePage = lazy(() =>
+const CampaignWorkspacePage = lazyRetry(() =>
   import('@/pages/campaigns/CampaignWorkspacePage').then((m) => ({ default: m.CampaignWorkspacePage }))
 )
-const DeliveryPage = lazy(() =>
+const DeliveryPage = lazyRetry(() =>
   import('@/pages/delivery/DeliveryPage').then((m) => ({ default: m.DeliveryPage }))
 )
-const ReportsPage = lazy(() =>
+const ReportsPage = lazyRetry(() =>
   import('@/pages/reports/ReportsPage').then((m) => ({ default: m.ReportsPage }))
 )
-const SettingsPage = lazy(() =>
+const SettingsPage = lazyRetry(() =>
   import('@/pages/settings/SettingsPage').then((m) => ({ default: m.SettingsPage }))
 )
-const TeamPage = lazy(() => import('@/pages/team/TeamPage').then((m) => ({ default: m.TeamPage })))
-const SuppliersPage = lazy(() =>
+const TeamPage = lazyRetry(() => import('@/pages/team/TeamPage').then((m) => ({ default: m.TeamPage })))
+const SuppliersPage = lazyRetry(() =>
   import('@/pages/suppliers/SuppliersPage').then((m) => ({ default: m.SuppliersPage }))
 )
 
